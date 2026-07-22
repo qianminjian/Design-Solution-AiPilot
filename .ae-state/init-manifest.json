@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.1",
+  "project_type": "spec-doc",
+  "language": "typescript",
+  "created_at": "2026-07-22T11:40:04.041346+00:00",
+  "init_version": "1.0.0",
+  "conventions": {
+    "linter": "eslint",
+    "type_checker": "tsc",
+    "test_runner": "",
+    "ci_platform": "none",
+    "build_cmd": "pnpm build"
+  },
+  "structure": {
+    "source_root": "src",
+    "test_root": "tests",
+    "design_root": "design"
+  },
+  "templates_applied": [
+    "spec-doc",
+    "typescript"
+  ],
+  "answers": {
+    "_folder_name": "",
+    "sep": "/",
+    "os": "macos",
+    "project_type": "中小型办公（5–15",
+    "project_description": "",
+    "test_runner": "",
+    "ci_platform": "",
+    "doc_name": "my-spec",
+    "doc_description": "",
+    "author_name": "",
+    "language": "typescript",
+    "package_manager": "pnpm",
+    "doc_status": "探索",
+    "version": "0.1.0",
+    "_detection_confidence": "high",
+    "project_name": "Design-Solution-AiPilot",
+    "repo_name": "Design-Solution-AiPilot",
+    "current_year": "2026",
+    "current_month": "07",
+    "current_day": "22",
+    "_ae_python": "/Users/minjianq/.claude/skills/ae-init/.venv/bin/python",
+    "_ae_version": "1.0.0"
+  },
+  "files": [
+    {
+      "path": "pnpm-lock.yaml",
+      "status": "created"
+    },
+    {
+      "path": "index.html",
+      "status": "created"
+    },
+    {
+      "path": "LICENSE",
+      "status": "created"
+    },
+    {
+      "path": ".pre-commit-config.yaml",
+      "status": "created"
+    },
+    {
+      "path": ".ae-answers.yml",
+      "status": "created"
+    },
+    {
+      "path": "BEACON.md",
+      "status": "created"
+    },
+    {
+      "path": ".editorconfig",
+      "status": "created"
+    },
+    {
+      "path": "README.md",
+      "status": "created"
+    },
+    {
+      "path": "prettier.config.js",
+      "status": "created"
+    },
+    {
+      "path": ".gitignore",
+      "status": "created"
+    },
+    {
+      "path": "package.json",
+      "status": "created"
+    },
+    {
+      "path": "tsconfig.json",
+      "status": "created"
+    },
+    {
+      "path": "spec.md",
+      "status": "created"
+    },
+    {
+      "path": "eslint.config.js",
+      "status": "created"
+    },
+    {
+      "path": "vite.config.ts",
+      "status": "created"
+    },
+    {
+      "path": "CLAUDE.md",
+      "status": "created"
+    },
+    {
+      "path": "design/INDEX.md",
+      "status": "created"
+    },
+    {
+      "path": "tests/index.test.ts",
+      "status": "created"
+    },
+    {
+      "path": "src/App.tsx",
+      "status": "created"
+    },
+    {
+      "path": "src/main.tsx",
+      "status": "created"
+    },
+    {
+      "path": "src/index.ts",
+      "status": "created"
+    },
+    {
+      "path": "design/decisions/README.md",
+      "status": "created"
+    },
+    {
+      "path": "design/decisions/adr-template.md",
+      "status": "created"
+    },
+    {
+      "path": "design/BEACON.md",
+      "status": "skipped"
+    }
+  ]
+}

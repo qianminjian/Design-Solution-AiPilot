@@ -1,0 +1,22 @@
+_meta:
+  ae_version: 1.0.0
+  created_at: '2026-07-22T19:40:03.899397+08:00'
+  schema_version: 1
+author_name: ''
+ci_platform: ''
+current_day: '22'
+current_month: '07'
+current_year: '2026'
+doc_description: ''
+doc_name: my-spec
+doc_status: 探索
+language: typescript
+os: macos
+package_manager: pnpm
+project_description: ''
+project_name: Design-Solution-AiPilot
+project_type: 中小型办公（5–15
+repo_name: Design-Solution-AiPilot
+sep: /
+test_runner: ''
+version: 0.1.0
