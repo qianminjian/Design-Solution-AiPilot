@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Analysis - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+    <!-- ========== Shell Layout ========== -->
+    <style>
+      /* ── Shell 布局变量 ── */
+      :root {
+        --shell-header-height: 56px;
+        --shell-sidebar-width: 240px;
+        --shell-sidebar-collapsed-width: 56px;
+        --shell-content-padding: 24px;
+      }
+
+      /* ── 顶部 Header Bar ── */
+      .shell-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: var(--shell-header-height);
+        padding: 0 16px;
+        background: #ffffff;
+        border-bottom: 1px solid var(--bd-border);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .shell-header__left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 200px;
+      }
+
+      .shell-header__logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: var(--bd-foreground);
+      }
+
+      .shell-header__logo svg {
+        flex-shrink: 0;
+      }
+
+      .shell-header__logo-text {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+
+      .shell-header__center {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shell-header__right {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 200px;
+        justify-content: flex-end;
+      }
+
+      .shell-header__icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--bd-radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .shell-header__icon-btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .shell-header__icon-btn:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-header__user {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px 4px 4px;
+        border-radius: var(--bd-radius-full);
+        cursor: pointer;
+        transition: background-color 120ms ease;
+      }
+
+      .shell-header__user:hover {
+        background-color: var(--bd-muted);
+      }
+
+      .shell-header__user:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-header__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--bd-radius-full);
+        background: var(--bd-primary-100);
+        color: var(--bd-primary-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .shell-header__user-chevron {
+        color: var(--bd-muted-foreground);
+      }
+
+      /* ── 左侧 Sidebar ── */
+      .shell-sidebar {
+        position: fixed;
+        top: var(--shell-header-height);
+        left: 0;
+        bottom: 0;
+        width: var(--shell-sidebar-width);
+        background: #ffffff;
+        border-right: 1px solid var(--bd-border);
+        display: flex;
+        flex-direction: column;
+        z-index: 90;
+        transition: width 200ms ease;
+        overflow: hidden;
+      }
+
+      .shell-sidebar--collapsed {
+        width: var(--shell-sidebar-collapsed-width);
+      }
+
+      .shell-sidebar__nav {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 8px 0;
+      }
+
+      .shell-sidebar__nav::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .shell-sidebar__nav::-webkit-scrollbar-thumb {
+        background: var(--bd-slate-200);
+        border-radius: var(--bd-radius-full);
+      }
+
+      .shell-sidebar__nav-group-label {
+        padding: 12px 12px 6px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .shell-sidebar__item {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        padding: 0 12px;
+        gap: 10px;
+        color: var(--bd-card-foreground);
+        text-decoration: none;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+      }
+
+      .shell-sidebar__item:hover {
+        background-color: var(--bd-muted);
+      }
+
+      .shell-sidebar__item:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: -2px;
+      }
+
+      /* 活跃导航项状态 */
+      .shell-sidebar__item--active {
+        background-color: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+        border-left-color: var(--bd-primary-600);
+        font-weight: 500;
+      }
+
+      .shell-sidebar__item svg {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+      }
+
+      .shell-sidebar__item-label {
+        font-size: 14px;
+        line-height: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* 折叠态隐藏文本 */
+      .shell-sidebar--collapsed .shell-sidebar__item-label,
+      .shell-sidebar--collapsed .shell-sidebar__nav-group-label {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__item {
+        justify-content: center;
+        padding: 0;
+      }
+
+      /* ── 侧栏底部切换按钮 ── */
+      .shell-sidebar__footer {
+        border-top: 1px solid var(--bd-border);
+        padding: 8px;
+      }
+
+      .shell-sidebar__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 36px;
+        border-radius: var(--bd-radius-sm);
+        border: 1px solid var(--bd-border);
+        background: #ffffff;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .shell-sidebar__toggle:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .shell-sidebar__toggle:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-sidebar__toggle svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        transition: transform 200ms ease;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__toggle-label {
+        display: none;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__toggle svg {
+        transform: rotate(180deg);
+      }
+
+      /* ── 主内容区域 ── */
+      .shell-main {
+        margin-left: var(--shell-sidebar-width);
+        padding-top: var(--shell-header-height);
+        min-height: 100vh;
+        transition: margin-left 200ms ease;
+      }
+
+      .shell-main--sidebar-collapsed {
+        margin-left: var(--shell-sidebar-collapsed-width);
+      }
+
+      .shell-content {
+        padding: var(--shell-content-padding);
+        min-height: calc(100vh - var(--shell-header-height));
+      }
+
+      /* ── 页面标题区域 ── */
+      .shell-page-header {
+        margin-bottom: 24px;
+      }
+
+      .shell-page-title {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: -0.02em;
+        color: var(--bd-foreground);
+        margin: 0 0 4px;
+      }
+
+      .shell-page-subtitle {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: var(--bd-muted-foreground);
+        margin: 0;
+      }
+
+      /* ── Breadcrumb ── */
+      .shell-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--bd-muted-foreground);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .shell-breadcrumb li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .shell-breadcrumb a {
+        color: var(--bd-muted-foreground);
+        text-decoration: none;
+        transition: color 120ms ease;
+      }
+
+      .shell-breadcrumb a:hover {
+        color: var(--bd-primary-600);
+      }
+
+      .shell-breadcrumb__sep {
+        color: var(--bd-slate-300);
+        flex-shrink: 0;
+      }
+
+      .shell-breadcrumb__current {
+        color: var(--bd-foreground);
+        font-weight: 500;
+      }
+
+      /* ── Engineering 页面专用样式 ── */
+      .eng-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--bd-border);
+        margin-bottom: 24px;
+      }
+
+      .eng-tab {
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color 120ms ease, border-color 120ms ease;
+        margin-bottom: -1px;
+      }
+
+      .eng-tab:hover {
+        color: var(--bd-primary-600);
+      }
+
+      .eng-tab--active {
+        color: var(--bd-primary-600);
+        border-bottom-color: var(--bd-primary-600);
+      }
+
+      .eng-card {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        box-shadow: var(--shadow-xs);
+      }
+
+      .eng-card__header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--bd-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .eng-card__title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+      }
+
+      .eng-card__body {
+        padding: 20px;
+      }
+
+      .eng-param-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--bd-muted);
+      }
+
+      .eng-param-row:last-child {
+        border-bottom: none;
+      }
+
+      .eng-param-label {
+        font-size: 13px;
+        color: var(--bd-muted-foreground);
+      }
+
+      .eng-param-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bd-card-foreground);
+      }
+
+      .eng-result-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .eng-result-card {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        padding: 16px;
+        box-shadow: var(--shadow-xs);
+      }
+
+      .eng-result-card__label {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--bd-muted-foreground);
+        margin-bottom: 6px;
+      }
+
+      .eng-result-card__value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--bd-foreground);
+        line-height: 1.2;
+      }
+
+      .eng-result-card__unit {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--bd-muted-foreground);
+        margin-left: 2px;
+      }
+
+      .eng-result-card__status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 8px;
+        padding: 2px 8px;
+        border-radius: var(--bd-radius-full);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .eng-result-card__status--pass {
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .eng-result-card__status--neutral {
+        background: var(--bd-muted);
+        color: var(--bd-muted-foreground);
+      }
+
+      /* ── Story Drift CSS Bar Chart ── */
+      .eng-drift-chart {
+        padding: 20px;
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        box-shadow: var(--shadow-xs);
+      }
+
+      .eng-drift-chart__title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        margin-bottom: 4px;
+      }
+
+      .eng-drift-chart__subtitle {
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+        margin-bottom: 16px;
+      }
+
+      .eng-drift-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .eng-drift-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .eng-drift-bar-label {
+        width: 48px;
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        text-align: right;
+      }
+
+      .eng-drift-bar-track {
+        flex: 1;
+        height: 20px;
+        background: var(--bd-muted);
+        border-radius: var(--bd-radius-sm);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .eng-drift-bar-fill {
+        height: 100%;
+        border-radius: var(--bd-radius-sm);
+        transition: width 600ms ease;
+      }
+
+      .eng-drift-bar-value {
+        width: 56px;
+        flex-shrink: 0;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--bd-card-foreground);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .eng-drift-bar-limit {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--state-error);
+        z-index: 1;
+      }
+
+      .eng-drift-bar-limit::after {
+        content: 'Limit';
+        position: absolute;
+        top: -14px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        color: var(--state-error);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .eng-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: var(--state-success-bg);
+        border: 1px solid var(--state-success-light);
+        border-radius: var(--bd-radius-sm);
+      }
+
+      .eng-note__icon {
+        flex-shrink: 0;
+        color: var(--state-success);
+        margin-top: 1px;
+      }
+
+      .eng-note__text {
+        font-size: 13px;
+        color: var(--state-success);
+        font-weight: 500;
+        line-height: 1.5;
+      }
+
+      /* ── Analysis History Table ── */
+      .eng-history-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .eng-history-table th {
+        text-align: left;
+        padding: 10px 16px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--bd-muted-foreground);
+        background: var(--bd-muted);
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .eng-history-table th:first-child {
+        border-radius: var(--bd-radius-sm) 0 0 0;
+      }
+
+      .eng-history-table th:last-child {
+        border-radius: 0 var(--bd-radius-sm) 0 0;
+      }
+
+      .eng-history-table td {
+        padding: 12px 16px;
+        color: var(--bd-card-foreground);
+        border-bottom: 1px solid var(--bd-muted);
+      }
+
+      .eng-history-table tbody tr:hover {
+        background: var(--bd-primary-50);
+      }
+
+      .eng-history-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .eng-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: var(--bd-radius-full);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .eng-status-badge--completed {
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .eng-status-badge--running {
+        background: var(--state-info-light);
+        color: var(--state-info);
+      }
+
+      .eng-status-badge--failed {
+        background: var(--state-error-light);
+        color: var(--state-error);
+      }
+
+      .eng-status-badge--warning {
+        background: var(--state-warning-light);
+        color: var(--state-warning);
+      }
+
+      /* ── Load Table ── */
+      .eng-load-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-top: 4px;
+      }
+
+      .eng-load-table th {
+        text-align: left;
+        padding: 8px 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--bd-muted-foreground);
+        background: var(--bd-muted);
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .eng-load-table td {
+        padding: 8px 12px;
+        color: var(--bd-card-foreground);
+        border-bottom: 1px solid var(--bd-muted);
+      }
+
+      .eng-load-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+    <!-- ========== 顶部 Header Bar ========== -->
+    <header class="shell-header">
+      <div class="shell-header__left">
+        <a class="shell-header__logo" href="/">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+            <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+            <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+            <path d="M10 6h4"/>
+            <path d="M10 10h4"/>
+            <path d="M10 14h4"/>
+            <path d="M10 18h4"/>
+          </svg>
+          <span class="shell-header__logo-text">AiPilot</span>
+        </a>
+      </div>
+
+      <div class="shell-header__center">
+        <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+          <li><a href="/engineering">Engineering</a></li>
+          <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+          <li><span class="shell-breadcrumb__current">Engineering Analysis</span></li>
+        </nav>
+      </div>
+
+      <div class="shell-header__right">
+        <button class="shell-header__icon-btn" type="button" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+          </svg>
+        </button>
+        <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+          </svg>
+        </button>
+        <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+          <div class="shell-header__avatar">AP</div>
+          <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========== 左侧 Sidebar ========== -->
+    <aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+      <nav class="shell-sidebar__nav">
+        <div class="shell-sidebar__nav-group-label">Workspace</div>
+
+        <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+          </svg>
+          <span class="shell-sidebar__item-label">My Work</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Projects</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Requirements</span>
+        </a>
+
+        <div style="height: 8px;"></div>
+        <div class="shell-sidebar__nav-group-label">Design Collaboration</div>
+
+        <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>
+          </svg>
+          <span class="shell-sidebar__item-label">CDE Library</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Viewer</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Design Options</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Coordination</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Rule Check</span>
+        </a>
+
+        <div style="height: 8px;"></div>
+        <div class="shell-sidebar__nav-group-label">AI &amp; Delivery</div>
+
+        <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+          </svg>
+          <span class="shell-sidebar__item-label">AI Review</span>
+        </a>
+
+        <!-- Engineering - ACTIVE -->
+        <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="engineering" href="/engineering">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Engineering</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Publish</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
+          </svg>
+          <span class="shell-sidebar__item-label">Change Impact</span>
+        </a>
+      </nav>
+
+      <div class="shell-sidebar__footer">
+        <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          <span class="shell-sidebar__toggle-label">Collapse</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ========== 主内容区域 ========== -->
+    <main class="shell-main" id="shell-main">
+      <div class="shell-content">
+
+        <!-- 页面标题 -->
+        <div class="shell-page-header">
+          <h1 class="shell-page-title">Engineering Analysis</h1>
+          <p class="shell-page-subtitle">Structural, MEP and environmental calculations</p>
+        </div>
+
+        <!-- 分析类型选项卡 -->
+        <div class="eng-tabs">
+          <button class="eng-tab eng-tab--active">Structural Analysis</button>
+          <button class="eng-tab">MEP Load Calculations</button>
+          <button class="eng-tab">Energy Analysis</button>
+          <button class="eng-tab">Daylight Simulation</button>
+        </div>
+
+        <!-- ====== 结构分析主面板 ====== -->
+        <div style="display: flex; gap: 24px; margin-bottom: 24px;">
+
+          <!-- 左侧：输入参数卡片 (40%) -->
+          <div style="width: 40%; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px;">
+
+            <!-- 建筑信息卡片 -->
+            <div class="eng-card">
+              <div class="eng-card__header">
+                <span class="eng-card__title">Building Information</span>
+              </div>
+              <div class="eng-card__body">
+                <div class="eng-param-row">
+                  <span class="eng-param-label">Floors</span>
+                  <span class="eng-param-value">12</span>
+                </div>
+                <div class="eng-param-row">
+                  <span class="eng-param-label">Total Height</span>
+                  <span class="eng-param-value">45 m</span>
+                </div>
+                <div class="eng-param-row">
+                  <span class="eng-param-label">Structural System</span>
+                  <span class="eng-param-value">Concrete Frame</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 荷载定义卡片 -->
+            <div class="eng-card">
+              <div class="eng-card__header">
+                <span class="eng-card__title">Load Definitions</span>
+              </div>
+              <div class="eng-card__body" style="padding: 0;">
+                <table class="eng-load-table">
+                  <thead>
+                    <tr>
+                      <th>Load Type</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Dead Load</td>
+                      <td style="font-weight: 600;">5.0 kN/m2</td>
+                    </tr>
+                    <tr>
+                      <td>Live Load</td>
+                      <td style="font-weight: 600;">3.0 kN/m2</td>
+                    </tr>
+                    <tr>
+                      <td>Wind Pressure</td>
+                      <td style="font-weight: 600;">1.2 kPa</td>
+                    </tr>
+                    <tr>
+                      <td>Seismic Zone</td>
+                      <td style="font-weight: 600;">Zone 2A</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 材料属性卡片 -->
+            <div class="eng-card">
+              <div class="eng-card__header">
+                <span class="eng-card__title">Material Properties</span>
+              </div>
+              <div class="eng-card__body">
+                <div class="eng-param-row">
+                  <span class="eng-param-label">Concrete Grade</span>
+                  <span class="eng-param-value">C40</span>
+                </div>
+                <div class="eng-param-row">
+                  <span class="eng-param-label">Steel Grade</span>
+                  <span class="eng-param-value">S355</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 右侧：结果面板 (60%) -->
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 16px;">
+
+            <!-- 关键结果卡片网格 -->
+            <div class="eng-result-grid">
+              <div class="eng-result-card">
+                <div class="eng-result-card__label">Max Story Drift</div>
+                <div class="eng-result-card__value">0.0035</div>
+                <div class="eng-result-card__status eng-result-card__status--pass">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  Pass
+                </div>
+              </div>
+              <div class="eng-result-card">
+                <div class="eng-result-card__label">Base Shear</div>
+                <div class="eng-result-card__value">2,450<span class="eng-result-card__unit">kN</span></div>
+                <div class="eng-result-card__status eng-result-card__status--neutral">
+                  Calculated
+                </div>
+              </div>
+              <div class="eng-result-card">
+                <div class="eng-result-card__label">Fundamental Period</div>
+                <div class="eng-result-card__value">1.8<span class="eng-result-card__unit">s</span></div>
+                <div class="eng-result-card__status eng-result-card__status--neutral">
+                  Calculated
+                </div>
+              </div>
+              <div class="eng-result-card">
+                <div class="eng-result-card__label">Total Weight</div>
+                <div class="eng-result-card__value">45,000<span class="eng-result-card__unit">kN</span></div>
+                <div class="eng-result-card__status eng-result-card__status--neutral">
+                  Calculated
+                </div>
+              </div>
+            </div>
+
+            <!-- 层间位移角条形图 -->
+            <div class="eng-drift-chart">
+              <div class="eng-drift-chart__title">Story Drift Ratio by Floor</div>
+              <div class="eng-drift-chart__subtitle">Inter-story drift ratios (h/L) -- IBC 2021 limit: 0.020</div>
+              <div class="eng-drift-bars">
+                <!-- 12F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">12F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-limit" style="left: 70%;"></div>
+                    <div class="eng-drift-bar-fill" style="width: 28%; background: var(--bd-primary-500);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0035</span>
+                </div>
+                <!-- 11F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">11F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 25%; background: var(--bd-primary-500);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0031</span>
+                </div>
+                <!-- 10F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">10F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 22%; background: var(--bd-primary-400);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0028</span>
+                </div>
+                <!-- 9F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">9F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 20%; background: var(--bd-primary-400);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0025</span>
+                </div>
+                <!-- 8F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">8F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 18%; background: var(--bd-primary-300);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0022</span>
+                </div>
+                <!-- 7F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">7F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 16%; background: var(--bd-primary-300);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0020</span>
+                </div>
+                <!-- 6F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">6F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 14%; background: var(--bd-primary-200);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0017</span>
+                </div>
+                <!-- 5F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">5F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 12%; background: var(--bd-primary-200);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0015</span>
+                </div>
+                <!-- 4F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">4F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 10%; background: var(--bd-primary-100);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0013</span>
+                </div>
+                <!-- 3F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">3F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 8%; background: var(--bd-primary-100);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0010</span>
+                </div>
+                <!-- 2F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">2F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 5%; background: var(--bd-primary-50); border: 1px solid var(--bd-primary-200);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0006</span>
+                </div>
+                <!-- 1F -->
+                <div class="eng-drift-bar-row">
+                  <span class="eng-drift-bar-label">1F</span>
+                  <div class="eng-drift-bar-track">
+                    <div class="eng-drift-bar-fill" style="width: 3%; background: var(--bd-primary-50); border: 1px solid var(--bd-primary-200);"></div>
+                  </div>
+                  <span class="eng-drift-bar-value">0.0003</span>
+                </div>
+              </div>
+
+              <!-- 合规提示 -->
+              <div class="eng-note">
+                <svg class="eng-note__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+                </svg>
+                <span class="eng-note__text">All values within acceptable limits per IBC 2021. Maximum drift ratio 0.0035 is well below the 0.020 allowable limit.</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ====== 分析历史表格 ====== -->
+        <div class="eng-card">
+          <div class="eng-card__header">
+            <span class="eng-card__title">Analysis History</span>
+            <button style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--bd-radius-sm); border: 1px solid var(--bd-border); background: var(--bd-card); color: var(--bd-primary); font-size: 13px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" x2="22" y1="5" y2="5"/><line x1="19" x2="19" y1="2" y2="8"/><path d="M7.5 16.5 10 14 12.5 16.5 17 10"/></svg>
+              Export Report
+            </button>
+          </div>
+          <div class="eng-card__body" style="padding: 0;">
+            <table class="eng-history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Analysis Type</th>
+                  <th>Project</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th>Run By</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2026-07-22 14:30</td>
+                  <td>Structural Analysis</td>
+                  <td>Tower A -- Office Complex</td>
+                  <td><span class="eng-status-badge eng-status-badge--completed">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    Completed
+                  </span></td>
+                  <td>4m 32s</td>
+                  <td>Auto (AI-assisted)</td>
+                </tr>
+                <tr>
+                  <td>2026-07-21 09:15</td>
+                  <td>MEP Load Calculations</td>
+                  <td>Tower A -- Office Complex</td>
+                  <td><span class="eng-status-badge eng-status-badge--completed">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    Completed
+                  </span></td>
+                  <td>2m 18s</td>
+                  <td>Auto (AI-assisted)</td>
+                </tr>
+                <tr>
+                  <td>2026-07-20 16:42</td>
+                  <td>Structural Analysis</td>
+                  <td>Tower A -- Office Complex</td>
+                  <td><span class="eng-status-badge eng-status-badge--warning">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                    Review Required
+                  </span></td>
+                  <td>5m 01s</td>
+                  <td>Auto (AI-assisted)</td>
+                </tr>
+                <tr>
+                  <td>2026-07-19 11:08</td>
+                  <td>Energy Analysis</td>
+                  <td>Tower A -- Office Complex</td>
+                  <td><span class="eng-status-badge eng-status-badge--completed">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    Completed
+                  </span></td>
+                  <td>8m 45s</td>
+                  <td>Auto (AI-assisted)</td>
+                </tr>
+                <tr>
+                  <td>2026-07-18 13:55</td>
+                  <td>Structural Analysis</td>
+                  <td>Tower A -- Office Complex</td>
+                  <td><span class="eng-status-badge eng-status-badge--failed">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                    Failed
+                  </span></td>
+                  <td>1m 12s</td>
+                  <td>System</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>

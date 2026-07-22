@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design Options - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+
+    <!-- SHARED SHELL: project-shell -->
+    <!-- AiPilot 平台公共 Shell 片段 -->
+    <style>
+  /* ── Shell 布局变量 ── */
+  :root {
+    --shell-header-height: 56px;
+    --shell-sidebar-width: 240px;
+    --shell-sidebar-collapsed-width: 56px;
+    --shell-content-padding: 24px;
+  }
+
+  /* ── 顶部 Header Bar ── */
+  .shell-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--shell-header-height);
+    padding: 0 16px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--bd-border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shell-header__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+  }
+
+  .shell-header__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--bd-foreground);
+  }
+
+  .shell-header__logo svg {
+    flex-shrink: 0;
+  }
+
+  .shell-header__logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .shell-header__center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shell-header__right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 200px;
+    justify-content: flex-end;
+  }
+
+  .shell-header__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--bd-radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .shell-header__icon-btn:hover {
+    background-color: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+
+  .shell-header__icon-btn:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-header__user {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 4px;
+    border-radius: var(--bd-radius-full);
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .shell-header__user:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .shell-header__user:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-header__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--bd-radius-full);
+    background: var(--bd-primary-100);
+    color: var(--bd-primary-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .shell-header__user-chevron {
+    color: var(--bd-muted-foreground);
+  }
+
+  /* ── 左侧 Sidebar ── */
+  .shell-sidebar {
+    position: fixed;
+    top: var(--shell-header-height);
+    left: 0;
+    bottom: 0;
+    width: var(--shell-sidebar-width);
+    background: #ffffff;
+    border-right: 1px solid var(--bd-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 90;
+    transition: width 200ms ease;
+    overflow: hidden;
+  }
+
+  .shell-sidebar--collapsed {
+    width: var(--shell-sidebar-collapsed-width);
+  }
+
+  .shell-sidebar__nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+  }
+
+  .shell-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .shell-sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--bd-slate-200);
+    border-radius: var(--bd-radius-full);
+  }
+
+  .shell-sidebar__nav-group-label {
+    padding: 12px 12px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--bd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .shell-sidebar__item {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 12px;
+    gap: 10px;
+    color: var(--bd-card-foreground);
+    text-decoration: none;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  .shell-sidebar__item:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .shell-sidebar__item:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: -2px;
+  }
+
+  .shell-sidebar__item--active {
+    background-color: var(--bd-primary-50);
+    color: var(--bd-primary-600);
+    border-left-color: var(--bd-primary-600);
+    font-weight: 500;
+  }
+
+  .shell-sidebar__item svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+
+  .shell-sidebar__item-label {
+    font-size: 14px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__item-label,
+  .shell-sidebar--collapsed .shell-sidebar__nav-group-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .shell-sidebar__footer {
+    border-top: 1px solid var(--bd-border);
+    padding: 8px;
+  }
+
+  .shell-sidebar__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    border-radius: var(--bd-radius-sm);
+    border: 1px solid var(--bd-border);
+    background: #ffffff;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .shell-sidebar__toggle:hover {
+    background-color: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+
+  .shell-sidebar__toggle:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-sidebar__toggle svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    transition: transform 200ms ease;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__toggle-label {
+    display: none;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__toggle svg {
+    transform: rotate(180deg);
+  }
+
+  /* ── 主内容区域 ── */
+  .shell-main {
+    margin-left: var(--shell-sidebar-width);
+    padding-top: var(--shell-header-height);
+    min-height: 100vh;
+    transition: margin-left 200ms ease;
+  }
+
+  .shell-main--sidebar-collapsed {
+    margin-left: var(--shell-sidebar-collapsed-width);
+  }
+
+  .shell-content {
+    padding: var(--shell-content-padding);
+    min-height: calc(100vh - var(--shell-header-height));
+  }
+
+  .shell-page-header {
+    margin-bottom: 24px;
+  }
+
+  .shell-page-title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    color: var(--bd-foreground);
+    margin: 0 0 4px;
+  }
+
+  .shell-page-subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--bd-muted-foreground);
+    margin: 0;
+  }
+
+  .shell-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--bd-muted-foreground);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .shell-breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .shell-breadcrumb a {
+    color: var(--bd-muted-foreground);
+    text-decoration: none;
+    transition: color 120ms ease;
+  }
+
+  .shell-breadcrumb a:hover {
+    color: var(--bd-primary-600);
+  }
+
+  .shell-breadcrumb__sep {
+    color: var(--bd-slate-300);
+    flex-shrink: 0;
+  }
+
+  .shell-breadcrumb__current {
+    color: var(--bd-foreground);
+    font-weight: 500;
+  }
+    </style>
+
+    <!-- 页面专属样式 -->
+    <style>
+      /* ── 方案选择标签栏 ── */
+      .do-tab-bar {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--bd-border);
+        margin-bottom: 20px;
+      }
+
+      .do-tab-bar__item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color 120ms ease, border-color 120ms ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+      }
+
+      .do-tab-bar__item:hover {
+        color: var(--bd-foreground);
+      }
+
+      .do-tab-bar__item--active {
+        color: var(--bd-primary-600);
+        border-bottom-color: var(--bd-primary-600);
+      }
+
+      .do-tab-bar__item-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: var(--bd-radius-full);
+        background: var(--bd-muted);
+        color: var(--bd-muted-foreground);
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      .do-tab-bar__item--active .do-tab-bar__item-badge {
+        background: var(--bd-primary-100);
+        color: var(--bd-primary-600);
+      }
+
+      /* ── 对比视图区域 ── */
+      .do-compare-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .do-plan-thumb {
+        position: relative;
+        border-radius: var(--bd-radius-lg);
+        border: 1px solid var(--bd-border);
+        background: var(--bd-card);
+        overflow: hidden;
+        aspect-ratio: 16 / 10;
+      }
+
+      .do-plan-thumb__canvas {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* CSS 平面图占位：网格背景 + 房间轮廓 */
+      .do-plan-thumb__canvas--opt-a {
+        background:
+          /* 网格线 */
+          linear-gradient(to right, var(--bd-slate-100) 1px, transparent 1px),
+          linear-gradient(to bottom, var(--bd-slate-100) 1px, transparent 1px),
+          var(--bd-slate-50);
+        background-size: 40px 40px, 40px 40px, 100% 100%;
+      }
+
+      .do-plan-thumb__canvas--opt-b {
+        background:
+          linear-gradient(to right, var(--bd-slate-100) 1px, transparent 1px),
+          linear-gradient(to bottom, var(--bd-slate-100) 1px, transparent 1px),
+          var(--bd-slate-50);
+        background-size: 40px 40px, 40px 40px, 100% 100%;
+      }
+
+      /* SVG 平面图线条 */
+      .do-plan-thumb__drawing {
+        position: absolute;
+        inset: 0;
+      }
+
+      .do-plan-thumb__drawing svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* 缩略图叠加信息层 */
+      .do-plan-thumb__overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 12px;
+        pointer-events: none;
+      }
+
+      .do-plan-thumb__overlay-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+
+      .do-plan-thumb__label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--bd-radius-sm);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(4px);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--bd-card-foreground);
+        box-shadow: var(--shadow-xs);
+      }
+
+      .do-plan-thumb__label-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: var(--bd-radius-full);
+      }
+
+      .do-plan-thumb__label-dot--a { background: var(--bd-primary-500); }
+      .do-plan-thumb__label-dot--b { background: var(--bd-primary-300); }
+
+      .do-plan-thumb__overlay-bottom {
+        display: flex;
+        gap: 8px;
+      }
+
+      .do-plan-thumb__stat {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: var(--bd-radius-sm);
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(4px);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        box-shadow: var(--shadow-xs);
+      }
+
+      .do-plan-thumb__stat-value {
+        color: var(--bd-card-foreground);
+        font-weight: 600;
+      }
+
+      /* ── 对比指标表格 ── */
+      .do-metrics-card {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-lg);
+        overflow: hidden;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-xs);
+      }
+
+      .do-metrics-card__header {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--bd-border);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .do-metrics-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .do-metrics-table thead th {
+        padding: 10px 16px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--bd-muted-foreground);
+        border-bottom: 1px solid var(--bd-border);
+        background: var(--bd-slate-50);
+      }
+
+      .do-metrics-table tbody td {
+        padding: 10px 16px;
+        color: var(--bd-card-foreground);
+        border-bottom: 1px solid var(--bd-border);
+        vertical-align: middle;
+      }
+
+      .do-metrics-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .do-metrics-table tbody tr:hover {
+        background: var(--bd-slate-50);
+      }
+
+      .do-metrics-table .metric-label {
+        font-weight: 500;
+        color: var(--bd-foreground);
+      }
+
+      .do-metrics-table .metric-value {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .do-metrics-table .metric-unit {
+        display: inline-block;
+        padding: 1px 6px;
+        margin-left: 4px;
+        border-radius: var(--bd-radius-full);
+        background: var(--bd-muted);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--bd-muted-foreground);
+        vertical-align: middle;
+      }
+
+      .do-metrics-table .best-check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: var(--bd-radius-full);
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .do-metrics-table .best-check svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* ── 专业标签页 ── */
+      .do-discipline-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--bd-border);
+        margin-bottom: 0;
+      }
+
+      .do-discipline-tabs__item {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: color 120ms ease, border-color 120ms ease;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+      }
+
+      .do-discipline-tabs__item:hover {
+        color: var(--bd-foreground);
+      }
+
+      .do-discipline-tabs__item--active {
+        color: var(--bd-primary-600);
+        border-bottom-color: var(--bd-primary-600);
+      }
+
+      .do-discipline-content {
+        padding: 16px;
+      }
+
+      .do-discipline-content ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .do-discipline-content li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--bd-card-foreground);
+      }
+
+      .do-discipline-content li::before {
+        content: '';
+        flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--bd-radius-full);
+    background: var(--bd-primary-400);
+    margin-top: 7px;
+      }
+
+      /* ── AI 比较笔记右侧面板 ── */
+      .do-ai-panel {
+        position: fixed;
+    right: 0;
+    top: var(--shell-header-height);
+    bottom: 0;
+    width: 300px;
+    background: var(--bd-card);
+    border-left: 1px solid var(--bd-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 80;
+    box-shadow: -2px 0 8px rgba(15, 23, 42, 0.03);
+      }
+
+      .do-ai-panel__header {
+        padding: 16px;
+        border-bottom: 1px solid var(--bd-border);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .do-ai-panel__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--bd-radius-sm);
+        background: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+      }
+
+      .do-ai-panel__icon svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .do-ai-panel__title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+      }
+
+      .do-ai-panel__body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      .do-ai-panel__note {
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--bd-card-foreground);
+      }
+
+      .do-ai-panel__note-highlight {
+        padding: 10px 12px;
+        border-radius: var(--bd-radius-md);
+        background: var(--bd-primary-50);
+        border-left: 3px solid var(--bd-primary-400);
+        margin-top: 12px;
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--bd-primary-800);
+      }
+
+      .do-ai-panel__divider {
+        height: 1px;
+        background: var(--bd-border);
+        margin: 16px 0;
+      }
+
+      .do-ai-panel__verdict {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 12px;
+        border-radius: var(--bd-radius-md);
+        background: var(--state-success-bg);
+        border: 1px solid var(--state-success-light);
+      }
+
+      .do-ai-panel__verdict-icon {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        color: var(--state-success);
+      }
+
+      .do-ai-panel__verdict-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--state-success);
+        line-height: 1.5;
+      }
+
+      /* 页面内容区域需要留出右侧面板空间 */
+      .do-page-layout {
+        display: flex;
+        margin-right: 300px;
+      }
+
+      .do-page-main {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* ── 通用工具 ── */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+<!-- ========== 顶部 Header Bar ========== -->
+<header class="shell-header">
+  <div class="shell-header__left">
+    <a class="shell-header__logo" href="/">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+        <path d="M10 6h4"/>
+        <path d="M10 10h4"/>
+        <path d="M10 14h4"/>
+        <path d="M10 18h4"/>
+      </svg>
+      <span class="shell-header__logo-text">AiPilot</span>
+    </a>
+  </div>
+
+  <div class="shell-header__center">
+    <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+      <li><a href="/">Home</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><a href="/design-options">Design Options</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><span class="shell-breadcrumb__current">Comparison</span></li>
+    </nav>
+  </div>
+
+  <div class="shell-header__right">
+    <button class="shell-header__icon-btn" type="button" aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+    </button>
+    <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      </svg>
+    </button>
+    <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+      <div class="shell-header__avatar">AP</div>
+      <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 左侧 Sidebar ========== -->
+<aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+  <nav class="shell-sidebar__nav">
+    <div class="shell-sidebar__nav-group-label">工作区</div>
+
+    <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      <span class="shell-sidebar__item-label">My Work</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Projects</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Requirements</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">设计协作</div>
+
+    <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>
+      </svg>
+      <span class="shell-sidebar__item-label">CDE Library</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Viewer</span>
+    </a>
+
+    <!-- Design Options — 活跃状态 -->
+    <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="design-options" href="/design-options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Design Options</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Coordination</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Rule Check</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+
+    <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+      </svg>
+      <span class="shell-sidebar__item-label">AI Review</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Engineering</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Publish</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Change Impact</span>
+    </a>
+  </nav>
+
+  <div class="shell-sidebar__footer">
+    <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      <span class="shell-sidebar__toggle-label">Collapse</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ========== 右侧 AI 比较笔记面板 ========== -->
+<aside class="do-ai-panel">
+  <div class="do-ai-panel__header">
+    <div class="do-ai-panel__icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+      </svg>
+    </div>
+    <span class="do-ai-panel__title">AI Comparison Notes</span>
+  </div>
+  <div class="do-ai-panel__body">
+    <div class="do-ai-panel__note">
+      Option A provides 8% better daylight coverage but 3% lower structural efficiency compared to Option B. The L-shape core configuration allows for deeper perimeter zones with consistent natural lighting on two facades per bay.
+    </div>
+    <div class="do-ai-panel__note-highlight">
+      Recommended for east-facing sites where morning daylight penetration is critical for occupant comfort and energy performance targets.
+    </div>
+
+    <div class="do-ai-panel__divider"></div>
+
+    <div class="do-ai-panel__note" style="margin-bottom: 12px;">
+      <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--bd-muted-foreground); margin-bottom: 8px;">Key Trade-offs</div>
+      <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px;">
+        <li style="display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.5; color: var(--bd-card-foreground);">
+          <svg style="flex-shrink: 0; width: 14px; height: 14px; color: var(--state-success); margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Daylight: Option A leads by 8%
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.5; color: var(--bd-card-foreground);">
+          <svg style="flex-shrink: 0; width: 14px; height: 14px; color: var(--state-warning); margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Structure: Option B 3% more efficient
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.5; color: var(--bd-card-foreground);">
+          <svg style="flex-shrink: 0; width: 14px; height: 14px; color: var(--state-success); margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          MEP routing: Option C shortest path
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 6px; font-size: 12px; line-height: 1.5; color: var(--bd-card-foreground);">
+          <svg style="flex-shrink: 0; width: 14px; height: 14px; color: var(--state-warning); margin-top: 1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Cost: Option A 2% higher per sqm
+        </li>
+      </ul>
+    </div>
+
+    <div class="do-ai-panel__verdict">
+      <svg class="do-ai-panel__verdict-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <span class="do-ai-panel__verdict-text">Recommendation: Option A for east-facing sites. Option B for cost-sensitive projects requiring maximum structural span.</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ========== 主内容区域 ========== -->
+<main class="shell-main" id="shell-main">
+  <div class="shell-content">
+    <div class="do-page-layout">
+      <div class="do-page-main">
+
+        <!-- 页面标题 -->
+        <div class="shell-page-header">
+          <h1 class="shell-page-title">Design Options</h1>
+          <p class="shell-page-subtitle">Compare and evaluate design alternatives</p>
+        </div>
+
+        <!-- 方案选择标签栏 -->
+        <div class="do-tab-bar">
+          <button class="do-tab-bar__item do-tab-bar__item--active" type="button">
+            <span class="do-tab-bar__item-badge">A</span>
+            Option A - L-Shape Core
+          </button>
+          <button class="do-tab-bar__item" type="button">
+            <span class="do-tab-bar__item-badge">B</span>
+            Option B - Central Core
+          </button>
+          <button class="do-tab-bar__item" type="button">
+            <span class="do-tab-bar__item-badge">C</span>
+            Option C - Split Core
+          </button>
+        </div>
+
+        <!-- 对比视图区域：2 列平面图缩略图 -->
+        <div class="do-compare-grid">
+          <!-- Option A 缩略图 -->
+          <div class="do-plan-thumb">
+            <div class="do-plan-thumb__canvas do-plan-thumb__canvas--opt-a">
+              <!-- CSS 占位平面图：L 形核心筒布局 -->
+              <div class="do-plan-thumb__drawing">
+                <svg viewBox="0 0 400 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 建筑外轮廓 -->
+                  <rect x="30" y="20" width="340" height="210" rx="2" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+                  <!-- L 形核心筒（左下角） -->
+                  <rect x="30" y="130" width="90" height="100" rx="1" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+                  <!-- 核心筒内部：电梯/楼梯示意 -->
+                  <rect x="40" y="140" width="25" height="25" rx="1" stroke="#2563eb" stroke-width="0.8" fill="#eff6ff"/>
+                  <rect x="72" y="140" width="25" height="25" rx="1" stroke="#2563eb" stroke-width="0.8" fill="#eff6ff"/>
+                  <rect x="50" y="172" width="35" height="45" rx="1" stroke="#2563eb" stroke-width="0.8" fill="#eff6ff"/>
+                  <!-- 主要功能区域分割线 -->
+                  <line x1="140" y1="20" x2="140" y2="230" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="250" y1="20" x2="250" y2="230" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="30" y1="110" x2="370" y2="110" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="30" y1="170" x2="370" y2="170" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <!-- 入口标注 -->
+                  <line x1="140" y1="230" x2="140" y2="245" stroke="#64748b" stroke-width="1"/>
+                  <polygon points="136,242 140,248 144,242" fill="#64748b"/>
+                  <!-- 房间标签 -->
+                  <text x="185" y="70" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Office Zone A</text>
+                  <text x="310" y="70" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Office Zone B</text>
+                  <text x="185" y="145" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Meeting</text>
+                  <text x="310" y="145" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Open Plan</text>
+                  <text x="310" y="205" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Services</text>
+                  <!-- 窗户示意线 -->
+                  <line x1="30" y1="40" x2="30" y2="90" stroke="#60a5fa" stroke-width="2.5"/>
+                  <line x1="370" y1="40" x2="370" y2="90" stroke="#60a5fa" stroke-width="2.5"/>
+                  <line x1="150" y1="20" x2="240" y2="20" stroke="#60a5fa" stroke-width="2.5"/>
+                </svg>
+              </div>
+              <!-- 叠加信息层 -->
+              <div class="do-plan-thumb__overlay">
+                <div class="do-plan-thumb__overlay-top">
+                  <div class="do-plan-thumb__label">
+                    <span class="do-plan-thumb__label-dot do-plan-thumb__label-dot--a"></span>
+                    Option A - L-Shape Core
+                  </div>
+                </div>
+                <div class="do-plan-thumb__overlay-bottom">
+                  <div class="do-plan-thumb__stat">
+                    GFA <span class="do-plan-thumb__stat-value">12,450 m<sup>2</sup></span>
+                  </div>
+                  <div class="do-plan-thumb__stat">
+                    Efficiency <span class="do-plan-thumb__stat-value">78.3%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Option B 缩略图 -->
+          <div class="do-plan-thumb">
+            <div class="do-plan-thumb__canvas do-plan-thumb__canvas--opt-b">
+              <!-- CSS 占位平面图：中心核心筒布局 -->
+              <div class="do-plan-thumb__drawing">
+                <svg viewBox="0 0 400 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 建筑外轮廓 -->
+                  <rect x="30" y="20" width="340" height="210" rx="2" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+                  <!-- 中心核心筒 -->
+                  <rect x="150" y="75" width="100" height="100" rx="1" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.2"/>
+                  <!-- 核心筒内部 -->
+                  <rect x="160" y="85" width="30" height="30" rx="1" stroke="#2563eb" stroke-width="0.8" fill="#eff6ff"/>
+                  <rect x="200" y="85" width="30" height="30" rx="1" stroke="#2563eb" stroke-width="0.8" fill="#eff6ff"/>
+                  <rect x="175" y="125" width="50" height="35" rx="1" stroke="#2563eb" stroke-width="0.8" fill="#eff6ff"/>
+                  <!-- 功能区域分割线 -->
+                  <line x1="130" y1="20" x2="130" y2="230" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="270" y1="20" x2="270" y2="230" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="30" y1="100" x2="150" y2="100" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="250" y1="100" x2="370" y2="100" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="30" y1="170" x2="150" y2="170" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <line x1="250" y1="170" x2="370" y2="170" stroke="#cbd5e1" stroke-width="0.8" stroke-dasharray="4 2"/>
+                  <!-- 入口标注 -->
+                  <line x1="200" y1="230" x2="200" y2="245" stroke="#64748b" stroke-width="1"/>
+                  <polygon points="196,242 200,248 204,242" fill="#64748b"/>
+                  <!-- 房间标签 -->
+                  <text x="80" y="65" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Office L</text>
+                  <text x="320" y="65" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Office R</text>
+                  <text x="80" y="140" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Meeting</text>
+                  <text x="320" y="140" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Lounge</text>
+                  <text x="80" y="205" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Core</text>
+                  <text x="320" y="205" font-family="Inter, sans-serif" font-size="9" fill="#475569" text-anchor="middle">Retail</text>
+                  <!-- 窗户示意线 -->
+                  <line x1="30" y1="35" x2="30" y2="85" stroke="#60a5fa" stroke-width="2.5"/>
+                  <line x1="370" y1="35" x2="370" y2="85" stroke="#60a5fa" stroke-width="2.5"/>
+                  <line x1="30" y1="120" x2="30" y2="155" stroke="#60a5fa" stroke-width="2.5"/>
+                  <line x1="370" y1="120" x2="370" y2="155" stroke="#60a5fa" stroke-width="2.5"/>
+                  <line x1="160" y1="20" x2="240" y2="20" stroke="#60a5fa" stroke-width="2.5"/>
+                </svg>
+              </div>
+              <!-- 叠加信息层 -->
+              <div class="do-plan-thumb__overlay">
+                <div class="do-plan-thumb__overlay-top">
+                  <div class="do-plan-thumb__label">
+                    <span class="do-plan-thumb__label-dot do-plan-thumb__label-dot--b"></span>
+                    Option B - Central Core
+                  </div>
+                </div>
+                <div class="do-plan-thumb__overlay-bottom">
+                  <div class="do-plan-thumb__stat">
+                    GFA <span class="do-plan-thumb__stat-value">12,800 m<sup>2</sup></span>
+                  </div>
+                  <div class="do-plan-thumb__stat">
+                    Efficiency <span class="do-plan-thumb__stat-value">80.7%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 对比指标表格 -->
+        <div class="do-metrics-card">
+          <div class="do-metrics-card__header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--bd-muted-foreground);">
+              <line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>
+            </svg>
+            Comparison Metrics
+          </div>
+          <table class="do-metrics-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Option A</th>
+                <th>Option B</th>
+                <th>Option C</th>
+                <th>Best</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="metric-label">Total Floor Area (GFA)</td>
+                <td class="metric-value">12,450<span class="metric-unit">m<sup>2</sup></span></td>
+                <td class="metric-value">12,800<span class="metric-unit">m<sup>2</sup></span></td>
+                <td class="metric-value">11,920<span class="metric-unit">m<sup>2</sup></span></td>
+                <td>
+                  <span class="best-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-label">Efficiency Ratio</td>
+                <td class="metric-value">78.3<span class="metric-unit">%</span></td>
+                <td class="metric-value">80.7<span class="metric-unit">%</span></td>
+                <td class="metric-value">76.1<span class="metric-unit">%</span></td>
+                <td>
+                  <span class="best-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-label">Structural Span</td>
+                <td class="metric-value">8.5<span class="metric-unit">m</span></td>
+                <td class="metric-value">9.2<span class="metric-unit">m</span></td>
+                <td class="metric-value">7.8<span class="metric-unit">m</span></td>
+                <td>
+                  <span class="best-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-label">MEP Routing Length</td>
+                <td class="metric-value">340<span class="metric-unit">m</span></td>
+                <td class="metric-value">385<span class="metric-unit">m</span></td>
+                <td class="metric-value">310<span class="metric-unit">m</span></td>
+                <td>
+                  <span class="best-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-label">Daylight Coverage</td>
+                <td class="metric-value">68.5<span class="metric-unit">%</span></td>
+                <td class="metric-value">62.8<span class="metric-unit">%</span></td>
+                <td class="metric-value">60.2<span class="metric-unit">%</span></td>
+                <td>
+                  <span class="best-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td class="metric-label">Estimated Cost/sqm</td>
+                <td class="metric-value">1,850<span class="metric-unit">USD</span></td>
+                <td class="metric-value">1,810<span class="metric-unit">USD</span></td>
+                <td class="metric-value">1,920<span class="metric-unit">USD</span></td>
+                <td>
+                  <span class="best-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 专业工作区标签页 -->
+        <div class="do-metrics-card">
+          <div class="do-discipline-tabs">
+            <button class="do-discipline-tabs__item do-discipline-tabs__item--active" type="button">Architecture</button>
+            <button class="do-discipline-tabs__item" type="button">Structure</button>
+            <button class="do-discipline-tabs__item" type="button">MEP</button>
+          </div>
+          <div class="do-discipline-content" id="discipline-architecture">
+            <ul>
+              <li>L-Shape core provides two exposed facades per office bay, improving cross-ventilation potential by up to 15% over central core arrangement.</li>
+              <li>Floor plate depth remains within the 12m effective daylight zone for both Option A and B; Option C exceeds this in the central zone by 2.4m.</li>
+              <li>Core adjacency to the primary lobby simplifies wayfinding and meets accessibility code requirements for vertical circulation distances.</li>
+              <li>Net-to-gross ratio for Option A (78.3%) is acceptable for a 10-storey speculative office benchmark of 75-80%.</li>
+            </ul>
+          </div>
+          <!-- Structure 选项卡内容（默认隐藏，Architecture 为激活状态） -->
+          <div class="do-discipline-content" id="discipline-structure" style="display: none;">
+            <ul>
+              <li>Central core (Option B) achieves maximum structural span of 9.2m with a 300mm flat slab, reducing beam depth and enabling flexible column-free zones.</li>
+              <li>L-Shape core introduces an asymmetric lateral load path; additional shear walls required at the north-east corner for wind resistance.</li>
+              <li>Split core (Option C) results in two shorter spans (7.8m) but requires transfer structures at level 3, increasing structural complexity and cost.</li>
+              <li>Foundation economy favors Option B due to symmetric column grid and reduced eccentric loading conditions.</li>
+            </ul>
+          </div>
+          <div class="do-discipline-content" id="discipline-mep" style="display: none;">
+            <ul>
+              <li>Split core (Option C) achieves the shortest MEP routing length (310m) by distributing risers on both sides of the floor plate.</li>
+              <li>Central core (Option B) requires longer horizontal distribution runs but benefits from a consolidated mechanical room with shared AHU plant.</li>
+              <li>L-Shape core (Option A) provides convenient shaft access for both fresh air supply and exhaust, supporting dedicated ventilation strategies for meeting rooms.</li>
+              <li>Fire suppression main routing is shortest in Option A due to the corner core placement reducing branch line extensions.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div><!-- /do-page-main -->
+    </div><!-- /do-page-layout -->
+  </div><!-- /shell-content -->
+</main>
+
+<script>
+  // Lucide 图标初始化
+  lucide.createIcons();
+
+  // 专业标签页切换逻辑
+  document.querySelectorAll('.do-discipline-tabs__item').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      // 移除所有激活状态
+      document.querySelectorAll('.do-discipline-tabs__item').forEach(function(t) {
+        t.classList.remove('do-discipline-tabs__item--active');
+      });
+      document.querySelectorAll('.do-discipline-content').forEach(function(c) {
+        c.style.display = 'none';
+      });
+      // 激活当前标签
+      tab.classList.add('do-discipline-tabs__item--active');
+      var discipline = tab.textContent.trim().toLowerCase();
+      var panel = document.getElementById('discipline-' + discipline);
+      if (panel) {
+        panel.style.display = 'block';
+      }
+    });
+  });
+</script>
+</body>
+</html>

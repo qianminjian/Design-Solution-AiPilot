@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordination - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+    <!-- ========== Shell 公共样式 ========== -->
+    <style>
+  /* ── Shell 布局变量 ── */
+  :root {
+    --shell-header-height: 56px;
+    --shell-sidebar-width: 240px;
+    --shell-sidebar-collapsed-width: 56px;
+    --shell-content-padding: 24px;
+  }
+
+  /* ── 顶部 Header Bar ── */
+  .shell-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--shell-header-height);
+    padding: 0 16px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--bd-border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shell-header__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+  }
+
+  .shell-header__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--bd-foreground);
+  }
+
+  .shell-header__logo svg {
+    flex-shrink: 0;
+  }
+
+  .shell-header__logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .shell-header__center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shell-header__right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 200px;
+    justify-content: flex-end;
+  }
+
+  .shell-header__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--bd-radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .shell-header__icon-btn:hover {
+    background-color: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+
+  .shell-header__icon-btn:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-header__user {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 4px;
+    border-radius: var(--bd-radius-full);
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .shell-header__user:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .shell-header__user:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-header__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--bd-radius-full);
+    background: var(--bd-primary-100);
+    color: var(--bd-primary-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .shell-header__user-chevron {
+    color: var(--bd-muted-foreground);
+  }
+
+  /* ── 左侧 Sidebar ── */
+  .shell-sidebar {
+    position: fixed;
+    top: var(--shell-header-height);
+    left: 0;
+    bottom: 0;
+    width: var(--shell-sidebar-width);
+    background: #ffffff;
+    border-right: 1px solid var(--bd-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 90;
+    transition: width 200ms ease;
+    overflow: hidden;
+  }
+
+  .shell-sidebar--collapsed {
+    width: var(--shell-sidebar-collapsed-width);
+  }
+
+  .shell-sidebar__nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+  }
+
+  .shell-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .shell-sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--bd-slate-200);
+    border-radius: var(--bd-radius-full);
+  }
+
+  .shell-sidebar__nav-group-label {
+    padding: 12px 12px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--bd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .shell-sidebar__item {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 12px;
+    gap: 10px;
+    color: var(--bd-card-foreground);
+    text-decoration: none;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  .shell-sidebar__item:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .shell-sidebar__item:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: -2px;
+  }
+
+  /* 活跃导航项状态 */
+  .shell-sidebar__item--active {
+    background-color: var(--bd-primary-50);
+    color: var(--bd-primary-600);
+    border-left-color: var(--bd-primary-600);
+    font-weight: 500;
+  }
+
+  .shell-sidebar__item svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+
+  .shell-sidebar__item-label {
+    font-size: 14px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 折叠态隐藏文本 */
+  .shell-sidebar--collapsed .shell-sidebar__item-label,
+  .shell-sidebar--collapsed .shell-sidebar__nav-group-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* ── 侧栏底部切换按钮 ── */
+  .shell-sidebar__footer {
+    border-top: 1px solid var(--bd-border);
+    padding: 8px;
+  }
+
+  .shell-sidebar__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    border-radius: var(--bd-radius-sm);
+    border: 1px solid var(--bd-border);
+    background: #ffffff;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .shell-sidebar__toggle:hover {
+    background-color: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+
+  .shell-sidebar__toggle:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-sidebar__toggle svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    transition: transform 200ms ease;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__toggle-label {
+    display: none;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__toggle svg {
+    transform: rotate(180deg);
+  }
+
+  /* ── 主内容区域 ── */
+  .shell-main {
+    margin-left: var(--shell-sidebar-width);
+    padding-top: var(--shell-header-height);
+    min-height: 100vh;
+    transition: margin-left 200ms ease;
+  }
+
+  .shell-main--sidebar-collapsed {
+    margin-left: var(--shell-sidebar-collapsed-width);
+  }
+
+  .shell-content {
+    padding: var(--shell-content-padding);
+    min-height: calc(100vh - var(--shell-header-height));
+  }
+
+  /* ── 页面标题区域 ── */
+  .shell-page-header {
+    margin-bottom: 24px;
+  }
+
+  .shell-page-title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    color: var(--bd-foreground);
+    margin: 0 0 4px;
+  }
+
+  .shell-page-subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--bd-muted-foreground);
+    margin: 0;
+  }
+
+  /* ── Breadcrumb ── */
+  .shell-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--bd-muted-foreground);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .shell-breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .shell-breadcrumb a {
+    color: var(--bd-muted-foreground);
+    text-decoration: none;
+    transition: color 120ms ease;
+  }
+
+  .shell-breadcrumb a:hover {
+    color: var(--bd-primary-600);
+  }
+
+  .shell-breadcrumb__sep {
+    color: var(--bd-slate-300);
+    flex-shrink: 0;
+  }
+
+  .shell-breadcrumb__current {
+    color: var(--bd-foreground);
+    font-weight: 500;
+  }
+
+  /* ── Coordination 页面专用样式 ── */
+  .coord-layout {
+    display: flex;
+    gap: 24px;
+  }
+
+  .coord-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .coord-detail-panel {
+    width: 350px;
+    flex-shrink: 0;
+    position: fixed;
+    right: 0;
+    top: var(--shell-header-height);
+    bottom: 0;
+    background: var(--bd-card);
+    border-left: 1px solid var(--bd-border);
+    box-shadow: var(--shadow-md);
+    z-index: 80;
+    transform: translateX(100%);
+    transition: transform 240ms ease;
+    overflow-y: auto;
+  }
+
+  .coord-detail-panel--open {
+    transform: translateX(0);
+  }
+
+  .coord-detail-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--bd-border);
+  }
+
+  .coord-detail-panel__body {
+    padding: 20px;
+  }
+
+  /* KPI 卡片 */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--bd-card);
+    border: 1px solid var(--bd-border);
+    border-radius: var(--bd-radius-md);
+    padding: 16px 20px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .kpi-card__label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--bd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+
+  .kpi-card__value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--bd-foreground);
+  }
+
+  .kpi-card__sub {
+    font-size: 12px;
+    color: var(--bd-muted-foreground);
+    margin-top: 6px;
+  }
+
+  /* 专业矩阵 */
+  .matrix-card {
+    background: var(--bd-card);
+    border: 1px solid var(--bd-border);
+    border-radius: var(--bd-radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow-xs);
+    margin-bottom: 24px;
+  }
+
+  .matrix-card__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--bd-foreground);
+    margin-bottom: 16px;
+  }
+
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(3, 1fr);
+    gap: 0;
+  }
+
+  .matrix-cell {
+    border: 1px solid var(--bd-border);
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 13px;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 120ms ease;
+  }
+
+  .matrix-cell:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .matrix-cell--header {
+    background: var(--bd-muted);
+    font-weight: 600;
+    color: var(--bd-foreground);
+    font-size: 13px;
+  }
+
+  .matrix-cell--corner {
+    background: var(--bd-slate-100);
+  }
+
+  .matrix-cell--row-header {
+    background: var(--bd-muted);
+    font-weight: 600;
+    color: var(--bd-foreground);
+    justify-content: flex-start;
+    padding-left: 20px;
+  }
+
+  .matrix-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .matrix-badge__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .matrix-badge--critical .matrix-badge__dot { background: var(--state-error); }
+  .matrix-badge--critical .matrix-badge__count { color: var(--state-error); }
+
+  .matrix-badge--warning .matrix-badge__dot { background: var(--state-warning); }
+  .matrix-badge--warning .matrix-badge__count { color: var(--state-warning); }
+
+  .matrix-badge--ok .matrix-badge__dot { background: var(--state-success); }
+  .matrix-badge--ok .matrix-badge__count { color: var(--state-success); }
+
+  /* 问题列表 */
+  .issue-table-wrap {
+    background: var(--bd-card);
+    border: 1px solid var(--bd-border);
+    border-radius: var(--bd-radius-md);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+
+  .issue-table-wrap__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--bd-border);
+  }
+
+  .issue-table-wrap__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--bd-foreground);
+  }
+
+  .issue-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .issue-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bd-muted-foreground);
+    background: var(--bd-muted);
+    border-bottom: 1px solid var(--bd-border);
+    white-space: nowrap;
+  }
+
+  .issue-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--bd-border);
+    color: var(--bd-card-foreground);
+    vertical-align: middle;
+  }
+
+  .issue-table tbody tr {
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .issue-table tbody tr:hover {
+    background-color: var(--bd-primary-50);
+  }
+
+  .issue-table tbody tr.issue-row--selected {
+    background-color: var(--bd-primary-50);
+    outline: 2px solid var(--bd-ring);
+    outline-offset: -2px;
+    border-radius: var(--bd-radius-sm);
+  }
+
+  /* 徽章样式 */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--bd-radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1.6;
+  }
+
+  .badge--hard-clash {
+    background: var(--state-error-bg);
+    color: var(--state-error);
+    border: 1px solid var(--state-error-light);
+  }
+
+  .badge--soft-clash {
+    background: var(--state-warning-bg);
+    color: var(--state-warning);
+    border: 1px solid var(--state-warning-light);
+  }
+
+  .badge--clearance {
+    background: var(--state-info-bg);
+    color: var(--state-info);
+    border: 1px solid var(--state-info-light);
+  }
+
+  .badge--critical {
+    background: var(--state-error-bg);
+    color: var(--state-error);
+    border: 1px solid var(--state-error-light);
+  }
+
+  .badge--high {
+    background: #fef2f2;
+    color: #ea580c;
+    border: 1px solid #fed7aa;
+  }
+
+  .badge--medium {
+    background: var(--state-warning-bg);
+    color: var(--state-warning);
+    border: 1px solid var(--state-warning-light);
+  }
+
+  .badge--low {
+    background: var(--state-success-bg);
+    color: var(--state-success);
+    border: 1px solid var(--state-success-light);
+  }
+
+  .badge--open {
+    background: var(--state-error-bg);
+    color: var(--state-error);
+    border: 1px solid var(--state-error-light);
+  }
+
+  .badge--in-progress {
+    background: var(--bd-primary-50);
+    color: var(--bd-primary-700);
+    border: 1px solid var(--bd-primary-200);
+  }
+
+  .badge--resolved {
+    background: var(--state-success-bg);
+    color: var(--state-success);
+    border: 1px solid var(--state-success-light);
+  }
+
+  .badge--rejected {
+    background: var(--bd-muted);
+    color: var(--bd-muted-foreground);
+    border: 1px solid var(--bd-border);
+  }
+
+  /* 碰撞可视化占位 */
+  .clash-viz {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    background: var(--bd-muted);
+    border: 1px solid var(--bd-border);
+    border-radius: var(--bd-radius-sm);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .clash-viz__label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--bd-muted-foreground);
+    background: var(--bd-card);
+    padding: 2px 10px;
+    border-radius: var(--bd-radius-full);
+    border: 1px solid var(--bd-border);
+  }
+
+  .clash-box {
+    position: absolute;
+    border: 2px solid;
+    border-radius: 2px;
+  }
+
+  .clash-box--arch {
+    width: 140px;
+    height: 90px;
+    border-color: var(--bd-primary-600);
+    background: rgba(37, 99, 235, 0.06);
+    top: 30px;
+    left: 60px;
+  }
+
+  .clash-box--mep {
+    width: 120px;
+    height: 70px;
+    border-color: var(--state-error);
+    background: rgba(220, 38, 38, 0.06);
+    top: 50px;
+    left: 100px;
+  }
+
+  .clash-zone {
+    position: absolute;
+    background: rgba(220, 38, 38, 0.18);
+    border: 1px dashed var(--state-error);
+    top: 50px;
+    left: 100px;
+    width: 100px;
+    height: 70px;
+    z-index: 2;
+    border-radius: 2px;
+  }
+
+  .clash-box-label {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* 详情面板元素信息 */
+  .detail-element {
+    border: 1px solid var(--bd-border);
+    border-radius: var(--bd-radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: var(--bd-muted);
+  }
+
+  .detail-element__disc {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .detail-element__name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--bd-foreground);
+  }
+
+  .detail-element__meta {
+    font-size: 12px;
+    color: var(--bd-muted-foreground);
+    margin-top: 2px;
+  }
+
+  /* 建议解决方案 */
+  .resolution-box {
+    border: 1px solid var(--bd-primary-200);
+    border-radius: var(--bd-radius-sm);
+    padding: 14px;
+    background: var(--bd-primary-50);
+    margin-bottom: 20px;
+  }
+
+  .resolution-box__title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--bd-primary-700);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .resolution-box__text {
+    font-size: 13px;
+    color: var(--bd-card-foreground);
+    line-height: 1.5;
+  }
+
+  /* 操作按钮组 */
+  .action-btns {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: var(--bd-radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+    text-align: center;
+  }
+
+  .action-btn--resolve {
+    background: var(--state-success);
+    color: #ffffff;
+    border-color: var(--state-success);
+  }
+
+  .action-btn--resolve:hover {
+    background: #15803d;
+  }
+
+  .action-btn--reject {
+    background: var(--bd-card);
+    color: var(--bd-foreground);
+    border-color: var(--bd-border);
+  }
+
+  .action-btn--reject:hover {
+    background: var(--bd-muted);
+  }
+
+  .action-btn--escalate {
+    background: var(--bd-card);
+    color: var(--state-warning);
+    border-color: var(--state-warning);
+  }
+
+  .action-btn--escalate:hover {
+    background: var(--state-warning-bg);
+  }
+
+  /* 评论线程 */
+  .comment-thread {
+    border-top: 1px solid var(--bd-border);
+    padding-top: 16px;
+  }
+
+  .comment-thread__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bd-foreground);
+    margin-bottom: 12px;
+  }
+
+  .comment-item {
+    display: flex;
+    gap: 10px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--bd-border);
+  }
+
+  .comment-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--bd-radius-full);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  .comment-avatar--arch { background: var(--bd-primary-600); }
+  .comment-avatar--mep { background: var(--state-info); }
+  .comment-avatar--struct { background: var(--state-warning); }
+
+  .comment-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
+  .comment-author {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bd-foreground);
+  }
+
+  .comment-time {
+    font-size: 11px;
+    color: var(--bd-muted-foreground);
+  }
+
+  .comment-text {
+    font-size: 13px;
+    color: var(--bd-card-foreground);
+    line-height: 1.5;
+  }
+
+  /* 运行检测按钮 */
+  .btn-run {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--bd-radius-sm);
+    background: var(--bd-primary);
+    color: var(--bd-primary-foreground);
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .btn-run:hover {
+    background: var(--bd-primary-700);
+  }
+
+  .btn-run:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .btn-run svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* 过滤器栏 */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: var(--bd-radius-full);
+    background: var(--bd-card);
+    border: 1px solid var(--bd-border);
+    font-size: 12px;
+    color: var(--bd-card-foreground);
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease;
+    white-space: nowrap;
+  }
+
+  .filter-chip:hover {
+    background: var(--bd-muted);
+    border-color: var(--bd-slate-300);
+  }
+
+  .filter-chip--active {
+    background: var(--bd-primary-50);
+    border-color: var(--bd-primary-300);
+    color: var(--bd-primary-700);
+  }
+
+  /* 关闭按钮 */
+  .panel-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--bd-radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .panel-close:hover {
+    background: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+<!-- ========== 顶部 Header Bar ========== -->
+<header class="shell-header">
+  <div class="shell-header__left">
+    <a class="shell-header__logo" href="/">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+        <path d="M10 6h4"/>
+        <path d="M10 10h4"/>
+        <path d="M10 14h4"/>
+        <path d="M10 18h4"/>
+      </svg>
+      <span class="shell-header__logo-text">AiPilot</span>
+    </a>
+  </div>
+  <div class="shell-header__center">
+    <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+      <li><a href="/">Home</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><span class="shell-breadcrumb__current">Coordination</span></li>
+    </nav>
+  </div>
+  <div class="shell-header__right">
+    <button class="shell-header__icon-btn" type="button" aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+    </button>
+    <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      </svg>
+    </button>
+    <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+      <div class="shell-header__avatar">AP</div>
+      <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 左侧 Sidebar ========== -->
+<aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+  <nav class="shell-sidebar__nav">
+    <div class="shell-sidebar__nav-group-label">工作区</div>
+    <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="shell-sidebar__item-label">My Work</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span class="shell-sidebar__item-label">Projects</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+      <span class="shell-sidebar__item-label">Requirements</span>
+    </a>
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">设计协作</div>
+    <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+      <span class="shell-sidebar__item-label">CDE Library</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="shell-sidebar__item-label">Viewer</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+      <span class="shell-sidebar__item-label">Design Options</span>
+    </a>
+    <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="coordination" href="/coordination">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+      <span class="shell-sidebar__item-label">Coordination</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+      <span class="shell-sidebar__item-label">Rule Check</span>
+    </a>
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+    <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+      <span class="shell-sidebar__item-label">AI Review</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/></svg>
+      <span class="shell-sidebar__item-label">Engineering</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+      <span class="shell-sidebar__item-label">Publish</span>
+    </a>
+    <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+      <span class="shell-sidebar__item-label">Change Impact</span>
+    </a>
+  </nav>
+  <div class="shell-sidebar__footer">
+    <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      <span class="shell-sidebar__toggle-label">Collapse</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ========== 主内容区域 ========== -->
+<main class="shell-main" id="shell-main">
+  <div class="shell-content">
+
+    <!-- 页面标题 -->
+    <div class="shell-page-header">
+      <h1 class="shell-page-title">Coordination & Issue Management</h1>
+      <p class="shell-page-subtitle">Multi-discipline clash detection, issue tracking, and resolution workflow for BIM coordination.</p>
+    </div>
+
+    <!-- KPI 卡片 -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-card__label">Total Clashes</div>
+        <div class="kpi-card__value">47</div>
+        <div class="kpi-card__sub">31 resolved / 16 open</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card__label">Resolved</div>
+        <div class="kpi-card__value" style="color: var(--state-success);">31</div>
+        <div class="kpi-card__sub">65.9% resolution rate</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card__label">Open Issues</div>
+        <div class="kpi-card__value" style="color: var(--state-error);">16</div>
+        <div class="kpi-card__sub">5 overdue</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-card__label" style="display: flex; align-items: center; justify-content: space-between;">
+          <span>Last Run</span>
+          <button class="btn-run" id="btnRunDetection" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Run Clash Detection
+          </button>
+        </div>
+        <div class="kpi-card__value" style="color: var(--bd-muted-foreground); font-size: 20px; margin-top: 12px;">2h ago</div>
+        <div class="kpi-card__sub">Jul 22, 2026 at 14:30</div>
+      </div>
+    </div>
+
+    <!-- 专业交叉矩阵 -->
+    <div class="matrix-card">
+      <div class="matrix-card__title">Discipline Clash Matrix</div>
+      <div class="matrix-grid">
+        <!-- 表头行 -->
+        <div class="matrix-cell matrix-cell--corner"></div>
+        <div class="matrix-cell matrix-cell--header">Architecture</div>
+        <div class="matrix-cell matrix-cell--header">Structure</div>
+        <div class="matrix-cell matrix-cell--header">MEP</div>
+        <!-- Architecture 行 -->
+        <div class="matrix-cell matrix-cell--row-header">Architecture</div>
+        <div class="matrix-cell matrix-cell--corner">--</div>
+        <div class="matrix-cell">
+          <span class="matrix-badge matrix-badge--warning">
+            <span class="matrix-badge__dot"></span>
+            <span class="matrix-badge__count">12</span>
+          </span>
+        </div>
+        <div class="matrix-cell">
+          <span class="matrix-badge matrix-badge--warning">
+            <span class="matrix-badge__dot"></span>
+            <span class="matrix-badge__count">8</span>
+          </span>
+        </div>
+        <!-- Structure 行 -->
+        <div class="matrix-cell matrix-cell--row-header">Structure</div>
+        <div class="matrix-cell">
+          <span class="matrix-badge matrix-badge--warning">
+            <span class="matrix-badge__dot"></span>
+            <span class="matrix-badge__count">12</span>
+          </span>
+        </div>
+        <div class="matrix-cell matrix-cell--corner">--</div>
+        <div class="matrix-cell">
+          <span class="matrix-badge matrix-badge--ok">
+            <span class="matrix-badge__dot"></span>
+            <span class="matrix-badge__count">3</span>
+          </span>
+        </div>
+        <!-- MEP 行 -->
+        <div class="matrix-cell matrix-cell--row-header">MEP</div>
+        <div class="matrix-cell">
+          <span class="matrix-badge matrix-badge--warning">
+            <span class="matrix-badge__dot"></span>
+            <span class="matrix-badge__count">8</span>
+          </span>
+        </div>
+        <div class="matrix-cell">
+          <span class="matrix-badge matrix-badge--ok">
+            <span class="matrix-badge__dot"></span>
+            <span class="matrix-badge__count">3</span>
+          </span>
+        </div>
+        <div class="matrix-cell matrix-cell--corner">--</div>
+      </div>
+    </div>
+
+    <!-- 问题列表 -->
+    <div class="issue-table-wrap">
+      <div class="issue-table-wrap__header">
+        <div class="issue-table-wrap__title">Coordination Issues</div>
+        <div class="filter-bar">
+          <span class="filter-chip filter-chip--active">All (16)</span>
+          <span class="filter-chip">Hard Clash</span>
+          <span class="filter-chip">Soft Clash</span>
+          <span class="filter-chip">Clearance</span>
+          <span class="filter-chip">Overdue</span>
+        </div>
+      </div>
+      <div style="overflow-x: auto;">
+        <table class="issue-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Description</th>
+              <th>Location</th>
+              <th>Disciplines</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody id="issueTableBody">
+            <tr data-issue="ISS-001" onclick="selectIssue('ISS-001')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-001</td>
+              <td><span class="badge badge--hard-clash">Hard Clash</span></td>
+              <td><span class="badge badge--critical">Critical</span></td>
+              <td>Structural beam intersects HVAC duct at Level 3 corridor</td>
+              <td>L3 / Grid A-B</td>
+              <td><span style="font-size:12px;">Arch vs MEP</span></td>
+              <td><span class="badge badge--open">Open</span></td>
+              <td>Li Wei</td>
+              <td style="color:var(--state-error); font-weight:500;">Jul 18</td>
+            </tr>
+            <tr data-issue="ISS-002" onclick="selectIssue('ISS-002')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-002</td>
+              <td><span class="badge badge--soft-clash">Soft Clash</span></td>
+              <td><span class="badge badge--high">High</span></td>
+              <td>Fire rated wall clearance conflict with electrical conduit</td>
+              <td>L2 / Grid C-D</td>
+              <td><span style="font-size:12px;">Arch vs MEP</span></td>
+              <td><span class="badge badge--in-progress">In Progress</span></td>
+              <td>Chen Hao</td>
+              <td>Jul 25</td>
+            </tr>
+            <tr data-issue="ISS-003" onclick="selectIssue('ISS-003')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-003</td>
+              <td><span class="badge badge--hard-clash">Hard Clash</span></td>
+              <td><span class="badge badge--critical">Critical</span></td>
+              <td>Column penetration for plumbing riser not coordinated</td>
+              <td>L1 / Grid E-F</td>
+              <td><span style="font-size:12px;">Struct vs MEP</span></td>
+              <td><span class="badge badge--open">Open</span></td>
+              <td>Zhang Ming</td>
+              <td style="color:var(--state-error); font-weight:500;">Jul 15</td>
+            </tr>
+            <tr data-issue="ISS-004" onclick="selectIssue('ISS-004')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-004</td>
+              <td><span class="badge badge--clearance">Clearance</span></td>
+              <td><span class="badge badge--medium">Medium</span></td>
+              <td>Ceiling void depth insufficient for sprinkler piping</td>
+              <td>L4 / Grid B-C</td>
+              <td><span style="font-size:12px;">Arch vs MEP</span></td>
+              <td><span class="badge badge--in-progress">In Progress</span></td>
+              <td>Wang Fang</td>
+              <td>Jul 28</td>
+            </tr>
+            <tr data-issue="ISS-005" onclick="selectIssue('ISS-005')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-005</td>
+              <td><span class="badge badge--soft-clash">Soft Clash</span></td>
+              <td><span class="badge badge--high">High</span></td>
+              <td>Structural slab edge conflicts with curtain wall anchor</td>
+              <td>L5 / Grid D-E</td>
+              <td><span style="font-size:12px;">Arch vs Struct</span></td>
+              <td><span class="badge badge--open">Open</span></td>
+              <td>Liu Yang</td>
+              <td>Jul 26</td>
+            </tr>
+            <tr data-issue="ISS-006" onclick="selectIssue('ISS-006')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-006</td>
+              <td><span class="badge badge--hard-clash">Hard Clash</span></td>
+              <td><span class="badge badge--medium">Medium</span></td>
+              <td>Electrical cable tray route blocked by structural brace</td>
+              <td>L2 / Grid A-B</td>
+              <td><span style="font-size:12px;">Struct vs MEP</span></td>
+              <td><span class="badge badge--resolved">Resolved</span></td>
+              <td>Zhang Ming</td>
+              <td>Jul 20</td>
+            </tr>
+            <tr data-issue="ISS-007" onclick="selectIssue('ISS-007')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-007</td>
+              <td><span class="badge badge--clearance">Clearance</span></td>
+              <td><span class="badge badge--low">Low</span></td>
+              <td>Maintenance access clearance below 600mm in plant room</td>
+              <td>B1 / Grid H-J</td>
+              <td><span style="font-size:12px;">Arch vs MEP</span></td>
+              <td><span class="badge badge--rejected">Rejected</span></td>
+              <td>Li Wei</td>
+              <td>Jul 30</td>
+            </tr>
+            <tr data-issue="ISS-008" onclick="selectIssue('ISS-008')">
+              <td style="font-weight:600; color:var(--bd-primary-600);">ISS-008</td>
+              <td><span class="badge badge--hard-clash">Hard Clash</span></td>
+              <td><span class="badge badge--critical">Critical</span></td>
+              <td>Elevator shaft dimensions conflict with MEP shaft openings</td>
+              <td>L1-L6 / Grid K</td>
+              <td><span style="font-size:12px;">Arch vs Struct</span></td>
+              <td><span class="badge badge--open">Open</span></td>
+              <td>Chen Hao</td>
+              <td style="color:var(--state-error); font-weight:500;">Jul 17</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ========== 右侧详情面板（可切换） ========== -->
+<div class="coord-detail-panel" id="detailPanel">
+  <div class="coord-detail-panel__header">
+    <span style="font-size:14px; font-weight:600; color:var(--bd-foreground);" id="detailPanelTitle">ISS-001</span>
+    <button class="panel-close" type="button" onclick="toggleDetailPanel()" aria-label="Close detail panel">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+  <div class="coord-detail-panel__body">
+
+    <!-- 碰撞可视化占位 -->
+    <div class="clash-viz">
+      <div class="clash-zone"></div>
+      <div class="clash-box clash-box--arch">
+        <span class="clash-box-label" style="color:var(--bd-primary-600);">Architecture - Beam</span>
+      </div>
+      <div class="clash-box clash-box--mep">
+        <span class="clash-box-label" style="color:var(--state-error);">MEP - HVAC Duct</span>
+      </div>
+      <span class="clash-viz-label">Clash Visualization</span>
+    </div>
+
+    <!-- 碰撞元素信息 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px; font-weight:600; color:var(--bd-muted-foreground); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Clashing Elements</div>
+      <div class="detail-element">
+        <div class="detail-element__disc" style="color:var(--bd-primary-600);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          Architecture
+        </div>
+        <div class="detail-element__name">Concrete Beam W14x22</div>
+        <div class="detail-element__meta">Level 3 / Grid A-B / Elevation: +10.200m</div>
+      </div>
+      <div class="detail-element">
+        <div class="detail-element__disc" style="color:var(--state-error);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m8 11 4 4 4-4"/><path d="M8 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4"/></svg>
+          MEP
+        </div>
+        <div class="detail-element__name">Rectangular Duct 600x300</div>
+        <div class="detail-element__meta">HVAC Supply / Level 3 Corridor / Elevation: +10.150m</div>
+      </div>
+    </div>
+
+    <!-- 建议解决方案 -->
+    <div class="resolution-box">
+      <div class="resolution-box__title">Suggested Resolution</div>
+      <div class="resolution-box__text">
+        Raise the HVAC duct clearance by 50mm. Alternatively, notch the beam bottom flange (requires structural engineer approval). Recommend coordinating with both disciplines in the next BIM coordination meeting scheduled for Jul 25.
+      </div>
+    </div>
+
+    <!-- 状态变更按钮 -->
+    <div class="action-btns">
+      <button class="action-btn action-btn--resolve" type="button">Resolve</button>
+      <button class="action-btn action-btn--reject" type="button">Reject</button>
+      <button class="action-btn action-btn--escalate" type="button">Escalate</button>
+    </div>
+
+    <!-- 评论线程 -->
+    <div class="comment-thread">
+      <div class="comment-thread__title">Comments (3)</div>
+
+      <div class="comment-item">
+        <div class="comment-avatar comment-avatar--arch">LW</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-author">Li Wei</span>
+            <span class="comment-time">Jul 22, 09:15</span>
+          </div>
+          <div class="comment-text">Confirmed the clash at Level 3 corridor. The beam depth cannot be reduced due to span requirements. Requesting MEP team to route the duct below the beam.</div>
+        </div>
+      </div>
+
+      <div class="comment-item">
+        <div class="comment-avatar comment-avatar--mep">CH</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-author">Chen Hao</span>
+            <span class="comment-time">Jul 22, 11:30</span>
+          </div>
+          <div class="comment-text">Routing below the beam will reduce ceiling height by 100mm at this location. Checking if we can use a shallower duct section 500x300 instead.</div>
+        </div>
+      </div>
+
+      <div class="comment-item">
+        <div class="comment-avatar comment-avatar--arch">LW</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-author">Li Wei</span>
+            <span class="comment-time">Jul 22, 14:02</span>
+          </div>
+          <div class="comment-text">500x300 duct is acceptable if airflow calculations confirm sufficient capacity. Please update the model and re-run clash detection.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // 详情面板切换逻辑
+  function toggleDetailPanel() {
+    var panel = document.getElementById('detailPanel');
+    panel.classList.toggle('coord-detail-panel--open');
+    clearSelectedRow();
+  }
+
+  function selectIssue(issueId) {
+    var panel = document.getElementById('detailPanel');
+    var title = document.getElementById('detailPanelTitle');
+    title.textContent = issueId;
+    panel.classList.add('coord-detail-panel--open');
+
+    // 高亮选中行
+    clearSelectedRow();
+    var row = document.querySelector('tr[data-issue="' + issueId + '"]');
+    if (row) {
+      row.classList.add('issue-row--selected');
+    }
+  }
+
+  function clearSelectedRow() {
+    var selected = document.querySelector('.issue-row--selected');
+    if (selected) {
+      selected.classList.remove('issue-row--selected');
+    }
+  }
+</script>
+
+</body>
+</html>

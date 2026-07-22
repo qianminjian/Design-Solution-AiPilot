@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Check - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+    <style>
+      /* ── Shell 布局变量 ── */
+      :root {
+        --shell-header-height: 56px;
+        --shell-sidebar-width: 240px;
+        --shell-sidebar-collapsed-width: 56px;
+        --shell-content-padding: 24px;
+      }
+
+      /* ── 顶部 Header Bar ── */
+      .shell-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: var(--shell-header-height);
+        padding: 0 16px;
+        background: #ffffff;
+        border-bottom: 1px solid var(--bd-border);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .shell-header__left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 200px;
+      }
+
+      .shell-header__logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: var(--bd-foreground);
+      }
+
+      .shell-header__logo svg {
+        flex-shrink: 0;
+      }
+
+      .shell-header__logo-text {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+
+      .shell-header__center {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shell-header__right {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 200px;
+        justify-content: flex-end;
+      }
+
+      .shell-header__icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--bd-radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .shell-header__icon-btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .shell-header__icon-btn:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-header__user {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px 4px 4px;
+        border-radius: var(--bd-radius-full);
+        cursor: pointer;
+        transition: background-color 120ms ease;
+      }
+
+      .shell-header__user:hover {
+        background-color: var(--bd-muted);
+      }
+
+      .shell-header__user:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-header__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--bd-radius-full);
+        background: var(--bd-primary-100);
+        color: var(--bd-primary-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .shell-header__user-chevron {
+        color: var(--bd-muted-foreground);
+      }
+
+      /* ── 左侧 Sidebar ── */
+      .shell-sidebar {
+        position: fixed;
+        top: var(--shell-header-height);
+        left: 0;
+        bottom: 0;
+        width: var(--shell-sidebar-width);
+        background: #ffffff;
+        border-right: 1px solid var(--bd-border);
+        display: flex;
+        flex-direction: column;
+        z-index: 90;
+        transition: width 200ms ease;
+        overflow: hidden;
+      }
+
+      .shell-sidebar--collapsed {
+        width: var(--shell-sidebar-collapsed-width);
+      }
+
+      .shell-sidebar__nav {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 8px 0;
+      }
+
+      .shell-sidebar__nav::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .shell-sidebar__nav::-webkit-scrollbar-thumb {
+        background: var(--bd-slate-200);
+        border-radius: var(--bd-radius-full);
+      }
+
+      .shell-sidebar__nav-group-label {
+        padding: 12px 12px 6px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .shell-sidebar__item {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        padding: 0 12px;
+        gap: 10px;
+        color: var(--bd-card-foreground);
+        text-decoration: none;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+      }
+
+      .shell-sidebar__item:hover {
+        background-color: var(--bd-muted);
+      }
+
+      .shell-sidebar__item:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: -2px;
+      }
+
+      .shell-sidebar__item--active {
+        background-color: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+        border-left-color: var(--bd-primary-600);
+        font-weight: 500;
+      }
+
+      .shell-sidebar__item svg {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+      }
+
+      .shell-sidebar__item-label {
+        font-size: 14px;
+        line-height: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__item-label,
+      .shell-sidebar--collapsed .shell-sidebar__nav-group-label {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__item {
+        justify-content: center;
+        padding: 0;
+      }
+
+      .shell-sidebar__footer {
+        border-top: 1px solid var(--bd-border);
+        padding: 8px;
+      }
+
+      .shell-sidebar__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 36px;
+        border-radius: var(--bd-radius-sm);
+        border: 1px solid var(--bd-border);
+        background: #ffffff;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .shell-sidebar__toggle:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .shell-sidebar__toggle:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-sidebar__toggle svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        transition: transform 200ms ease;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__toggle-label {
+        display: none;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__toggle svg {
+        transform: rotate(180deg);
+      }
+
+      .shell-main {
+        margin-left: var(--shell-sidebar-width);
+        padding-top: var(--shell-header-height);
+        min-height: 100vh;
+        transition: margin-left 200ms ease;
+      }
+
+      .shell-main--sidebar-collapsed {
+        margin-left: var(--shell-sidebar-collapsed-width);
+      }
+
+      .shell-content {
+        padding: var(--shell-content-padding);
+        min-height: calc(100vh - var(--shell-header-height));
+      }
+
+      .shell-page-header {
+        margin-bottom: 24px;
+      }
+
+      .shell-page-title {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: -0.02em;
+        color: var(--bd-foreground);
+        margin: 0 0 4px;
+      }
+
+      .shell-page-subtitle {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: var(--bd-muted-foreground);
+        margin: 0;
+      }
+
+      .shell-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--bd-muted-foreground);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .shell-breadcrumb li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .shell-breadcrumb a {
+        color: var(--bd-muted-foreground);
+        text-decoration: none;
+        transition: color 120ms ease;
+      }
+
+      .shell-breadcrumb a:hover {
+        color: var(--bd-primary-600);
+      }
+
+      .shell-breadcrumb__sep {
+        color: var(--bd-slate-300);
+        flex-shrink: 0;
+      }
+
+      .shell-breadcrumb__current {
+        color: var(--bd-foreground);
+        font-weight: 500;
+      }
+
+      /* ── Rule Check 页面专用样式 ── */
+      .rc-layout {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+      }
+
+      .rc-layout__main {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .rc-layout__panel {
+        width: 300px;
+        flex-shrink: 0;
+      }
+
+      .rc-layout__panel--collapsed {
+        width: 0;
+        overflow: hidden;
+      }
+
+      /* ── Rule Set Selector ── */
+      .rc-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 16px;
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        margin-bottom: 16px;
+      }
+
+      .rc-selector select,
+      .rc-selector input {
+        height: 36px;
+        padding: 0 12px;
+        border: 1px solid var(--bd-input);
+        border-radius: var(--bd-radius-sm);
+        background: var(--bd-card);
+        color: var(--bd-card-foreground);
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      .rc-selector select:focus,
+      .rc-selector input:focus {
+        border-color: var(--bd-ring);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+      }
+
+      .rc-selector select {
+        min-width: 160px;
+        cursor: pointer;
+        appearance: auto;
+      }
+
+      .rc-selector__label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        white-space: nowrap;
+      }
+
+      .rc-btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 16px;
+        border: none;
+        border-radius: var(--bd-radius-sm);
+        background: var(--bd-primary);
+        color: var(--bd-primary-foreground);
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background-color 120ms ease;
+        margin-left: auto;
+      }
+
+      .rc-btn-primary:hover {
+        background-color: var(--bd-primary-700);
+      }
+
+      .rc-btn-primary:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .rc-btn-primary svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* ── Summary Cards ── */
+      .rc-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .rc-summary-card {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        padding: 16px;
+        border-left: 3px solid var(--bd-border);
+      }
+
+      .rc-summary-card--total { border-left-color: var(--bd-primary-500); }
+      .rc-summary-card--pass { border-left-color: var(--state-success); }
+      .rc-summary-card--fail { border-left-color: var(--state-error); }
+      .rc-summary-card--warn { border-left-color: var(--state-warning); }
+
+      .rc-summary-card__label {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .rc-summary-card__value {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--bd-foreground);
+      }
+
+      .rc-summary-card__sub {
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+        margin-top: 4px;
+      }
+
+      /* ── Filter Bar ── */
+      .rc-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        margin-bottom: 12px;
+      }
+
+      .rc-filter-bar input,
+      .rc-filter-bar select {
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--bd-input);
+        border-radius: var(--bd-radius-sm);
+        background: var(--bd-card);
+        color: var(--bd-card-foreground);
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+      }
+
+      .rc-filter-bar input:focus,
+      .rc-filter-bar select:focus {
+        border-color: var(--bd-ring);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+      }
+
+      .rc-filter-bar input {
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .rc-filter-bar select {
+        min-width: 130px;
+        cursor: pointer;
+        appearance: auto;
+      }
+
+      .rc-filter-bar__count {
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+        white-space: nowrap;
+        margin-left: auto;
+      }
+
+      /* ── Results Table ── */
+      .rc-table-wrap {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        overflow: hidden;
+      }
+
+      .rc-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      .rc-table thead {
+        background: var(--bd-muted);
+      }
+
+      .rc-table th {
+        padding: 10px 14px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--bd-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .rc-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--bd-border);
+        color: var(--bd-card-foreground);
+        vertical-align: middle;
+      }
+
+      .rc-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .rc-table tbody tr:hover {
+        background-color: var(--bd-slate-50);
+      }
+
+      /* Severity Icons */
+      .rc-severity {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: var(--bd-radius-sm);
+        flex-shrink: 0;
+      }
+
+      .rc-severity--pass {
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .rc-severity--fail {
+        background: var(--state-error-light);
+        color: var(--state-error);
+      }
+
+      .rc-severity--warn {
+        background: var(--state-warning-light);
+        color: var(--state-warning);
+      }
+
+      .rc-severity--na {
+        background: var(--bd-slate-100);
+        color: var(--bd-slate-400);
+      }
+
+      .rc-severity svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* Status Badges */
+      .rc-status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: var(--bd-radius-full);
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .rc-status-badge--pass {
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .rc-status-badge--fail {
+        background: var(--state-error-light);
+        color: var(--state-error);
+      }
+
+      .rc-status-badge--warn {
+        background: var(--state-warning-light);
+        color: var(--state-warning);
+      }
+
+      .rc-status-badge--na {
+        background: var(--bd-slate-100);
+        color: var(--bd-slate-500);
+      }
+
+      /* Category Badges */
+      .rc-cat-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: var(--bd-radius-sm);
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .rc-cat-badge--arch { background: var(--bd-primary-50); color: var(--bd-primary-700); }
+      .rc-cat-badge--struct { background: #f5f3ff; color: #7c3aed; }
+      .rc-cat-badge--mep { background: #ecfdf5; color: #047857; }
+      .rc-cat-badge--fire { background: var(--state-error-bg); color: var(--state-error); }
+      .rc-cat-badge--access { background: var(--state-info-bg); color: var(--state-info); }
+      .rc-cat-badge--env { background: #f0fdf4; color: #15803d; }
+      .rc-cat-badge--safety { background: var(--state-warning-bg); color: #b45309; }
+
+      /* Rule ID mono */
+      .rc-rule-id {
+        font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+        font-size: 12px;
+        color: var(--bd-primary-600);
+        font-weight: 500;
+      }
+
+      .rc-code-ref {
+        font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+      }
+
+      .rc-element-count {
+        font-weight: 600;
+        color: var(--bd-card-foreground);
+      }
+
+      /* ── Right Panel ── */
+      .rc-panel {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        overflow: hidden;
+      }
+
+      .rc-panel__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .rc-panel__title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+      }
+
+      .rc-panel__toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: var(--bd-radius-sm);
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .rc-panel__toggle:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .rc-panel__body {
+        padding: 16px;
+      }
+
+      /* ── Donut Chart (CSS conic-gradient) ── */
+      .rc-donut-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .rc-donut {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        /* Pass: 84.6% = 198/234 => 304.56deg, Fail: 11.97% = 28/234 => 43.1deg, Warn: 3.42% = 8/234 => 12.3deg */
+        background: conic-gradient(
+          var(--state-success) 0deg 304.56deg,
+          var(--state-error) 304.56deg 347.66deg,
+          var(--state-warning) 347.66deg 360deg
+        );
+      }
+
+      .rc-donut__hole {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: var(--bd-card);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .rc-donut__rate {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--bd-foreground);
+        line-height: 1.1;
+      }
+
+      .rc-donut__rate-label {
+        font-size: 11px;
+        color: var(--bd-muted-foreground);
+        margin-top: 2px;
+      }
+
+      .rc-donut-legend {
+        display: flex;
+        gap: 16px;
+        margin-top: 14px;
+      }
+
+      .rc-donut-legend__item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--bd-card-foreground);
+      }
+
+      .rc-donut-legend__dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* ── Top 5 Failed Rules ── */
+      .rc-failed-list__title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        margin-bottom: 12px;
+      }
+
+      .rc-failed-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .rc-failed-item:last-child {
+        border-bottom: none;
+      }
+
+      .rc-failed-item__left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .rc-failed-item__rank {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: var(--bd-radius-sm);
+        background: var(--state-error-light);
+        color: var(--state-error);
+        font-size: 11px;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+
+      .rc-failed-item__id {
+        font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+        font-size: 12px;
+        color: var(--bd-card-foreground);
+        font-weight: 500;
+      }
+
+      .rc-failed-item__count {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--state-error);
+      }
+
+      /* ── Panel collapse toggle in main toolbar ── */
+      .rc-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-sm);
+        background: var(--bd-card);
+        color: var(--bd-muted-foreground);
+        font-size: 12px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .rc-btn-ghost:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-card-foreground);
+      }
+
+      .rc-btn-ghost svg {
+        width: 14px;
+        height: 14px;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+    <!-- ========== 顶部 Header Bar ========== -->
+    <header class="shell-header">
+      <div class="shell-header__left">
+        <a class="shell-header__logo" href="/">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+            <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+            <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+            <path d="M10 6h4"/>
+            <path d="M10 10h4"/>
+            <path d="M10 14h4"/>
+            <path d="M10 18h4"/>
+          </svg>
+          <span class="shell-header__logo-text">AiPilot</span>
+        </a>
+      </div>
+
+      <div class="shell-header__center">
+        <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+          <li><a href="/design-collaboration">Design Collaboration</a></li>
+          <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+          <li><span class="shell-breadcrumb__current">Rule Check</span></li>
+        </nav>
+      </div>
+
+      <div class="shell-header__right">
+        <button class="shell-header__icon-btn" type="button" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </button>
+        <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+          <div class="shell-header__avatar">AP</div>
+          <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- ========== 左侧 Sidebar ========== -->
+    <aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+      <nav class="shell-sidebar__nav">
+        <div class="shell-sidebar__nav-group-label">Workspace</div>
+
+        <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <span class="shell-sidebar__item-label">My Work</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span class="shell-sidebar__item-label">Projects</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+          <span class="shell-sidebar__item-label">Requirements</span>
+        </a>
+
+        <div style="height: 8px;"></div>
+        <div class="shell-sidebar__nav-group-label">Design Collaboration</div>
+
+        <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+          <span class="shell-sidebar__item-label">CDE Library</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="shell-sidebar__item-label">Viewer</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+          <span class="shell-sidebar__item-label">Design Options</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+          <span class="shell-sidebar__item-label">Coordination</span>
+        </a>
+
+        <!-- Rule Check (active) -->
+        <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="rule-check" href="/rule-check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+          <span class="shell-sidebar__item-label">Rule Check</span>
+        </a>
+
+        <div style="height: 8px;"></div>
+        <div class="shell-sidebar__nav-group-label">AI & Delivery</div>
+
+        <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+          <span class="shell-sidebar__item-label">AI Review</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/></svg>
+          <span class="shell-sidebar__item-label">Engineering</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+          <span class="shell-sidebar__item-label">Publish</span>
+        </a>
+
+        <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+          <span class="shell-sidebar__item-label">Change Impact</span>
+        </a>
+      </nav>
+
+      <div class="shell-sidebar__footer">
+        <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span class="shell-sidebar__toggle-label">Collapse</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ========== 主内容区域 ========== -->
+    <main class="shell-main" id="shell-main">
+      <div class="shell-content">
+
+        <!-- 页面标题 -->
+        <div class="shell-page-header">
+          <h1 class="shell-page-title">Rule Check & Compliance</h1>
+          <p class="shell-page-subtitle">Automated building code and standards verification</p>
+        </div>
+
+        <!-- 规范集选择器 -->
+        <div class="rc-selector">
+          <span class="rc-selector__label">Code Set</span>
+          <select>
+            <option>IBC 2021</option>
+            <option>BS 9999</option>
+            <option>EN 15251</option>
+            <option>Local Code</option>
+          </select>
+          <span class="rc-selector__label">Discipline</span>
+          <select>
+            <option>All</option>
+            <option>Architecture</option>
+            <option>Structure</option>
+            <option>MEP</option>
+            <option>Fire</option>
+          </select>
+          <button class="rc-btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+            Run Full Check
+          </button>
+        </div>
+
+        <!-- 主布局: 表格 + 右侧面板 -->
+        <div class="rc-layout" id="rc-layout">
+          <div class="rc-layout__main">
+
+            <!-- Summary Cards -->
+            <div class="rc-summary">
+              <div class="rc-summary-card rc-summary-card--total">
+                <div class="rc-summary-card__label">Total Rules Checked</div>
+                <div class="rc-summary-card__value">234</div>
+                <div class="rc-summary-card__sub">across 4 disciplines</div>
+              </div>
+              <div class="rc-summary-card rc-summary-card--pass">
+                <div class="rc-summary-card__label">Passed</div>
+                <div class="rc-summary-card__value">198</div>
+                <div class="rc-summary-card__sub">84.6% pass rate</div>
+              </div>
+              <div class="rc-summary-card rc-summary-card--fail">
+                <div class="rc-summary-card__label">Failed</div>
+                <div class="rc-summary-card__value">28</div>
+                <div class="rc-summary-card__sub">requires attention</div>
+              </div>
+              <div class="rc-summary-card rc-summary-card--warn">
+                <div class="rc-summary-card__label">Warnings</div>
+                <div class="rc-summary-card__value">8</div>
+                <div class="rc-summary-card__sub">review recommended</div>
+              </div>
+            </div>
+
+            <!-- Filter/Search Bar -->
+            <div class="rc-filter-bar">
+              <input type="text" placeholder="Search rule ID, code reference, or description..." />
+              <select>
+                <option value="">All Categories</option>
+                <option>Architecture</option>
+                <option>Structure</option>
+                <option>MEP</option>
+                <option>Fire Safety</option>
+                <option>Accessibility</option>
+                <option>Environmental</option>
+              </select>
+              <select>
+                <option value="">All Statuses</option>
+                <option>Pass</option>
+                <option>Fail</option>
+                <option>Warning</option>
+                <option>N/A</option>
+              </select>
+              <span class="rc-filter-bar__count">Showing 10 of 234 rules</span>
+              <button class="rc-btn-ghost" onclick="(function(){var p=document.getElementById('rc-panel');p.classList.toggle('rc-layout__panel--collapsed')})()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+                Panel
+              </button>
+            </div>
+
+            <!-- Results Table -->
+            <div class="rc-table-wrap">
+              <table class="rc-table">
+                <thead>
+                  <tr>
+                    <th style="width: 44px;"></th>
+                    <th>Rule ID</th>
+                    <th>Code Reference</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th style="text-align: right;">Elements</th>
+                    <th style="text-align: center;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Row 1: Fail -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--fail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1001</span></td>
+                    <td><span class="rc-code-ref">IBC 1006.3</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--arch">Architecture</span></td>
+                    <td>Minimum corridor width not met in 3 floor plans</td>
+                    <td style="text-align: right;"><span class="rc-element-count">12</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--fail">Fail</span></td>
+                  </tr>
+                  <!-- Row 2: Fail -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--fail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1002</span></td>
+                    <td><span class="rc-code-ref">IBC 1005.3</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--fire">Fire Safety</span></td>
+                    <td>Exit stairway pressurization requirements exceeded</td>
+                    <td style="text-align: right;"><span class="rc-element-count">4</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--fail">Fail</span></td>
+                  </tr>
+                  <!-- Row 3: Fail -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--fail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1003</span></td>
+                    <td><span class="rc-code-ref">IBC 1612.3</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--struct">Structure</span></td>
+                    <td>Fire-resistance rating of structural frame insufficient</td>
+                    <td style="text-align: right;"><span class="rc-element-count">8</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--fail">Fail</span></td>
+                  </tr>
+                  <!-- Row 4: Warning -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--warn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1004</span></td>
+                    <td><span class="rc-code-ref">IBC 1011.5</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--access">Accessibility</span></td>
+                    <td>Ramp slope approaching maximum allowable ratio</td>
+                    <td style="text-align: right;"><span class="rc-element-count">3</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--warn">Warning</span></td>
+                  </tr>
+                  <!-- Row 5: Pass -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--pass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1005</span></td>
+                    <td><span class="rc-code-ref">IBC 1013.4</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--fire">Fire Safety</span></td>
+                    <td>Emergency lighting coverage meets minimum requirements</td>
+                    <td style="text-align: right;"><span class="rc-element-count">42</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--pass">Pass</span></td>
+                  </tr>
+                  <!-- Row 6: Pass -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--pass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1006</span></td>
+                    <td><span class="rc-code-ref">IBC 1203.2</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--mep">MEP</span></td>
+                    <td>Plumbing fixture count complies with occupancy load</td>
+                    <td style="text-align: right;"><span class="rc-element-count">18</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--pass">Pass</span></td>
+                  </tr>
+                  <!-- Row 7: Warning -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--warn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1007</span></td>
+                    <td><span class="rc-code-ref">EN 15251</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--env">Environmental</span></td>
+                    <td>Thermal comfort category II marginally below threshold</td>
+                    <td style="text-align: right;"><span class="rc-element-count">6</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--warn">Warning</span></td>
+                  </tr>
+                  <!-- Row 8: Fail -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--fail">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1008</span></td>
+                    <td><span class="rc-code-ref">IBC 403.6</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--safety">Safety</span></td>
+                    <td>Glazing in hazardous locations lacks required safety rating</td>
+                    <td style="text-align: right;"><span class="rc-element-count">9</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--fail">Fail</span></td>
+                  </tr>
+                  <!-- Row 9: Pass -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--pass">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1009</span></td>
+                    <td><span class="rc-code-ref">IBC 2902.1</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--mep">MEP</span></td>
+                    <td>Ventilation rates comply with ASHRAE 62.1 minimums</td>
+                    <td style="text-align: right;"><span class="rc-element-count">31</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--pass">Pass</span></td>
+                  </tr>
+                  <!-- Row 10: N/A -->
+                  <tr>
+                    <td>
+                      <span class="rc-severity rc-severity--na">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>
+                      </span>
+                    </td>
+                    <td><span class="rc-rule-id">RC-1010</span></td>
+                    <td><span class="rc-code-ref">BS 9999</span></td>
+                    <td><span class="rc-cat-badge rc-cat-badge--fire">Fire Safety</span></td>
+                    <td>UK fire escape width requirements not applicable to this region</td>
+                    <td style="text-align: right;"><span class="rc-element-count">0</span></td>
+                    <td style="text-align: center;"><span class="rc-status-badge rc-status-badge--na">N/A</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          <!-- 右侧面板 -->
+          <div class="rc-layout__panel" id="rc-panel">
+            <div class="rc-panel">
+              <div class="rc-panel__header">
+                <span class="rc-panel__title">Rule Set Summary</span>
+                <button class="rc-panel__toggle" onclick="(function(){var p=document.getElementById('rc-panel');p.classList.toggle('rc-layout__panel--collapsed')})()" aria-label="Close panel">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              <div class="rc-panel__body">
+                <!-- Donut Chart -->
+                <div class="rc-donut-wrap">
+                  <div class="rc-donut">
+                    <div class="rc-donut__hole">
+                      <span class="rc-donut__rate">84.6%</span>
+                      <span class="rc-donut__rate-label">Pass Rate</span>
+                    </div>
+                  </div>
+                  <div class="rc-donut-legend">
+                    <span class="rc-donut-legend__item">
+                      <span class="rc-donut-legend__dot" style="background: var(--state-success);"></span>
+                      Pass (198)
+                    </span>
+                    <span class="rc-donut-legend__item">
+                      <span class="rc-donut-legend__dot" style="background: var(--state-error);"></span>
+                      Fail (28)
+                    </span>
+                    <span class="rc-donut-legend__item">
+                      <span class="rc-donut-legend__dot" style="background: var(--state-warning);"></span>
+                      Warn (8)
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Top 5 Failed Rules -->
+                <div class="rc-failed-list__title">Top 5 Failed Rules</div>
+
+                <div class="rc-failed-item">
+                  <div class="rc-failed-item__left">
+                    <span class="rc-failed-item__rank">1</span>
+                    <span class="rc-failed-item__id">RC-1001</span>
+                  </div>
+                  <span class="rc-failed-item__count">12</span>
+                </div>
+
+                <div class="rc-failed-item">
+                  <div class="rc-failed-item__left">
+                    <span class="rc-failed-item__rank">2</span>
+                    <span class="rc-failed-item__id">RC-1008</span>
+                  </div>
+                  <span class="rc-failed-item__count">9</span>
+                </div>
+
+                <div class="rc-failed-item">
+                  <div class="rc-failed-item__left">
+                    <span class="rc-failed-item__rank">3</span>
+                    <span class="rc-failed-item__id">RC-1003</span>
+                  </div>
+                  <span class="rc-failed-item__count">8</span>
+                </div>
+
+                <div class="rc-failed-item">
+                  <div class="rc-failed-item__left">
+                    <span class="rc-failed-item__rank">4</span>
+                    <span class="rc-failed-item__id">RC-1015</span>
+                  </div>
+                  <span class="rc-failed-item__count">7</span>
+                </div>
+
+                <div class="rc-failed-item">
+                  <div class="rc-failed-item__left">
+                    <span class="rc-failed-item__rank">5</span>
+                    <span class="rc-failed-item__id">RC-1002</span>
+                  </div>
+                  <span class="rc-failed-item__count">4</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>

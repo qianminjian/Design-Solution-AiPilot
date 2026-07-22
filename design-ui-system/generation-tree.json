@@ -1,0 +1,157 @@
+{
+  "root": {
+    "nodeId": "gen-project-shell",
+    "kind": "project-shell",
+    "pageIds": [],
+    "output": "partials/project-shell.html",
+    "sharedRegions": ["header", "sidebar"],
+    "privateRegions": [],
+    "mutableSlots": ["activeNavItem", "pageTitle", "breadcrumb"],
+    "status": "planned",
+    "children": [
+      {
+        "nodeId": "gen-page-login",
+        "kind": "page-leaf",
+        "pageIds": ["page-login"],
+        "output": "pages/login.html",
+        "sharedRegions": [],
+        "privateRegions": ["login form body"],
+        "mutableSlots": [],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-my-work",
+        "kind": "page-leaf",
+        "pageIds": ["page-my-work"],
+        "output": "pages/my-work.html",
+        "sharedRegions": [],
+        "privateRegions": ["dashboard body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-project-home",
+        "kind": "page-leaf",
+        "pageIds": ["page-project-home"],
+        "output": "pages/project-home.html",
+        "sharedRegions": [],
+        "privateRegions": ["project home body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-requirements",
+        "kind": "page-leaf",
+        "pageIds": ["page-requirements"],
+        "output": "pages/requirements.html",
+        "sharedRegions": [],
+        "privateRegions": ["requirements body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-cde-library",
+        "kind": "page-leaf",
+        "pageIds": ["page-cde-library"],
+        "output": "pages/cde-library.html",
+        "sharedRegions": [],
+        "privateRegions": ["CDE library body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-viewer",
+        "kind": "page-leaf",
+        "pageIds": ["page-viewer"],
+        "output": "pages/viewer.html",
+        "sharedRegions": [],
+        "privateRegions": ["viewer body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-design-options",
+        "kind": "page-leaf",
+        "pageIds": ["page-design-options"],
+        "output": "pages/design-options.html",
+        "sharedRegions": [],
+        "privateRegions": ["design options body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-coordination",
+        "kind": "page-leaf",
+        "pageIds": ["page-coordination"],
+        "output": "pages/coordination.html",
+        "sharedRegions": [],
+        "privateRegions": ["coordination body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-rule-check",
+        "kind": "page-leaf",
+        "pageIds": ["page-rule-check"],
+        "output": "pages/rule-check.html",
+        "sharedRegions": [],
+        "privateRegions": ["rule check body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-ai-review",
+        "kind": "page-leaf",
+        "pageIds": ["page-ai-review"],
+        "output": "pages/ai-review.html",
+        "sharedRegions": [],
+        "privateRegions": ["AI review body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-engineering",
+        "kind": "page-leaf",
+        "pageIds": ["page-engineering"],
+        "output": "pages/engineering.html",
+        "sharedRegions": [],
+        "privateRegions": ["engineering analysis body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-publish",
+        "kind": "page-leaf",
+        "pageIds": ["page-publish"],
+        "output": "pages/publish.html",
+        "sharedRegions": [],
+        "privateRegions": ["publish wizard body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      },
+      {
+        "nodeId": "gen-page-change-impact",
+        "kind": "page-leaf",
+        "pageIds": ["page-change-impact"],
+        "output": "pages/change-impact.html",
+        "sharedRegions": [],
+        "privateRegions": ["change impact body"],
+        "mutableSlots": ["activeNavItem"],
+        "status": "planned",
+        "children": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AiPilot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+    <!-- Login page specific styles -->
+    <style>
+      /* ── Reset ── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      /* ── Split Panel Layout ── */
+      .login-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 100vh;
+      }
+
+      /* ── Left Brand Panel ── */
+      .brand-panel {
+        background-color: var(--bd-slate-800);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 48px;
+      }
+
+      /* Blueprint grid background */
+      .brand-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+        background-size: 40px 40px;
+        z-index: 0;
+      }
+
+      /* Subtle larger grid overlay */
+      .brand-panel::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(37, 99, 235, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(37, 99, 235, 0.04) 1px, transparent 1px);
+        background-size: 200px 200px;
+        z-index: 0;
+      }
+
+      /* Architectural CSS shapes layer */
+      .arch-shapes {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* Building silhouette: left tower */
+      .arch-shapes .tower-left {
+        position: absolute;
+        bottom: 0;
+        left: 8%;
+        width: 60px;
+        height: 260px;
+        background: linear-gradient(to top, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.03));
+        border: 1px solid rgba(37, 99, 235, 0.15);
+        border-bottom: none;
+      }
+      .arch-shapes .tower-left::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        background-image:
+          linear-gradient(rgba(37, 99, 235, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(37, 99, 235, 0.1) 1px, transparent 1px);
+        background-size: 12px 20px;
+      }
+
+      /* Building silhouette: right tower */
+      .arch-shapes .tower-right {
+        position: absolute;
+        bottom: 0;
+        right: 12%;
+        width: 80px;
+        height: 200px;
+        background: linear-gradient(to top, rgba(37, 99, 235, 0.1), rgba(37, 99, 235, 0.02));
+        border: 1px solid rgba(37, 99, 235, 0.12);
+        border-bottom: none;
+      }
+      .arch-shapes .tower-right::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        background-image:
+          linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+        background-size: 16px 16px;
+      }
+
+      /* Building silhouette: center block */
+      .arch-shapes .block-center {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 140px;
+        background: linear-gradient(to top, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0.01));
+        border: 1px solid rgba(37, 99, 235, 0.1);
+        border-bottom: none;
+      }
+      .arch-shapes .block-center::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        background-image:
+          linear-gradient(rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px);
+        background-size: 20px 24px;
+      }
+
+      /* Diagonal architectural line */
+      .arch-shapes .diag-line {
+        position: absolute;
+        top: 10%;
+        left: 5%;
+        width: 90%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.2), transparent);
+        transform: rotate(-12deg);
+        transform-origin: left center;
+      }
+
+      /* Horizontal dimension line */
+      .arch-shapes .dim-line {
+        position: absolute;
+        bottom: 20%;
+        left: 20%;
+        width: 60%;
+        height: 0;
+        border-top: 1px dashed rgba(37, 99, 235, 0.2);
+      }
+      .arch-shapes .dim-line::before,
+      .arch-shapes .dim-line::after {
+        content: "";
+        position: absolute;
+        top: -6px;
+        width: 1px;
+        height: 12px;
+        background: rgba(37, 99, 235, 0.2);
+      }
+      .arch-shapes .dim-line::before { left: 0; }
+      .arch-shapes .dim-line::after { right: 0; }
+
+      /* Brand content (above shapes) */
+      .brand-content {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+      }
+
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .brand-logo-icon {
+        width: 48px;
+        height: 48px;
+        color: var(--bd-primary-400);
+      }
+
+      .brand-logo-text {
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #ffffff;
+      }
+
+      .brand-tagline {
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: var(--bd-slate-400);
+        max-width: 320px;
+        margin: 0 auto;
+      }
+
+      /* ── Right Form Panel ── */
+      .form-panel {
+        background-color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 32px;
+      }
+
+      .login-card {
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .login-heading {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1.3;
+        letter-spacing: -0.02em;
+        color: var(--bd-foreground);
+        margin-bottom: 8px;
+      }
+
+      .login-subtitle {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--bd-muted-foreground);
+        margin-bottom: 32px;
+      }
+
+      /* ── Form Fields ── */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: var(--bd-card-foreground);
+        margin-bottom: 6px;
+      }
+
+      .form-input-wrapper {
+        position: relative;
+      }
+
+      .form-input {
+        width: 100%;
+        height: 40px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-family: inherit;
+        color: var(--bd-card-foreground);
+        background-color: #ffffff;
+        border: 1px solid var(--bd-input);
+        border-radius: var(--bd-radius-md);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+
+      .form-input::placeholder {
+        color: var(--bd-slate-400);
+      }
+
+      .form-input:hover {
+        border-color: var(--bd-slate-300);
+      }
+
+      .form-input:focus {
+        border-color: var(--bd-ring);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .form-input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--bd-slate-400);
+        pointer-events: none;
+      }
+
+      .form-input.has-icon {
+        padding-left: 36px;
+      }
+
+      .form-input.has-toggle {
+        padding-right: 40px;
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: transparent;
+        color: var(--bd-slate-400);
+        cursor: pointer;
+        border-radius: var(--bd-radius-sm);
+        transition: color 0.15s, background-color 0.15s;
+      }
+
+      .password-toggle:hover {
+        color: var(--bd-slate-600);
+        background-color: var(--bd-slate-100);
+      }
+
+      /* ── Remember + Forgot Row ── */
+      .form-options {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+
+      .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+      }
+
+      .checkbox-wrapper input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--bd-primary-600);
+        cursor: pointer;
+      }
+
+      .checkbox-label {
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .forgot-link {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bd-primary-600);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+
+      .forgot-link:hover {
+        color: var(--bd-primary-700);
+        text-decoration: underline;
+      }
+
+      /* ── Primary Button ── */
+      .btn-primary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 40px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: inherit;
+        color: #ffffff;
+        background-color: var(--bd-primary-600);
+        border: none;
+        border-radius: var(--bd-radius-lg);
+        cursor: pointer;
+        transition: background-color 0.15s;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--bd-primary-700);
+      }
+
+      .btn-primary:active {
+        background-color: var(--bd-primary-800);
+      }
+
+      /* ── Divider ── */
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 24px 0;
+      }
+
+      .divider::before,
+      .divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background-color: var(--bd-border);
+      }
+
+      .divider-text {
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+        white-space: nowrap;
+      }
+
+      /* ── SSO Button Row ── */
+      .sso-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 32px;
+      }
+
+      .sso-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 40px;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: inherit;
+        color: var(--bd-card-foreground);
+        background-color: #ffffff;
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        cursor: pointer;
+        transition: border-color 0.15s, background-color 0.15s;
+      }
+
+      .sso-btn:hover {
+        border-color: var(--bd-slate-300);
+        background-color: var(--bd-slate-50);
+      }
+
+      .sso-btn svg {
+        flex-shrink: 0;
+      }
+
+      /* ── Footer ── */
+      .login-footer {
+        text-align: center;
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+      }
+
+      .login-footer a {
+        font-weight: 500;
+        color: var(--bd-primary-600);
+        text-decoration: none;
+      }
+
+      .login-footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+  <main class="login-layout">
+    <!-- Left: Brand Panel -->
+    <div class="brand-panel">
+      <div class="arch-shapes">
+        <div class="tower-left"></div>
+        <div class="tower-right"></div>
+        <div class="block-center"></div>
+        <div class="diag-line"></div>
+        <div class="dim-line"></div>
+      </div>
+      <div class="brand-content">
+        <div class="brand-logo">
+          <svg class="brand-logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="20" width="12" height="24" rx="2" stroke="currentColor" stroke-width="2"/>
+            <rect x="24" y="12" width="12" height="32" rx="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M20 8L24 4L28 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24 4V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="8" y1="44" x2="40" y2="44" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="brand-logo-text">AiPilot</span>
+        </div>
+        <p class="brand-tagline">AI-Powered Construction Drawings Platform</p>
+      </div>
+    </div>
+
+    <!-- Right: Form Panel -->
+    <div class="form-panel">
+      <div class="login-card">
+        <h1 class="login-heading">Sign In</h1>
+        <p class="login-subtitle">Enter your credentials to access the workspace</p>
+
+        <form>
+          <!-- Email -->
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <div class="form-input-wrapper">
+              <svg class="form-input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2.5 4L8 8L13.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="2" y="3.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+              <input class="form-input has-icon" type="email" id="email" placeholder="name@company.com" autocomplete="email">
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="form-input-wrapper">
+              <svg class="form-input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M5.5 7V5A2.5 2.5 0 0 1 10.5 5V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <input class="form-input has-icon has-toggle" type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1.5 8S3.5 3.5 8 3.5 14.5 8 14.5 8 12.5 12.5 8 12.5 1.5 8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember + Forgot -->
+          <div class="form-options">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" id="remember">
+              <span class="checkbox-label">Remember me</span>
+            </label>
+            <a href="#" class="forgot-link">Forgot password?</a>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-primary">Sign In</button>
+        </form>
+
+        <!-- Divider -->
+        <div class="divider">
+          <span class="divider-text">or continue with</span>
+        </div>
+
+        <!-- SSO Buttons -->
+        <div class="sso-row">
+          <button type="button" class="sso-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14.9 8.18c0-.55-.05-1.08-.14-1.59H8v3.01h3.84a3.28 3.28 0 0 1-1.42 2.15v1.95h2.31c1.35-1.25 2.17-3.08 2.17-5.52z" fill="#4285F4"/>
+              <path d="M8 15c1.94 0 3.56-.64 4.75-1.74l-2.31-1.95c-.64.43-1.46.69-2.44.69-1.88 0-3.47-1.27-4.04-2.98H1.59v2.01A7.997 7.997 0 0 0 8 15z" fill="#34A853"/>
+              <path d="M3.96 9.02A4.83 4.83 0 0 1 3.68 8c0-.35.06-.69.16-1.02V4.97H1.59A8 8 0 0 0 1.59 11l2.37-1.98z" fill="#FBBC05"/>
+              <path d="M8 3.58c1.06 0 2.01.36 2.76 1.08l2.05-2.05C11.56 1.41 9.94.75 8 .75A7.997 7.997 0 0 0 1.59 4.97l2.37 2.01C4.53 5.27 6.12 3.58 8 3.58z" fill="#EA4335"/>
+            </svg>
+            Google
+          </button>
+
+          <button type="button" class="sso-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="6" height="6" fill="#F25022"/>
+              <rect x="9" y="1" width="6" height="6" fill="#7FBA00"/>
+              <rect x="1" y="9" width="6" height="6" fill="#00A4EF"/>
+              <rect x="9" y="9" width="6" height="6" fill="#FFB900"/>
+            </svg>
+            Microsoft
+          </button>
+
+          <button type="button" class="sso-btn">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4h3v3H4V4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 4h3v3H9V4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4 9h3v3H4V9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 9h3v3H9V9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M1.5 8h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M8 1.5v13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            SAML
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="login-footer">
+          Don't have an account? <a href="#">Contact admin</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

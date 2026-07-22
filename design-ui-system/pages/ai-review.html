@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Review Center - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+  <!-- ========== 顶部 Header Bar ========== -->
+  <header class="shell-header">
+    <div class="shell-header__left">
+      <a class="shell-header__logo" href="/">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+          <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+          <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+          <path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+        </svg>
+        <span class="shell-header__logo-text">AiPilot</span>
+      </a>
+    </div>
+    <div class="shell-header__center">
+      <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+        <li><span class="shell-breadcrumb__current">AI Review Center</span></li>
+      </nav>
+    </div>
+    <div class="shell-header__right">
+      <button class="shell-header__icon-btn" type="button" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </button>
+      <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+        <div class="shell-header__avatar">AP</div>
+        <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== 左侧 Sidebar ========== -->
+  <aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+    <nav class="shell-sidebar__nav">
+      <div class="shell-sidebar__nav-group-label">工作区</div>
+      <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span class="shell-sidebar__item-label">My Work</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span class="shell-sidebar__item-label">Projects</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+        <span class="shell-sidebar__item-label">Requirements</span>
+      </a>
+
+      <div style="height: 8px;"></div>
+      <div class="shell-sidebar__nav-group-label">设计协作</div>
+
+      <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        <span class="shell-sidebar__item-label">CDE Library</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="shell-sidebar__item-label">Viewer</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <span class="shell-sidebar__item-label">Design Options</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+        <span class="shell-sidebar__item-label">Coordination</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+        <span class="shell-sidebar__item-label">Rule Check</span>
+      </a>
+
+      <div style="height: 8px;"></div>
+      <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+
+      <!-- activeNavItem: ai-review -->
+      <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="ai-review" href="/ai-review">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+        <span class="shell-sidebar__item-label">AI Review</span>
+      </a>
+
+      <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/></svg>
+        <span class="shell-sidebar__item-label">Engineering</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+        <span class="shell-sidebar__item-label">Publish</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+        <span class="shell-sidebar__item-label">Change Impact</span>
+      </a>
+    </nav>
+
+    <div class="shell-sidebar__footer">
+      <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span class="shell-sidebar__toggle-label">Collapse</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== 主内容区域 ========== -->
+  <main class="shell-main" id="shell-main">
+    <div class="shell-content">
+      <!-- 页面标题 -->
+      <div class="shell-page-header" style="display:flex; align-items:flex-start; justify-content:space-between;">
+        <div>
+          <h1 class="shell-page-title">AI Review Center</h1>
+          <p class="shell-page-subtitle">AI-assisted design compliance and quality reviews</p>
+        </div>
+        <button class="panel-toggle-btn" onclick="(function(){var p=document.getElementById('stats-panel');p.classList.toggle('review-page__panel--collapsed')})()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/></svg>
+          Toggle Panel
+        </button>
+      </div>
+
+      <!-- 页面主体 -->
+      <div class="review-page">
+        <!-- 左侧主区域 -->
+        <div class="review-page__main">
+          <!-- KPI 卡片 -->
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-card__icon kpi-card__icon--pending">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="kpi-card__body">
+                <div class="kpi-card__label">Pending Review</div>
+                <div class="kpi-card__value kpi-card__value--pending">12</div>
+                <div class="kpi-card__trend">3 critical items need attention</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__icon kpi-card__icon--approved">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+              </div>
+              <div class="kpi-card__body">
+                <div class="kpi-card__label">Approved</div>
+                <div class="kpi-card__value kpi-card__value--approved">89</div>
+                <div class="kpi-card__trend">+14 this week</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-card__icon kpi-card__icon--rejected">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+              </div>
+              <div class="kpi-card__body">
+                <div class="kpi-card__label">Rejected</div>
+                <div class="kpi-card__value kpi-card__value--rejected">5</div>
+                <div class="kpi-card__trend">2 escalated to architect</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 筛选栏 -->
+          <div class="filter-bar">
+            <select class="filter-bar__select">
+              <option>All Risk Levels</option>
+              <option>Critical</option>
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+            <select class="filter-bar__select">
+              <option>All Types</option>
+              <option>Code Compliance</option>
+              <option>Spatial Check</option>
+              <option>Structural</option>
+              <option>MEP</option>
+            </select>
+            <select class="filter-bar__select">
+              <option>All Status</option>
+              <option>Pending</option>
+              <option>Approved</option>
+              <option>Rejected</option>
+            </select>
+            <div class="filter-bar__search-wrapper">
+              <svg class="filter-bar__search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input class="filter-bar__search" type="text" placeholder="Search reviews by ID, description, or file...">
+            </div>
+            <span class="filter-bar__count">Showing 8 of 12 pending</span>
+          </div>
+
+          <!-- 审核队列表格 -->
+          <div class="review-table-wrapper">
+            <table class="review-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;"></th>
+                  <th>Review ID</th>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>File Reference</th>
+                  <th>Risk Level</th>
+                  <th>Confidence</th>
+                  <th>Status</th>
+                  <th>Reviewer</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Row 1: Critical -->
+                <tr onclick="toggleDetail('detail-1')">
+                  <td><span class="priority-dot priority-dot--critical"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0847</td>
+                  <td><span class="type-badge type-badge--code">Code</span></td>
+                  <td class="desc-cell">Emergency exit stairway width does not meet minimum 44-inch clear width requirement at Level 3 landing</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      A-301.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--critical"><span class="priority-dot priority-dot--critical"></span> Critical</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--high" style="width:96%"></div></div>
+                      <span class="confidence-bar__value">96%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--pending">Pending</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">Unassigned</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--approve" onclick="event.stopPropagation()">Approve</button>
+                      <button class="action-btn action-btn--reject" onclick="event.stopPropagation()">Reject</button>
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr id="detail-1" class="detail-row review-detail">
+                  <td colspan="10">
+                    <div class="review-detail__inner">
+                      <div>
+                        <div class="review-detail__section-title">AI Finding</div>
+                        <div class="review-detail__finding">The emergency exit stairway at Level 3 (Grid intersection A-3) has a clear width of 38 inches, which is below the minimum required 44 inches (1118 mm) as specified by IBC 2021 Section 1006.3. This stairway serves as a required exit path for approximately 120 occupants on Level 3.</div>
+                        <div class="review-detail__section-title">Code Reference</div>
+                        <div class="review-detail__ref">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                          IBC 2021 Section 1006.3
+                        </div>
+                        <div class="review-detail__section-title">Suggested Fix</div>
+                        <div class="review-detail__fix">
+                          <div class="review-detail__fix-label">Recommended Action</div>
+                          Widen the stairway structure by relocating the adjacent wall 6 inches toward Grid line A, or relocate the stair core to achieve minimum 44-inch clear width. Verify impact on structural grid and adjacent room areas.
+                        </div>
+                        <div class="review-detail__actions">
+                          <button class="detail-action-btn detail-action-btn--approve">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            Approve Finding
+                          </button>
+                          <button class="detail-action-btn detail-action-btn--changes">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            Request Changes
+                          </button>
+                          <button class="detail-action-btn detail-action-btn--escalate">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                            Escalate
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="review-detail__section-title">Before / After</div>
+                        <div class="review-detail__thumbs">
+                          <div class="review-detail__thumb-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="review-detail__thumb-label">Before</span>
+                          </div>
+                          <div class="review-detail__thumb-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="review-detail__thumb-label">After</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 2: High -->
+                <tr onclick="toggleDetail('detail-2')">
+                  <td><span class="priority-dot priority-dot--high"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0846</td>
+                  <td><span class="type-badge type-badge--spatial">Spatial</span></td>
+                  <td class="desc-cell">Conference room on Level 2 exceeds maximum occupancy due to undersized egress doors for calculated occupant load</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      A-201.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--high"><span class="priority-dot priority-dot--high"></span> High</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--high" style="width:91%"></div></div>
+                      <span class="confidence-bar__value">91%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--pending">Pending</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">J. Chen</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--approve" onclick="event.stopPropagation()">Approve</button>
+                      <button class="action-btn action-btn--reject" onclick="event.stopPropagation()">Reject</button>
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr id="detail-2" class="detail-row review-detail">
+                  <td colspan="10">
+                    <div class="review-detail__inner">
+                      <div>
+                        <div class="review-detail__section-title">AI Finding</div>
+                        <div class="review-detail__finding">The conference room on Level 2 (Room 204) has a calculated occupant load of 65 persons based on 15 sq ft/person assembly function. Current egress provisions include a single 36-inch door, which supports a maximum capacity of 50 persons per IBC Table 1005.1.</div>
+                        <div class="review-detail__section-title">Code Reference</div>
+                        <div class="review-detail__ref">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                          IBC 2021 Table 1005.1
+                        </div>
+                        <div class="review-detail__section-title">Suggested Fix</div>
+                        <div class="review-detail__fix">
+                          <div class="review-detail__fix-label">Recommended Action</div>
+                          Add a second 36-inch egress door on the south wall adjacent to the corridor, or reduce the occupant load by subdividing the room with a rated partition.
+                        </div>
+                        <div class="review-detail__actions">
+                          <button class="detail-action-btn detail-action-btn--approve">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            Approve Finding
+                          </button>
+                          <button class="detail-action-btn detail-action-btn--changes">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            Request Changes
+                          </button>
+                          <button class="detail-action-btn detail-action-btn--escalate">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                            Escalate
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="review-detail__section-title">Before / After</div>
+                        <div class="review-detail__thumbs">
+                          <div class="review-detail__thumb-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="review-detail__thumb-label">Before</span>
+                          </div>
+                          <div class="review-detail__thumb-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="review-detail__thumb-label">After</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 3: Critical -->
+                <tr onclick="toggleDetail('detail-3')">
+                  <td><span class="priority-dot priority-dot--critical"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0845</td>
+                  <td><span class="type-badge type-badge--structural">Structural</span></td>
+                  <td class="desc-cell">Missing shear wall connection detail at Level 5 grid intersection C-7, potential seismic load path discontinuity</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      S-501.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--critical"><span class="priority-dot priority-dot--critical"></span> Critical</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--high" style="width:88%"></div></div>
+                      <span class="confidence-bar__value">88%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--pending">Pending</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">M. Torres</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--approve" onclick="event.stopPropagation()">Approve</button>
+                      <button class="action-btn action-btn--reject" onclick="event.stopPropagation()">Reject</button>
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr id="detail-3" class="detail-row review-detail">
+                  <td colspan="10">
+                    <div class="review-detail__inner">
+                      <div>
+                        <div class="review-detail__section-title">AI Finding</div>
+                        <div class="review-detail__finding">The shear wall at Grid C-7, Level 5 terminates without a proper hold-down or drag strut connection to the Level 4 shear wall below. This creates a discontinuity in the lateral force load path, which is a potential seismic safety concern per ASCE 7-22 Section 12.3.</div>
+                        <div class="review-detail__section-title">Code Reference</div>
+                        <div class="review-detail__ref">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                          ASCE 7-22 Section 12.3
+                        </div>
+                        <div class="review-detail__section-title">Suggested Fix</div>
+                        <div class="review-detail__fix">
+                          <div class="review-detail__fix-label">Recommended Action</div>
+                          Add a steel drag strut or collector element connecting the Level 5 shear wall to the Level 4 wall below. Coordinate with structural engineer for connection design and force transfer calculations.
+                        </div>
+                        <div class="review-detail__actions">
+                          <button class="detail-action-btn detail-action-btn--approve">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                            Approve Finding
+                          </button>
+                          <button class="detail-action-btn detail-action-btn--changes">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            Request Changes
+                          </button>
+                          <button class="detail-action-btn detail-action-btn--escalate">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                            Escalate
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <div class="review-detail__section-title">Before / After</div>
+                        <div class="review-detail__thumbs">
+                          <div class="review-detail__thumb-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="review-detail__thumb-label">Before</span>
+                          </div>
+                          <div class="review-detail__thumb-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                            <span class="review-detail__thumb-label">After</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 4: Medium -->
+                <tr onclick="toggleDetail('detail-4')">
+                  <td><span class="priority-dot priority-dot--medium"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0844</td>
+                  <td><span class="type-badge type-badge--mep">MEP</span></td>
+                  <td class="desc-cell">HVAC duct routing conflicts with structural beam at Level 4 Grid D-5 corridor crossing</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      M-401.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--medium"><span class="priority-dot priority-dot--medium"></span> Medium</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--mid" style="width:78%"></div></div>
+                      <span class="confidence-bar__value">78%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--approved">Approved</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">L. Park</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 5: High -->
+                <tr onclick="toggleDetail('detail-5')">
+                  <td><span class="priority-dot priority-dot--high"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0843</td>
+                  <td><span class="type-badge type-badge--code">Code</span></td>
+                  <td class="desc-cell">Accessible restroom on Level 1 does not provide required 60-inch turning radius for wheelchair maneuvering</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      A-103.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--high"><span class="priority-dot priority-dot--high"></span> High</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--high" style="width:93%"></div></div>
+                      <span class="confidence-bar__value">93%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--pending">Pending</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">A. Kim</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--approve" onclick="event.stopPropagation()">Approve</button>
+                      <button class="action-btn action-btn--reject" onclick="event.stopPropagation()">Reject</button>
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 6: Low -->
+                <tr onclick="toggleDetail('detail-6')">
+                  <td><span class="priority-dot priority-dot--low"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0842</td>
+                  <td><span class="type-badge type-badge--spatial">Spatial</span></td>
+                  <td class="desc-cell">Open office area on Level 6 exceeds recommended maximum travel distance to nearest exit by 12 feet</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      A-601.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--low"><span class="priority-dot priority-dot--low"></span> Low</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--mid" style="width:72%"></div></div>
+                      <span class="confidence-bar__value">72%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--approved">Approved</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">R. Silva</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 7: Medium -->
+                <tr onclick="toggleDetail('detail-7')">
+                  <td><span class="priority-dot priority-dot--medium"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0841</td>
+                  <td><span class="type-badge type-badge--mep">MEP</span></td>
+                  <td class="desc-cell">Fire sprinkler head spacing exceeds maximum 12-foot coverage radius in storage room B-102</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      FP-101.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--medium"><span class="priority-dot priority-dot--medium"></span> Medium</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--mid" style="width:81%"></div></div>
+                      <span class="confidence-bar__value">81%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--rejected">Rejected</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">D. Johnson</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Row 8: Low -->
+                <tr onclick="toggleDetail('detail-8')">
+                  <td><span class="priority-dot priority-dot--low"></span></td>
+                  <td style="font-weight:600;">AIR-2024-0840</td>
+                  <td><span class="type-badge type-badge--code">Code</span></td>
+                  <td class="desc-cell">Glazing area in south facade exceeds 40% wall area ratio requiring additional solar heat gain analysis</td>
+                  <td>
+                    <span class="file-ref">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                      A-ELEV.rvt
+                    </span>
+                  </td>
+                  <td><span class="risk-tag risk-tag--low"><span class="priority-dot priority-dot--low"></span> Low</span></td>
+                  <td>
+                    <div class="confidence-bar">
+                      <div class="confidence-bar__track"><div class="confidence-bar__fill confidence-bar__fill--mid" style="width:68%"></div></div>
+                      <span class="confidence-bar__value">68%</span>
+                    </div>
+                  </td>
+                  <td><span class="status-badge status-badge--pending">Pending</span></td>
+                  <td style="font-size:12px;color:var(--bd-muted-foreground);">Unassigned</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn action-btn--approve" onclick="event.stopPropagation()">Approve</button>
+                      <button class="action-btn action-btn--reject" onclick="event.stopPropagation()">Reject</button>
+                      <button class="action-btn action-btn--view" onclick="event.stopPropagation()">View</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 右侧面板 -->
+        <div class="review-page__panel" id="stats-panel">
+          <div class="stats-panel">
+            <!-- 审核统计卡片 -->
+            <div class="stats-panel__card" style="margin-bottom:16px;">
+              <div class="stats-panel__header">
+                <span class="stats-panel__title">Review Statistics</span>
+                <button class="stats-panel__toggle" onclick="(function(){var p=document.getElementById('stats-panel');p.classList.toggle('review-page__panel--collapsed')})()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              <!-- 环形图 -->
+              <div class="donut-placeholder">
+                <div class="donut-chart">
+                  <div class="donut-chart__visual">
+                    <div class="donut-chart__hole"></div>
+                    <div class="donut-chart__center">
+                      <div class="donut-chart__total">106</div>
+                      <div class="donut-chart__total-label">Total</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 图例 -->
+              <div class="donut-legend">
+                <div class="donut-legend__item">
+                  <span class="donut-legend__dot" style="background:var(--bd-primary-500);"></span>
+                  Code (36%)
+                </div>
+                <div class="donut-legend__item">
+                  <span class="donut-legend__dot" style="background:#f97316;"></span>
+                  Spatial (25%)
+                </div>
+                <div class="donut-legend__item">
+                  <span class="donut-legend__dot" style="background:var(--state-warning);"></span>
+                  Structural (19%)
+                </div>
+                <div class="donut-legend__item">
+                  <span class="donut-legend__dot" style="background:var(--state-info);"></span>
+                  MEP (14%)
+                </div>
+                <div class="donut-legend__item">
+                  <span class="donut-legend__dot" style="background:var(--bd-muted);"></span>
+                  Other (6%)
+                </div>
+              </div>
+            </div>
+
+            <!-- 近期审核历史 -->
+            <div class="stats-panel__card">
+              <div class="stats-panel__header">
+                <span class="stats-panel__title">Recent History</span>
+              </div>
+              <div class="stats-panel__history">
+                <div class="stats-panel__section-title">Last 5 Reviews</div>
+                <div class="history-item">
+                  <span class="history-item__dot history-item__dot--approved"></span>
+                  <div>
+                    <div class="history-item__text">AIR-2024-0839: Egress lighting spacing approved</div>
+                    <div class="history-item__meta">L. Park &middot; 2 hours ago</div>
+                  </div>
+                </div>
+                <div class="history-item">
+                  <span class="history-item__dot history-item__dot--rejected"></span>
+                  <div>
+                    <div class="history-item__text">AIR-2024-0841: Sprinkler spacing rejected, needs redesign</div>
+                    <div class="history-item__meta">D. Johnson &middot; 4 hours ago</div>
+                  </div>
+                </div>
+                <div class="history-item">
+                  <span class="history-item__dot history-item__dot--approved"></span>
+                  <div>
+                    <div class="history-item__text">AIR-2024-0838: Elevator shaft dimensions approved</div>
+                    <div class="history-item__meta">M. Torres &middot; Yesterday</div>
+                  </div>
+                </div>
+                <div class="history-item">
+                  <span class="history-item__dot history-item__dot--approved"></span>
+                  <div>
+                    <div class="history-item__text">AIR-2024-0837: Parking ventilation rate approved</div>
+                    <div class="history-item__meta">A. Kim &middot; Yesterday</div>
+                  </div>
+                </div>
+                <div class="history-item">
+                  <span class="history-item__dot history-item__dot--pending"></span>
+                  <div>
+                    <div class="history-item__text">AIR-2024-0836: Faade U-value analysis pending</div>
+                    <div class="history-item__meta">J. Chen &middot; 2 days ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    /**
+     * 切换展开行详情
+     * @param {string} id - 详情行的 DOM id
+     */
+    function toggleDetail(id) {
+      var row = document.getElementById(id);
+      if (row) {
+        row.classList.toggle('is-open');
+      }
+    }
+  </script>
+
+    <style>
+    /* ── 页面级布局 ── */
+    .review-page {
+      display: flex;
+      gap: 20px;
+      min-height: calc(100vh - var(--shell-header-height) - 48px);
+    }
+
+    .review-page__main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .review-page__panel {
+      width: 300px;
+      flex-shrink: 0;
+      transition: width 200ms ease, opacity 200ms ease;
+    }
+
+    .review-page__panel--collapsed {
+      width: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    /* ── KPI 卡片 ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .kpi-card {
+      background: var(--bd-card);
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .kpi-card__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--bd-radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-card__icon--pending {
+      background: var(--state-warning-bg);
+      color: var(--state-warning);
+    }
+
+    .kpi-card__icon--approved {
+      background: var(--state-success-bg);
+      color: var(--state-success);
+    }
+
+    .kpi-card__icon--rejected {
+      background: var(--state-error-bg);
+      color: var(--state-error);
+    }
+
+    .kpi-card__body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .kpi-card__label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--bd-muted-foreground);
+      margin-bottom: 4px;
+    }
+
+    .kpi-card__value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .kpi-card__value--pending { color: var(--state-warning); }
+    .kpi-card__value--approved { color: var(--state-success); }
+    .kpi-card__value--rejected { color: var(--state-error); }
+
+    .kpi-card__trend {
+      font-size: 12px;
+      color: var(--bd-muted-foreground);
+      margin-top: 2px;
+    }
+
+    /* ── 筛选栏 ── */
+    .filter-bar {
+      background: var(--bd-card);
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-lg);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-xs);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-bar__select {
+      height: 34px;
+      padding: 0 32px 0 10px;
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-sm);
+      background: var(--bd-card);
+      color: var(--bd-card-foreground);
+      font-size: 13px;
+      font-family: inherit;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      cursor: pointer;
+      transition: border-color 120ms ease;
+    }
+
+    .filter-bar__select:focus {
+      outline: 2px solid var(--bd-ring);
+      outline-offset: 1px;
+      border-color: var(--bd-ring);
+    }
+
+    .filter-bar__search {
+      flex: 1;
+      min-width: 180px;
+      height: 34px;
+      padding: 0 10px 0 34px;
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-sm);
+      background: var(--bd-card);
+      color: var(--bd-card-foreground);
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 120ms ease;
+    }
+
+    .filter-bar__search:focus {
+      outline: 2px solid var(--bd-ring);
+      outline-offset: 1px;
+      border-color: var(--bd-ring);
+    }
+
+    .filter-bar__search-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .filter-bar__search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--bd-muted-foreground);
+      pointer-events: none;
+    }
+
+    .filter-bar__count {
+      font-size: 13px;
+      color: var(--bd-muted-foreground);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* ── 审核队列表格 ── */
+    .review-table-wrapper {
+      background: var(--bd-card);
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .review-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .review-table thead {
+      background: var(--bd-muted);
+    }
+
+    .review-table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 600;
+      font-size: 12px;
+      color: var(--bd-muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--bd-border);
+      white-space: nowrap;
+    }
+
+    .review-table td {
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--bd-border);
+      color: var(--bd-card-foreground);
+      vertical-align: middle;
+    }
+
+    .review-table tbody tr {
+      transition: background-color 120ms ease;
+      cursor: pointer;
+    }
+
+    .review-table tbody tr:hover {
+      background: var(--bd-primary-50);
+    }
+
+    .review-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* 优先级圆点 */
+    .priority-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--bd-radius-full);
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .priority-dot--critical { background: var(--state-error); box-shadow: 0 0 0 3px var(--state-error-light); }
+    .priority-dot--high { background: #f97316; box-shadow: 0 0 0 3px #ffedd5; }
+    .priority-dot--medium { background: var(--state-warning); box-shadow: 0 0 0 3px var(--state-warning-light); }
+    .priority-dot--low { background: var(--state-info); box-shadow: 0 0 0 3px var(--state-info-light); }
+
+    /* 类型徽章 */
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--bd-radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .type-badge--code { background: var(--bd-primary-100); color: var(--bd-primary-700); }
+    .type-badge--spatial { background: #f3e8ff; color: #7c3aed; }
+    .type-badge--structural { background: #fef3c7; color: #92400e; }
+    .type-badge--mep { background: #cffafe; color: #0e7490; }
+
+    /* 风险等级 */
+    .risk-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .risk-tag--critical { color: var(--state-error); }
+    .risk-tag--high { color: #f97316; }
+    .risk-tag--medium { color: var(--state-warning); }
+    .risk-tag--low { color: var(--state-info); }
+
+    /* 置信度条 */
+    .confidence-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 100px;
+    }
+
+    .confidence-bar__track {
+      flex: 1;
+      height: 6px;
+      background: var(--bd-muted);
+      border-radius: var(--bd-radius-full);
+      overflow: hidden;
+    }
+
+    .confidence-bar__fill {
+      height: 100%;
+      border-radius: var(--bd-radius-full);
+      transition: width 300ms ease;
+    }
+
+    .confidence-bar__fill--high { background: var(--state-success); }
+    .confidence-bar__fill--mid { background: var(--state-warning); }
+    .confidence-bar__fill--low { background: var(--state-error); }
+
+    .confidence-bar__value {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--bd-card-foreground);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* 状态标签 */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: var(--bd-radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .status-badge--pending {
+      background: var(--state-warning-bg);
+      color: var(--state-warning);
+    }
+
+    .status-badge--approved {
+      background: var(--state-success-bg);
+      color: var(--state-success);
+    }
+
+    .status-badge--rejected {
+      background: var(--state-error-bg);
+      color: var(--state-error);
+    }
+
+    /* 操作按钮 */
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--bd-radius-sm);
+      border: 1px solid var(--bd-border);
+      background: var(--bd-card);
+      color: var(--bd-card-foreground);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 120ms ease;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+
+    .action-btn:hover {
+      background: var(--bd-muted);
+      border-color: var(--bd-slate-300);
+    }
+
+    .action-btn--approve {
+      border-color: var(--state-success);
+      color: var(--state-success);
+      background: var(--state-success-bg);
+    }
+
+    .action-btn--approve:hover {
+      background: var(--state-success);
+      color: #fff;
+    }
+
+    .action-btn--reject {
+      border-color: var(--state-error);
+      color: var(--state-error);
+      background: var(--state-error-bg);
+    }
+
+    .action-btn--reject:hover {
+      background: var(--state-error);
+      color: #fff;
+    }
+
+    .action-btn--view {
+      border-color: var(--bd-primary-200);
+      color: var(--bd-primary-600);
+    }
+
+    .action-btn--view:hover {
+      background: var(--bd-primary-50);
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* ── 展开行详情 ── */
+    .review-detail {
+      background: var(--bd-background);
+      border-bottom: 1px solid var(--bd-border);
+    }
+
+    .review-detail td {
+      padding: 0 !important;
+    }
+
+    .review-detail__inner {
+      padding: 20px 24px;
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 20px;
+    }
+
+    .review-detail__section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--bd-muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .review-detail__finding {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--bd-card-foreground);
+      margin-bottom: 16px;
+    }
+
+    .review-detail__ref {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--bd-primary-50);
+      border: 1px solid var(--bd-primary-200);
+      border-radius: var(--bd-radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--bd-primary-700);
+      margin-bottom: 16px;
+    }
+
+    .review-detail__fix {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--bd-card-foreground);
+      padding: 12px 14px;
+      background: var(--state-success-bg);
+      border-left: 3px solid var(--state-success);
+      border-radius: 0 var(--bd-radius-sm) var(--bd-radius-sm) 0;
+      margin-bottom: 16px;
+    }
+
+    .review-detail__fix-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--state-success);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .review-detail__thumbs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .review-detail__thumb-box {
+      aspect-ratio: 4 / 3;
+      background: var(--bd-muted);
+      border: 1px dashed var(--bd-border);
+      border-radius: var(--bd-radius-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--bd-muted-foreground);
+    }
+
+    .review-detail__thumb-label {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .review-detail__actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--bd-border);
+    }
+
+    .detail-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--bd-radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 120ms ease;
+      border: 1px solid transparent;
+      font-family: inherit;
+    }
+
+    .detail-action-btn--approve {
+      background: var(--state-success);
+      color: #fff;
+      border-color: var(--state-success);
+    }
+
+    .detail-action-btn--approve:hover {
+      background: #15803d;
+    }
+
+    .detail-action-btn--changes {
+      background: var(--bd-card);
+      color: var(--bd-card-foreground);
+      border-color: var(--bd-border);
+    }
+
+    .detail-action-btn--changes:hover {
+      background: var(--bd-muted);
+    }
+
+    .detail-action-btn--escalate {
+      background: var(--bd-card);
+      color: var(--state-error);
+      border-color: var(--state-error);
+    }
+
+    .detail-action-btn--escalate:hover {
+      background: var(--state-error-bg);
+    }
+
+    /* ── 右侧面板 ── */
+    .stats-panel {
+      position: sticky;
+      top: calc(var(--shell-header-height) + 24px);
+    }
+
+    .stats-panel__card {
+      background: var(--bd-card);
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .stats-panel__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--bd-border);
+    }
+
+    .stats-panel__title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--bd-foreground);
+    }
+
+    .stats-panel__toggle {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: var(--bd-muted-foreground);
+      cursor: pointer;
+      border-radius: var(--bd-radius-sm);
+      transition: all 120ms ease;
+    }
+
+    .stats-panel__toggle:hover {
+      background: var(--bd-muted);
+      color: var(--bd-foreground);
+    }
+
+    /* 环形图占位 */
+    .donut-placeholder {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .donut-chart {
+      width: 140px;
+      height: 140px;
+      position: relative;
+    }
+
+    .donut-chart__ring {
+      width: 100%;
+      height: 100%;
+      border-radius: var(--bd-radius-full);
+      position: relative;
+    }
+
+    /* CSS-only donut using conic-gradient */
+    .donut-chart__visual {
+      width: 140px;
+      height: 140px;
+      border-radius: var(--bd-radius-full);
+      background: conic-gradient(
+        var(--bd-primary-500) 0deg 130deg,
+        #f97316 130deg 220deg,
+        var(--state-warning) 220deg 290deg,
+        var(--state-info) 290deg 340deg,
+        var(--bd-muted) 340deg 360deg
+      );
+      position: relative;
+    }
+
+    .donut-chart__hole {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: var(--bd-radius-full);
+      background: var(--bd-card);
+    }
+
+    .donut-chart__center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1;
+    }
+
+    .donut-chart__total {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--bd-foreground);
+      line-height: 1;
+    }
+
+    .donut-chart__total-label {
+      font-size: 10px;
+      color: var(--bd-muted-foreground);
+      margin-top: 2px;
+    }
+
+    .donut-legend {
+      padding: 0 16px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .donut-legend__item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--bd-card-foreground);
+    }
+
+    .donut-legend__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--bd-radius-full);
+      flex-shrink: 0;
+    }
+
+    /* 历史列表 */
+    .stats-panel__history {
+      padding: 12px 16px 16px;
+    }
+
+    .stats-panel__section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--bd-muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--bd-border);
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .history-item__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--bd-radius-full);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .history-item__dot--approved { background: var(--state-success); }
+    .history-item__dot--rejected { background: var(--state-error); }
+    .history-item__dot--pending { background: var(--state-warning); }
+
+    .history-item__text {
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--bd-card-foreground);
+    }
+
+    .history-item__meta {
+      font-size: 11px;
+      color: var(--bd-muted-foreground);
+      margin-top: 2px;
+    }
+
+    /* 文件引用 */
+    .file-ref {
+      font-size: 12px;
+      color: var(--bd-primary-600);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .file-ref svg {
+      flex-shrink: 0;
+    }
+
+    /* 描述截断 */
+    .desc-cell {
+      max-width: 260px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 面板切换按钮（主区域） */
+    .panel-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--bd-radius-sm);
+      border: 1px solid var(--bd-border);
+      background: var(--bd-card);
+      color: var(--bd-muted-foreground);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 120ms ease;
+      font-family: inherit;
+    }
+
+    .panel-toggle-btn:hover {
+      background: var(--bd-muted);
+      color: var(--bd-foreground);
+    }
+
+    /* 隐藏展开行默认 */
+    .detail-row {
+      display: none;
+    }
+
+    .detail-row.is-open {
+      display: table-row;
+    }
+  </style>
+</body>
+</html>

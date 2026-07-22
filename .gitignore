@@ -1,14 +1,104 @@
-# Scratch files
+# ── 临时/草稿文件 ──
 _scratch/
+.scratch/
+tmp/
+temp/
 *.tmp
 *.bak
+*.log
 
-# OS
+# ── OS ──
 .DS_Store
 Thumbs.db
 
-# Editor
+# ── 编辑器 / IDE ──
 .vscode/
 .idea/
 *.swp
 *.swo
+*.iml
+
+# ── TypeScript / Node ──
+node_modules/
+dist/
+out/
+build/
+.next/
+*.tsbuildinfo
+.turbo/
+
+# ── 覆盖率报告 ──
+coverage/
+.nyc_output/
+htmlcov/
+*.lcov
+
+# ── 测试输出 ──
+test-results/
+playwright-report/
+.vitest/
+.jest-cache/
+.junit/
+test-output/
+
+# ── Lint / 工具缓存 ──
+.eslintcache
+.prettiercache
+.stylelintcache
+.cache/
+
+# ── Java ──
+target/
+build/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+.m2/
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ── Docker ──
+docker-compose.override.yml
+
+# ── 环境变量 / 密钥 ──
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.pfx
+
+# ── 设计源文件（走 S3，不进 Git）──
+*.rvt
+*.rfa
+*.dwg
+*.dxf
+*.3dm
+*.skp
+*.ifc
+*.pln
+
+# ── ae-init state ──
+.ae-state/
+
+# ── Trae 本地状态（规则文件 .trae/rules/ 须提交，仅忽略本地运行态）──
+.trae/.local/
+.trae/cache/
+.trae/logs/

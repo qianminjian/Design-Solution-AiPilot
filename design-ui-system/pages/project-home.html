@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Home - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+<!-- ========== 顶部 Header Bar ========== -->
+<header class="shell-header">
+  <div class="shell-header__left">
+    <a class="shell-header__logo" href="/">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+        <path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+      </svg>
+      <span class="shell-header__logo-text">AiPilot</span>
+    </a>
+  </div>
+
+  <div class="shell-header__center">
+    <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+      <li><a href="/">Home</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><a href="/my-work" id="breadcrumb-my-work">My Work</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><span class="shell-breadcrumb__current">Metro Office Tower</span></li>
+    </nav>
+  </div>
+
+  <div class="shell-header__right">
+    <button class="shell-header__icon-btn" type="button" aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </button>
+    <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+    </button>
+    <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+      <div class="shell-header__avatar">AP</div>
+      <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 左侧 Sidebar ========== -->
+<aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+  <nav class="shell-sidebar__nav">
+    <div class="shell-sidebar__nav-group-label">工作区</div>
+
+    <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work" id="nav-my-work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+      <span class="shell-sidebar__item-label">My Work</span>
+    </a>
+
+    <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="projects" href="/projects" id="nav-projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span class="shell-sidebar__item-label">Projects</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements" id="nav-requirements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+      <span class="shell-sidebar__item-label">Requirements</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">设计协作</div>
+
+    <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library" id="nav-cde-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+      <span class="shell-sidebar__item-label">CDE Library</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer" id="nav-viewer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="shell-sidebar__item-label">Viewer</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options" id="nav-design-options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+      <span class="shell-sidebar__item-label">Design Options</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination" id="nav-coordination">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+      <span class="shell-sidebar__item-label">Coordination</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check" id="nav-rule-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+      <span class="shell-sidebar__item-label">Rule Check</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+
+    <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review" id="nav-ai-review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+      <span class="shell-sidebar__item-label">AI Review</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering" id="nav-engineering">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/></svg>
+      <span class="shell-sidebar__item-label">Engineering</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="publish" href="/publish" id="nav-publish">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+      <span class="shell-sidebar__item-label">Publish</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact" id="nav-change-impact">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+      <span class="shell-sidebar__item-label">Change Impact</span>
+    </a>
+  </nav>
+
+  <div class="shell-sidebar__footer">
+    <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      <span class="shell-sidebar__toggle-label">Collapse</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ========== 主内容区域 ========== -->
+<main class="shell-main" id="shell-main">
+  <div class="shell-content">
+
+    <!-- ════════════════ 项目头部 ════════════════ -->
+    <div class="ph-header" style="display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:20px; flex-wrap:wrap;">
+      <div>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:6px;">
+          <h1 class="shell-page-title" style="margin:0;">Metro Office Tower</h1>
+          <!-- 状态徽章: In Progress -->
+          <span class="bd-status-badge bd-status-badge--info">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            In Progress
+          </span>
+        </div>
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <span class="bd-body-sm" style="display:flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            Singapore
+          </span>
+          <span class="bd-body-sm" style="display:flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="14" x="4" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            Office Building - 12 Floors
+          </span>
+          <span class="bd-body-sm" style="display:flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Client: ABC Development Pte Ltd
+          </span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="bd-btn bd-btn--outline" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+          Edit Project
+        </button>
+        <button class="bd-btn bd-btn--primary" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+
+    <!-- ════════════════ 门控阶段横条 ════════════════ -->
+    <div class="ph-gate-banner" style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:20px 24px; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bd-primary-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="bd-title-sm" style="color:var(--bd-primary-600);">Project Gate Progress</span>
+      </div>
+      <div class="ph-gate-stepper" style="display:flex; align-items:center; justify-content:space-between; position:relative; padding:0 20px;">
+        <!-- 连接线（底层） -->
+        <div style="position:absolute; top:15px; left:40px; right:40px; height:3px; background:var(--bd-slate-200); z-index:0;"></div>
+        <div style="position:absolute; top:15px; left:40px; width:calc(50% - 40px); height:3px; background:var(--state-success); z-index:1;"></div>
+
+        <!-- Step 1: Concept Design (Complete) -->
+        <div class="ph-gate-step ph-gate-step--complete" style="display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:2;">
+          <div style="width:30px; height:30px; border-radius:50%; background:var(--state-success); display:flex; align-items:center; justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span class="bd-body-sm" style="color:var(--state-success); font-weight:600;">Concept Design</span>
+        </div>
+
+        <!-- Step 2: Schematic Design (Complete) -->
+        <div class="ph-gate-step ph-gate-step--complete" style="display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:2;">
+          <div style="width:30px; height:30px; border-radius:50%; background:var(--state-success); display:flex; align-items:center; justify-content:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span class="bd-body-sm" style="color:var(--state-success); font-weight:600;">Schematic Design</span>
+        </div>
+
+        <!-- Step 3: Design Development (Current) -->
+        <div class="ph-gate-step ph-gate-step--current" style="display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:2;">
+          <div style="width:30px; height:30px; border-radius:50%; background:var(--bd-primary-600); display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 4px var(--bd-primary-100); animation:bd-pulse-ring 2s ease-in-out infinite;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+          </div>
+          <span class="bd-body-sm" style="color:var(--bd-primary-600); font-weight:600;">Design Development</span>
+        </div>
+
+        <!-- Step 4: Construction Documents (Pending) -->
+        <div class="ph-gate-step ph-gate-step--pending" style="display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:2;">
+          <div style="width:30px; height:30px; border-radius:50%; background:var(--bd-slate-200); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:12px; font-weight:600; color:var(--bd-slate-400);">4</span>
+          </div>
+          <span class="bd-body-sm" style="color:var(--bd-muted-foreground);">Construction Docs</span>
+        </div>
+
+        <!-- Step 5: Review & Publish (Pending) -->
+        <div class="ph-gate-step ph-gate-step--pending" style="display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; z-index:2;">
+          <div style="width:30px; height:30px; border-radius:50%; background:var(--bd-slate-200); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:12px; font-weight:600; color:var(--bd-slate-400);">5</span>
+          </div>
+          <span class="bd-body-sm" style="color:var(--bd-muted-foreground);">Review &amp; Publish</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ KPI 卡片行 ════════════════ -->
+    <div class="ph-kpi-row" style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px;">
+      <!-- KPI 1: Tasks -->
+      <div class="ph-kpi-card" style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <div style="width:32px; height:32px; border-radius:var(--bd-radius-md); background:var(--bd-primary-50); display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--bd-primary-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+          </div>
+          <span class="bd-caption">Total Tasks</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:8px;">
+          <span style="font-size:28px; font-weight:700; color:var(--bd-foreground); line-height:1;">156</span>
+          <span class="bd-body-sm" style="color:var(--state-success);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            89 completed
+          </span>
+        </div>
+        <div style="margin-top:8px; height:4px; background:var(--bd-slate-100); border-radius:var(--bd-radius-full); overflow:hidden;">
+          <div style="width:57%; height:100%; background:var(--bd-primary-600); border-radius:var(--bd-radius-full);"></div>
+        </div>
+      </div>
+
+      <!-- KPI 2: Issues -->
+      <div class="ph-kpi-card" style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <div style="width:32px; height:32px; border-radius:var(--bd-radius-md); background:var(--state-warning-bg); display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--state-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+          </div>
+          <span class="bd-caption">Open Issues</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:8px;">
+          <span style="font-size:28px; font-weight:700; color:var(--bd-foreground); line-height:1;">23</span>
+          <span class="bd-body-sm" style="color:var(--state-error);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+            4 critical
+          </span>
+        </div>
+      </div>
+
+      <!-- KPI 3: Files -->
+      <div class="ph-kpi-card" style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <div style="width:32px; height:32px; border-radius:var(--bd-radius-md); background:var(--state-success-bg); display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--state-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <span class="bd-caption">Files Uploaded</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:8px;">
+          <span style="font-size:28px; font-weight:700; color:var(--bd-foreground); line-height:1;">342</span>
+          <span class="bd-body-sm" style="color:var(--bd-muted-foreground);">Last: 2h ago</span>
+        </div>
+      </div>
+
+      <!-- KPI 4: AI Reviews -->
+      <div class="ph-kpi-card" style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <div style="width:32px; height:32px; border-radius:var(--bd-radius-md); background:var(--state-info-bg); display:flex; align-items:center; justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--state-info)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+          </div>
+          <span class="bd-caption">AI Reviews</span>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:8px;">
+          <span style="font-size:28px; font-weight:700; color:var(--bd-foreground); line-height:1;">67</span>
+          <span class="bd-body-sm" style="color:var(--state-warning);">12 pending</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ 标签页 + 右侧面板 布局 ════════════════ -->
+    <div class="ph-workspace" style="display:flex; gap:20px; align-items:flex-start;">
+      <!-- 左侧主内容 -->
+      <div style="flex:1; min-width:0;">
+        <!-- 标签栏 -->
+        <div class="ph-tabs" style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); border-bottom:none;">
+          <div class="ph-tabs__list" style="display:flex; border-bottom:1px solid var(--bd-border); padding:0 8px;">
+            <button class="ph-tabs__tab ph-tabs__tab--active" type="button" data-tab="requirements">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+              Requirements
+            </button>
+            <button class="ph-tabs__tab" type="button" data-tab="design-options">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+              Design Options
+            </button>
+            <button class="ph-tabs__tab" type="button" data-tab="documents">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Documents
+            </button>
+            <button class="ph-tabs__tab" type="button" data-tab="issues">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+              Issues
+            </button>
+            <button class="ph-tabs__tab" type="button" data-tab="ai-reviews" id="tab-ai-reviews">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+              AI Reviews
+            </button>
+          </div>
+
+          <!-- 标签面板: Requirements (默认激活) -->
+          <div class="ph-tabs__panel" id="panel-requirements" style="padding:0;">
+            <!-- 表头 -->
+            <div style="display:grid; grid-template-columns:80px 1fr 100px 80px 40px; align-items:center; padding:10px 16px; background:var(--bd-slate-50); border-bottom:1px solid var(--bd-border); font-size:11px; font-weight:600; color:var(--bd-muted-foreground); text-transform:uppercase; letter-spacing:0.05em;">
+              <span>ID</span>
+              <span>Title</span>
+              <span>Status</span>
+              <span>Priority</span>
+              <span></span>
+            </div>
+
+            <!-- 需求条目 1 -->
+            <div class="ph-req-row" style="display:grid; grid-template-columns:80px 1fr 100px 80px 40px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--bd-border); transition:background-color 120ms ease; cursor:pointer;" onmouseenter="this.style.backgroundColor='var(--bd-slate-50)'" onmouseleave="this.style.backgroundColor='transparent'">
+              <span class="bd-body-sm" style="color:var(--bd-primary-600); font-weight:500;">REQ-001</span>
+              <span class="bd-body">Floor-to-floor height shall be minimum 3.9m for all office levels</span>
+              <span class="bd-status-badge bd-status-badge--success">Approved</span>
+              <span class="bd-priority-badge bd-priority-badge--high">High</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bd-slate-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+
+            <!-- 需求条目 2 -->
+            <div class="ph-req-row" style="display:grid; grid-template-columns:80px 1fr 100px 80px 40px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--bd-border); transition:background-color 120ms ease; cursor:pointer;" onmouseenter="this.style.backgroundColor='var(--bd-slate-50)'" onmouseleave="this.style.backgroundColor='transparent'">
+              <span class="bd-body-sm" style="color:var(--bd-primary-600); font-weight:500;">REQ-002</span>
+              <span class="bd-body">Structural grid shall be 9m x 8.4m with column spacing aligned to core</span>
+              <span class="bd-status-badge bd-status-badge--warning">In Review</span>
+              <span class="bd-priority-badge bd-priority-badge--high">High</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bd-slate-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+
+            <!-- 需求条目 3 -->
+            <div class="ph-req-row" style="display:grid; grid-template-columns:80px 1fr 100px 80px 40px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--bd-border); transition:background-color 120ms ease; cursor:pointer;" onmouseenter="this.style.backgroundColor='var(--bd-slate-50)'" onmouseleave="this.style.backgroundColor='transparent'">
+              <span class="bd-body-sm" style="color:var(--bd-primary-600); font-weight:500;">REQ-003</span>
+              <span class="bd-body">MEP riser locations to be coordinated with structural walls on each floor</span>
+              <span class="bd-status-badge bd-status-badge--success">Approved</span>
+              <span class="bd-priority-badge bd-priority-badge--medium">Medium</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bd-slate-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+
+            <!-- 需求条目 4 -->
+            <div class="ph-req-row" style="display:grid; grid-template-columns:80px 1fr 100px 80px 40px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--bd-border); transition:background-color 120ms ease; cursor:pointer;" onmouseenter="this.style.backgroundColor='var(--bd-slate-50)'" onmouseleave="this.style.backgroundColor='transparent'">
+              <span class="bd-body-sm" style="color:var(--bd-primary-600); font-weight:500;">REQ-004</span>
+              <span class="bd-body">Façade U-value shall not exceed 1.8 W/m2K per Singapore BC regulations</span>
+              <span class="bd-status-badge bd-status-badge--info">Draft</span>
+              <span class="bd-priority-badge bd-priority-badge--medium">Medium</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bd-slate-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+
+            <!-- 需求条目 5 -->
+            <div class="ph-req-row" style="display:grid; grid-template-columns:80px 1fr 100px 80px 40px; align-items:center; padding:12px 16px; transition:background-color 120ms ease; cursor:pointer;" onmouseenter="this.style.backgroundColor='var(--bd-slate-50)'" onmouseleave="this.style.backgroundColor='transparent'">
+              <span class="bd-body-sm" style="color:var(--bd-primary-600); font-weight:500;">REQ-005</span>
+              <span class="bd-body">Lift lobby width at ground floor shall accommodate 3 waiting persons per lift bank</span>
+              <span class="bd-status-badge bd-status-badge--info">Draft</span>
+              <span class="bd-priority-badge bd-priority-badge--low">Low</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--bd-slate-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧面板 -->
+      <aside class="ph-right-panel" style="width:300px; flex-shrink:0;" id="ph-right-panel">
+        <!-- 项目团队 -->
+        <div style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <span class="bd-title-sm">Project Team</span>
+            <button class="bd-btn--ghost" type="button" style="background:none; border:none; color:var(--bd-primary-600); font-size:12px; font-weight:500; cursor:pointer; padding:2px 4px;">
+              View All
+            </button>
+          </div>
+          <div style="display:flex; align-items:center; gap:-8px;">
+            <!-- 头像 1 -->
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--bd-primary-100); color:var(--bd-primary-600); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; border:2px solid #ffffff; position:relative; z-index:5;">AP</div>
+            <!-- 头像 2 -->
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--state-success-light); color:var(--state-success); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; border:2px solid #ffffff; margin-left:-8px; position:relative; z-index:4;">LW</div>
+            <!-- 头像 3 -->
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--state-warning-light); color:var(--state-warning); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; border:2px solid #ffffff; margin-left:-8px; position:relative; z-index:3;">RK</div>
+            <!-- 头像 4 -->
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--state-info-light); color:var(--state-info); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; border:2px solid #ffffff; margin-left:-8px; position:relative; z-index:2;">MJ</div>
+            <!-- 头像 5 -->
+            <div style="width:36px; height:36px; border-radius:50%; background:var(--state-error-light); color:var(--state-error); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; border:2px solid #ffffff; margin-left:-8px; position:relative; z-index:1;">TS</div>
+          </div>
+        </div>
+
+        <!-- 快捷操作 -->
+        <div style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px; margin-bottom:16px;">
+          <span class="bd-title-sm" style="display:block; margin-bottom:12px;">Quick Actions</span>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="bd-btn bd-btn--outline bd-btn--block" type="button" id="btn-upload-files">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              Upload Files
+            </button>
+            <button class="bd-btn bd-btn--outline bd-btn--block" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+              Run AI Review
+            </button>
+            <button class="bd-btn bd-btn--outline bd-btn--block" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6"/><path d="M9 11h6"/></svg>
+              Generate Report
+            </button>
+          </div>
+        </div>
+
+        <!-- 活动时间线 -->
+        <div style="background:#ffffff; border:1px solid var(--bd-border); border-radius:var(--bd-radius-md); padding:16px 20px;">
+          <span class="bd-title-sm" style="display:block; margin-bottom:12px;">Recent Activity</span>
+          <div class="ph-timeline">
+            <!-- 时间线条目 1 -->
+            <div style="display:flex; gap:12px; padding-bottom:16px; position:relative;">
+              <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+                <div style="width:8px; height:8px; border-radius:50%; background:var(--bd-primary-500); flex-shrink:0; margin-top:6px;"></div>
+                <div style="width:1px; flex:1; background:var(--bd-slate-200); margin-top:4px;"></div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p class="bd-body" style="margin:0 0 2px;">AI review completed for Level 3 floor plan</p>
+                <span class="bd-body-sm">12 min ago</span>
+              </div>
+            </div>
+            <!-- 时间线条目 2 -->
+            <div style="display:flex; gap:12px; padding-bottom:16px; position:relative;">
+              <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+                <div style="width:8px; height:8px; border-radius:50%; background:var(--state-success); flex-shrink:0; margin-top:6px;"></div>
+                <div style="width:1px; flex:1; background:var(--bd-slate-200); margin-top:4px;"></div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p class="bd-body" style="margin:0 0 2px;">REQ-001 approved by lead architect</p>
+                <span class="bd-body-sm">1h ago</span>
+              </div>
+            </div>
+            <!-- 时间线条目 3 -->
+            <div style="display:flex; gap:12px; padding-bottom:16px; position:relative;">
+              <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+                <div style="width:8px; height:8px; border-radius:50%; background:var(--state-warning); flex-shrink:0; margin-top:6px;"></div>
+                <div style="width:1px; flex:1; background:var(--bd-slate-200); margin-top:4px;"></div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p class="bd-body" style="margin:0 0 2px;">3 new clash detections in MEP coordination</p>
+                <span class="bd-body-sm">2h ago</span>
+              </div>
+            </div>
+            <!-- 时间线条目 4 -->
+            <div style="display:flex; gap:12px; padding-bottom:16px; position:relative;">
+              <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+                <div style="width:8px; height:8px; border-radius:50%; background:var(--bd-slate-300); flex-shrink:0; margin-top:6px;"></div>
+                <div style="width:1px; flex:1; background:var(--bd-slate-200); margin-top:4px;"></div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p class="bd-body" style="margin:0 0 2px;">Revit model uploaded: DD-Phase2-Structural.rvt</p>
+                <span class="bd-body-sm">3h ago</span>
+              </div>
+            </div>
+            <!-- 时间线条目 5 -->
+            <div style="display:flex; gap:12px; position:relative;">
+              <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0;">
+                <div style="width:8px; height:8px; border-radius:50%; background:var(--state-info); flex-shrink:0; margin-top:6px;"></div>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <p class="bd-body" style="margin:0 0 2px;">Design option B flagged for client review</p>
+                <span class="bd-body-sm">5h ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+</main>
+
+<!-- ========== 页面级样式 ========== -->
+<style>
+  /* ── 脉冲动画 (当前门控步骤) ── */
+  @keyframes bd-pulse-ring {
+    0%, 100% { box-shadow: 0 0 0 4px var(--bd-primary-100); }
+    50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.1); }
+  }
+
+  /* ── 状态徽章 ── */
+  .bd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--bd-radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .bd-status-badge--info { background: var(--state-info-light); color: var(--state-info); }
+  .bd-status-badge--success { background: var(--state-success-light); color: var(--state-success); }
+  .bd-status-badge--warning { background: var(--state-warning-light); color: var(--state-warning); }
+  .bd-status-badge--error { background: var(--state-error-light); color: var(--state-error); }
+
+  /* ── 优先级徽章 ── */
+  .bd-priority-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--bd-radius-full);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .bd-priority-badge--high { background: var(--state-error-light); color: var(--state-error); }
+  .bd-priority-badge--medium { background: var(--state-warning-light); color: var(--state-warning); }
+  .bd-priority-badge--low { background: var(--bd-slate-100); color: var(--bd-slate-500); }
+
+  /* ── 按钮 ── */
+  .bd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--bd-radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+    white-space: nowrap;
+  }
+  .bd-btn:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+  .bd-btn--primary {
+    background: var(--bd-primary-600);
+    color: #ffffff;
+    border-color: var(--bd-primary-600);
+  }
+  .bd-btn--primary:hover {
+    background: var(--bd-primary-700);
+    border-color: var(--bd-primary-700);
+  }
+  .bd-btn--outline {
+    background: #ffffff;
+    color: var(--bd-card-foreground);
+    border-color: var(--bd-border);
+  }
+  .bd-btn--outline:hover {
+    background: var(--bd-muted);
+    border-color: var(--bd-slate-300);
+  }
+  .bd-btn--block {
+    width: 100%;
+  }
+
+  /* ── 标签页 ── */
+  .ph-tabs__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--bd-muted-foreground);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+    white-space: nowrap;
+  }
+  .ph-tabs__tab:hover {
+    color: var(--bd-foreground);
+    background: var(--bd-slate-50);
+  }
+  .ph-tabs__tab:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: -2px;
+  }
+  .ph-tabs__tab--active {
+    color: var(--bd-primary-600);
+    border-bottom-color: var(--bd-primary-600);
+  }
+  .ph-tabs__tab--active:hover {
+    background: transparent;
+  }
+
+  /* ── KPI 卡片 ── */
+  .ph-kpi-card {
+    transition: box-shadow 120ms ease;
+  }
+  .ph-kpi-card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+</style>
+</body>
+</html>

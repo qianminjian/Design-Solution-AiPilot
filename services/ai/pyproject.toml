@@ -1,0 +1,25 @@
+[project]
+name = "ai-service"
+version = "0.1.0"
+description = "施工图全流程 AI 平台 — Python AI 服务（Python 3.12 + FastAPI）"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.32,<1",
+    "pydantic>=2.9,<3",
+    "httpx>=0.28,<1",
+    "python-multipart>=0.0.17,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.28",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

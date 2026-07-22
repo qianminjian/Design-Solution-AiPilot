@@ -1,0 +1,1484 @@
+<!-- PAGE: CDE Library -->
+<!-- Inherits: partials/project-shell.html (activeNavItem = cde-library) -->
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDE Library - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+  <!-- ========== 顶部 Header Bar ========== -->
+  <header class="shell-header">
+    <div class="shell-header__left">
+      <a class="shell-header__logo" href="/">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+          <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+          <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+          <path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>
+        </svg>
+        <span class="shell-header__logo-text">AiPilot</span>
+      </a>
+    </div>
+
+    <div class="shell-header__center">
+      <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+        <li><span class="shell-breadcrumb__current">CDE Asset Library</span></li>
+      </nav>
+    </div>
+
+    <div class="shell-header__right">
+      <button class="shell-header__icon-btn" type="button" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </button>
+      <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu">
+        <div class="shell-header__avatar">AP</div>
+        <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== 左侧 Sidebar ========== -->
+  <aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+    <nav class="shell-sidebar__nav">
+      <div class="shell-sidebar__nav-group-label">工作区</div>
+      <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        <span class="shell-sidebar__item-label">My Work</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span class="shell-sidebar__item-label">Projects</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+        <span class="shell-sidebar__item-label">Requirements</span>
+      </a>
+      <div style="height: 8px;"></div>
+      <div class="shell-sidebar__nav-group-label">设计协作</div>
+      <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="cde-library" href="/cde-library">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+        <span class="shell-sidebar__item-label">CDE Library</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="shell-sidebar__item-label">Viewer</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        <span class="shell-sidebar__item-label">Design Options</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+        <span class="shell-sidebar__item-label">Coordination</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+        <span class="shell-sidebar__item-label">Rule Check</span>
+      </a>
+      <div style="height: 8px;"></div>
+      <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+      <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+        <span class="shell-sidebar__item-label">AI Review</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/></svg>
+        <span class="shell-sidebar__item-label">Engineering</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
+        <span class="shell-sidebar__item-label">Publish</span>
+      </a>
+      <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></svg>
+        <span class="shell-sidebar__item-label">Change Impact</span>
+      </a>
+    </nav>
+    <div class="shell-sidebar__footer">
+      <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span class="shell-sidebar__toggle-label">Collapse</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== 主内容区域 ========== -->
+  <main class="shell-main" id="shell-main">
+    <div class="shell-content">
+      <!-- 页面标题 -->
+      <div class="shell-page-header">
+        <h1 class="shell-page-title">CDE Asset Library</h1>
+        <p class="shell-page-subtitle">Manage, version, and share project design files across all disciplines.</p>
+      </div>
+
+      <!-- 上传拖拽区域 -->
+      <div class="cde-upload-zone" role="button" tabindex="0" aria-label="Upload files">
+        <div class="cde-upload-zone__icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <span class="cde-upload-zone__text">Drop files here or click to browse</span>
+        <span class="cde-upload-zone__hint">Max file size: 500 MB per file</span>
+        <div class="cde-upload-badges">
+          <span class="cde-upload-badge cde-upload-badge--rvt">RVT</span>
+          <span class="cde-upload-badge cde-upload-badge--dwg">DWG</span>
+          <span class="cde-upload-badge cde-upload-badge--3dm">3DM</span>
+          <span class="cde-upload-badge cde-upload-badge--skp">SKP</span>
+          <span class="cde-upload-badge cde-upload-badge--pdf">PDF</span>
+          <span class="cde-upload-badge cde-upload-badge--rfa">RFA</span>
+        </div>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="cde-toolbar">
+        <!-- 视图切换 -->
+        <button class="cde-toolbar__btn cde-toolbar__btn--active" type="button" aria-label="Grid view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/></svg>
+          Grid
+        </button>
+        <button class="cde-toolbar__btn" type="button" aria-label="List view">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          List
+        </button>
+
+        <div style="width: 1px; height: 20px; background: var(--bd-border); margin: 0 4px;"></div>
+
+        <!-- 排序 -->
+        <select class="cde-toolbar__select" aria-label="Sort by">
+          <option>Modified (Newest)</option>
+          <option>Modified (Oldest)</option>
+          <option>Name (A-Z)</option>
+          <option>Size (Largest)</option>
+        </select>
+
+        <!-- 筛选 -->
+        <select class="cde-toolbar__select" aria-label="Filter by type">
+          <option>All Types</option>
+          <option>.rvt</option>
+          <option>.dwg</option>
+          <option>.3dm</option>
+          <option>.skp</option>
+          <option>.pdf</option>
+          <option>.rfa</option>
+        </select>
+
+        <span class="cde-toolbar__spacer"></span>
+
+        <!-- 搜索 -->
+        <div class="cde-toolbar__search">
+          <svg class="cde-toolbar__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" placeholder="Search files..." aria-label="Search files">
+        </div>
+
+        <!-- 新建文件夹 -->
+        <button class="cde-toolbar__btn" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+          New Folder
+        </button>
+      </div>
+
+      <!-- 主布局: 文件树 + 文件网格 -->
+      <div class="cde-layout">
+        <!-- 左侧文件夹树 -->
+        <div class="cde-tree">
+          <div class="cde-tree__header">Project Folders</div>
+
+          <!-- 01-Architecture -->
+          <div class="cde-tree__folder" data-folder="architecture">
+            <div class="cde-tree__folder-row cde-tree__folder-row--active">
+              <svg class="cde-tree__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <svg class="cde-tree__folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+              <span class="cde-tree__folder-label">01-Architecture</span>
+              <span class="cde-tree__folder-count">18</span>
+            </div>
+            <div class="cde-tree__children">
+              <div class="cde-tree__subfolder-row cde-tree__subfolder-row--active">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Plans</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Elevations</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Sections</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>3D-Views</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Details</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 02-Structure -->
+          <div class="cde-tree__folder cde-tree__folder--collapsed" data-folder="structure">
+            <div class="cde-tree__folder-row">
+              <svg class="cde-tree__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <svg class="cde-tree__folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+              <span class="cde-tree__folder-label">02-Structure</span>
+              <span class="cde-tree__folder-count">9</span>
+            </div>
+            <div class="cde-tree__children">
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Frame-Models</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Calculations</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 03-MEP -->
+          <div class="cde-tree__folder cde-tree__folder--collapsed" data-folder="mep">
+            <div class="cde-tree__folder-row">
+              <svg class="cde-tree__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <svg class="cde-tree__folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+              <span class="cde-tree__folder-label">03-MEP</span>
+              <span class="cde-tree__folder-count">12</span>
+            </div>
+            <div class="cde-tree__children">
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>HVAC</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Electrical</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Plumbing</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 04-Survey -->
+          <div class="cde-tree__folder cde-tree__folder--collapsed" data-folder="survey">
+            <div class="cde-tree__folder-row">
+              <svg class="cde-tree__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <svg class="cde-tree__folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+              <span class="cde-tree__folder-label">04-Survey</span>
+              <span class="cde-tree__folder-count">4</span>
+            </div>
+            <div class="cde-tree__children">
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Topography</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 05-Client-Archive -->
+          <div class="cde-tree__folder cde-tree__folder--collapsed" data-folder="client-archive">
+            <div class="cde-tree__folder-row">
+              <svg class="cde-tree__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              <svg class="cde-tree__folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+              <span class="cde-tree__folder-label">05-Client-Archive</span>
+              <span class="cde-tree__folder-count">4</span>
+            </div>
+            <div class="cde-tree__children">
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Approved</span>
+              </div>
+              <div class="cde-tree__subfolder-row">
+                <svg class="cde-tree__subfolder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                <span>Reports</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧文件网格 -->
+        <div class="cde-files">
+          <div class="cde-grid">
+
+            <!-- 文件卡片 1 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--rvt">RVT</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-101-Floor-Plan-L1.rvt</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v3.2</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>12.4 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #6366f1;">LW</div>
+                  <span class="cde-card__author-name">Li Wei</span>
+                </div>
+                <span class="cde-card__date">Jul 20, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 2 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--rvt">RVT</div>
+                <span class="cde-card__status cde-card__status--review">In Review</span>
+              </div>
+              <div class="cde-card__name">A-102-Floor-Plan-L2.rvt</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v2.8</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>11.1 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #0ea5e9;">MK</div>
+                  <span class="cde-card__author-name">M. Khan</span>
+                </div>
+                <span class="cde-card__date">Jul 19, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 3 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--dwg">DWG</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-201-South-Elevation.dwg</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v4.0</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>3.2 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #f59e0b;">YT</div>
+                  <span class="cde-card__author-name">Y. Tanaka</span>
+                </div>
+                <span class="cde-card__date">Jul 18, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 4 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--pdf">PDF</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-301-Bldg-Section-AA.pdf</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v5.1</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>1.8 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #6366f1;">LW</div>
+                  <span class="cde-card__author-name">Li Wei</span>
+                </div>
+                <span class="cde-card__date">Jul 17, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 5 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--3dm">3DM</div>
+                <span class="cde-card__status cde-card__status--draft">Draft</span>
+              </div>
+              <div class="cde-card__name">A-401-Massing-Study-v2.3dm</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v2.1</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>45.6 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #10b981;">CR</div>
+                  <span class="cde-card__author-name">C. Rizzo</span>
+                </div>
+                <span class="cde-card__date">Jul 16, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 6 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--rvt">RVT</div>
+                <span class="cde-card__status cde-card__status--review">In Review</span>
+              </div>
+              <div class="cde-card__name">A-103-Floor-Plan-L3.rvt</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v1.5</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>9.7 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #0ea5e9;">MK</div>
+                  <span class="cde-card__author-name">M. Khan</span>
+                </div>
+                <span class="cde-card__date">Jul 15, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 7 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--dwg">DWG</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-202-North-Elevation.dwg</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>Version</span>
+                  <span class="cde-card__version">v3.7</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>Size</span>
+                  <span>2.9 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #f59e0b;">YT</div>
+                  <span class="cde-card__author-name">Y. Tanaka</span>
+                </div>
+                <span class="cde-card__date">Jul 14, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 8 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--pdf">PDF</div>
+                <span class="cde-card__status cde-card__status--draft">Draft</span>
+              </div>
+              <div class="cde-card__name">A-302-Stair-Detail-SD1.pdf</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>v1.0</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>4.5 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #8b5cf6;">SL</div>
+                  <span class="cde-card__author-name">S. Lee</span>
+                </div>
+                <span class="cde-card__date">Jul 13, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 9 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--rvt">RVT</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-104-Roof-Plan.rvt</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>v2.4</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>8.3 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #6366f1;">LW</div>
+                  <span class="cde-card__author-name">Li Wei</span>
+                </div>
+                <span class="cde-card__date">Jul 12, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 10 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--3dm">3DM</div>
+                <span class="cde-card__status cde-card__status--review">In Review</span>
+              </div>
+              <div class="cde-card__name">A-402-Facade-Panel-Proto.3dm</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>v1.3</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>67.2 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #10b981;">CR</div>
+                  <span class="cde-card__author-name">C. Rizzo</span>
+                </div>
+                <span class="cde-card__date">Jul 11, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 11 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--dwg">DWG</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-203-West-Elevation.dwg</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>v3.2</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>2.7 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #f59e0b;">YT</div>
+                  <span class="cde-card__author-name">Y. Tanaka</span>
+                </div>
+                <span class="cde-card__date">Jul 10, 2026</span>
+              </div>
+            </div>
+
+            <!-- 文件卡片 12 -->
+            <div class="cde-card">
+              <div class="cde-card__top">
+                <div class="cde-card__type-icon cde-card__type-icon--pdf">PDF</div>
+                <span class="cde-card__status cde-card__status--approved">Approved</span>
+              </div>
+              <div class="cde-card__name">A-303-Door-Window-Schedule.pdf</div>
+              <div class="cde-card__meta">
+                <div class="cde-card__meta-row">
+                  <span>v4.5</span>
+                </div>
+                <div class="cde-card__meta-row">
+                  <span>6.1 MB</span>
+                </div>
+              </div>
+              <div class="cde-card__bottom">
+                <div class="cde-card__author">
+                  <div class="cde-card__avatar" style="background-color: #8b5cf6;">SL</div>
+                  <span class="cde-card__author-name">S. Lee</span>
+                </div>
+                <span class="cde-card__date">Jul 9, 2026</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 底部状态栏 -->
+  <div class="cde-status-bar" id="cde-status-bar">
+    <span class="cde-status-bar__dot"></span>
+    <span>47 files</span>
+    <span class="cde-status-bar__divider"></span>
+    <span>2.3 GB used</span>
+    <span class="cde-status-bar__divider"></span>
+    <span>Last sync: 5 min ago</span>
+  </div>
+
+  <!-- Shell 布局变量 -->
+  <style>
+    :root {
+      --shell-header-height: 56px;
+      --shell-sidebar-width: 240px;
+      --shell-sidebar-collapsed-width: 56px;
+      --shell-content-padding: 24px;
+    }
+
+    /* ── 顶部 Header Bar ── */
+    .shell-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--shell-header-height);
+      padding: 0 16px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--bd-border);
+      box-shadow: var(--shadow-sm, 0 1px 2px 0 rgb(0 0 0 / 0.05));
+    }
+
+    .shell-header__left { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+    .shell-header__logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--bd-foreground); }
+    .shell-header__logo svg { flex-shrink: 0; }
+    .shell-header__logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+    .shell-header__center { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .shell-header__right { display: flex; align-items: center; gap: 4px; min-width: 200px; justify-content: flex-end; }
+
+    .shell-header__icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: var(--bd-radius-sm, 6px);
+      border: none; background: transparent; color: var(--bd-muted-foreground);
+      cursor: pointer; transition: background-color 120ms ease, color 120ms ease;
+    }
+    .shell-header__icon-btn:hover { background-color: var(--bd-muted, #f8fafc); color: var(--bd-foreground); }
+
+    .shell-header__user {
+      display: flex; align-items: center; gap: 6px; padding: 4px 8px 4px 4px;
+      border-radius: var(--bd-radius-full, 9999px); cursor: pointer;
+      transition: background-color 120ms ease;
+    }
+    .shell-header__user:hover { background-color: var(--bd-muted, #f8fafc); }
+    .shell-header__avatar {
+      width: 32px; height: 32px; border-radius: var(--bd-radius-full, 9999px);
+      background: var(--bd-primary-100, #e0e7ff); color: var(--bd-primary-600, #4f46e5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600;
+    }
+    .shell-header__user-chevron { color: var(--bd-muted-foreground); }
+
+    /* ── 左侧 Sidebar ── */
+    .shell-sidebar {
+      position: fixed; top: var(--shell-header-height); left: 0; bottom: 0;
+      width: var(--shell-sidebar-width); background: #ffffff;
+      border-right: 1px solid var(--bd-border);
+      display: flex; flex-direction: column; z-index: 90;
+      transition: width 200ms ease; overflow: hidden;
+    }
+    .shell-sidebar--collapsed { width: var(--shell-sidebar-collapsed-width); }
+
+    .shell-sidebar__nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 8px 0; }
+    .shell-sidebar__nav::-webkit-scrollbar { width: 4px; }
+    .shell-sidebar__nav::-webkit-scrollbar-thumb { background: var(--bd-slate-200, #e2e8f0); border-radius: var(--bd-radius-full, 9999px); }
+
+    .shell-sidebar__nav-group-label {
+      padding: 12px 12px 6px; font-size: 11px; font-weight: 500;
+      color: var(--bd-muted-foreground); text-transform: uppercase;
+      letter-spacing: 0.05em; white-space: nowrap; overflow: hidden;
+    }
+
+    .shell-sidebar__item {
+      display: flex; align-items: center; height: 40px; padding: 0 12px; gap: 10px;
+      color: var(--bd-card-foreground); text-decoration: none; cursor: pointer;
+      border-left: 3px solid transparent; white-space: nowrap; overflow: hidden;
+      transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+    }
+    .shell-sidebar__item:hover { background-color: var(--bd-muted, #f8fafc); }
+    .shell-sidebar__item--active {
+      background-color: var(--bd-primary-50, #eff6ff); color: var(--bd-primary-600, #4f46e5);
+      border-left-color: var(--bd-primary-600, #4f46e5); font-weight: 500;
+    }
+    .shell-sidebar__item svg { flex-shrink: 0; width: 20px; height: 20px; }
+    .shell-sidebar__item-label { font-size: 14px; line-height: 1; overflow: hidden; text-overflow: ellipsis; }
+
+    .shell-sidebar--collapsed .shell-sidebar__item-label,
+    .shell-sidebar--collapsed .shell-sidebar__nav-group-label { opacity: 0; width: 0; overflow: hidden; }
+    .shell-sidebar--collapsed .shell-sidebar__item { justify-content: center; padding: 0; }
+
+    .shell-sidebar__footer { border-top: 1px solid var(--bd-border); padding: 8px; }
+    .shell-sidebar__toggle {
+      display: flex; align-items: center; justify-content: center; width: 100%; height: 36px;
+      border-radius: var(--bd-radius-sm, 6px); border: 1px solid var(--bd-border);
+      background: #ffffff; color: var(--bd-muted-foreground); cursor: pointer;
+      gap: 8px; font-size: 12px; font-weight: 500;
+      transition: background-color 120ms ease, color 120ms ease;
+    }
+    .shell-sidebar__toggle:hover { background-color: var(--bd-muted, #f8fafc); color: var(--bd-foreground); }
+    .shell-sidebar__toggle svg { flex-shrink: 0; width: 18px; height: 18px; transition: transform 200ms ease; }
+    .shell-sidebar--collapsed .shell-sidebar__toggle-label { display: none; }
+    .shell-sidebar--collapsed .shell-sidebar__toggle svg { transform: rotate(180deg); }
+
+    /* ── 主内容区域 ── */
+    .shell-main {
+      margin-left: var(--shell-sidebar-width); padding-top: var(--shell-header-height);
+      min-height: 100vh; transition: margin-left 200ms ease;
+      padding-bottom: 48px;
+    }
+    .shell-main--sidebar-collapsed { margin-left: var(--shell-sidebar-collapsed-width); }
+    .shell-content { padding: var(--shell-content-padding); min-height: calc(100vh - var(--shell-header-height)); }
+
+    /* ── 页面标题区域 ── */
+    .shell-page-header { margin-bottom: 24px; }
+    .shell-page-title { font-size: 24px; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em; color: var(--bd-foreground); margin: 0 0 4px; }
+    .shell-page-subtitle { font-size: 14px; font-weight: 400; line-height: 1.6; color: var(--bd-muted-foreground); margin: 0; }
+
+    /* ── Breadcrumb ── */
+    .shell-breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--bd-muted-foreground); list-style: none; margin: 0; padding: 0; }
+    .shell-breadcrumb li { display: flex; align-items: center; gap: 6px; }
+    .shell-breadcrumb a { color: var(--bd-muted-foreground); text-decoration: none; transition: color 120ms ease; }
+    .shell-breadcrumb a:hover { color: var(--bd-primary-600, #4f46e5); }
+    .shell-breadcrumb__sep { color: var(--bd-slate-300, #cbd5e1); flex-shrink: 0; }
+    .shell-breadcrumb__current { color: var(--bd-foreground); font-weight: 500; }
+  </style>
+
+    <style>
+    /* ── CDE Library 页面样式 ── */
+
+    /* 上传拖拽区域 */
+    .cde-upload-zone {
+      border: 2px dashed var(--bd-border);
+      border-radius: var(--bd-radius-lg, 12px);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--bd-muted, #f8fafc);
+      cursor: pointer;
+      transition: border-color 150ms ease, background-color 150ms ease;
+      margin-bottom: 16px;
+    }
+
+    .cde-upload-zone:hover {
+      border-color: var(--bd-primary-400);
+      background: var(--bd-primary-50, #eff6ff);
+    }
+
+    .cde-upload-zone__icon {
+      color: var(--bd-primary-400);
+      margin-bottom: 4px;
+    }
+
+    .cde-upload-zone__text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--bd-foreground);
+    }
+
+    .cde-upload-zone__hint {
+      font-size: 12px;
+      color: var(--bd-muted-foreground);
+    }
+
+    .cde-upload-badges {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .cde-upload-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--bd-radius-sm, 6px);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      border: 1px solid var(--bd-border);
+      background: #ffffff;
+      color: var(--bd-card-foreground);
+    }
+
+    .cde-upload-badge--rvt { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .cde-upload-badge--dwg { border-color: #f59e0b; color: #92400e; background: #fffbeb; }
+    .cde-upload-badge--3dm { border-color: #10b981; color: #065f46; background: #ecfdf5; }
+    .cde-upload-badge--skp { border-color: #0ea5e9; color: #0c4a6e; background: #f0f9ff; }
+    .cde-upload-badge--pdf { border-color: #ef4444; color: #991b1b; background: #fef2f2; }
+    .cde-upload-badge--rfa { border-color: #8b5cf6; color: #5b21b6; background: #f5f3ff; }
+
+    /* 工具栏 */
+    .cde-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .cde-toolbar__spacer {
+      flex: 1;
+    }
+
+    .cde-toolbar__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: var(--bd-radius-sm, 6px);
+      border: 1px solid var(--bd-border);
+      background: #ffffff;
+      color: var(--bd-card-foreground);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease;
+      white-space: nowrap;
+    }
+
+    .cde-toolbar__btn:hover {
+      background-color: var(--bd-muted, #f8fafc);
+      border-color: var(--bd-slate-300);
+    }
+
+    .cde-toolbar__btn--active {
+      background-color: var(--bd-primary-50, #eff6ff);
+      border-color: var(--bd-primary-300);
+      color: var(--bd-primary-600);
+    }
+
+    .cde-toolbar__btn--primary {
+      background-color: var(--bd-primary-600);
+      border-color: var(--bd-primary-600);
+      color: #ffffff;
+    }
+
+    .cde-toolbar__btn--primary:hover {
+      background-color: var(--bd-primary-700);
+      border-color: var(--bd-primary-700);
+    }
+
+    .cde-toolbar__select {
+      height: 34px;
+      padding: 0 10px;
+      border-radius: var(--bd-radius-sm, 6px);
+      border: 1px solid var(--bd-border);
+      background: #ffffff;
+      color: var(--bd-card-foreground);
+      font-size: 13px;
+      cursor: pointer;
+      appearance: auto;
+    }
+
+    .cde-toolbar__search {
+      position: relative;
+    }
+
+    .cde-toolbar__search input {
+      height: 34px;
+      padding: 0 12px 0 34px;
+      border-radius: var(--bd-radius-sm, 6px);
+      border: 1px solid var(--bd-border);
+      background: #ffffff;
+      font-size: 13px;
+      color: var(--bd-foreground);
+      width: 220px;
+      outline: none;
+      transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .cde-toolbar__search input:focus {
+      border-color: var(--bd-primary-400);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    }
+
+    .cde-toolbar__search input::placeholder {
+      color: var(--bd-muted-foreground);
+    }
+
+    .cde-toolbar__search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--bd-muted-foreground);
+      pointer-events: none;
+    }
+
+    /* 主布局: 文件树 + 文件网格 */
+    .cde-layout {
+      display: flex;
+      gap: 0;
+      min-height: calc(100vh - var(--shell-header-height) - 48px - var(--shell-content-padding) * 2 - 80px - 56px);
+    }
+
+    /* 左侧文件夹树 */
+    .cde-tree {
+      width: 250px;
+      min-width: 250px;
+      border-right: 1px solid var(--bd-border);
+      padding: 12px 0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .cde-tree::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .cde-tree::-webkit-scrollbar-thumb {
+      background: var(--bd-slate-200);
+      border-radius: var(--bd-radius-full);
+    }
+
+    .cde-tree__header {
+      padding: 0 12px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--bd-muted-foreground);
+    }
+
+    .cde-tree__folder {
+      user-select: none;
+    }
+
+    .cde-tree__folder-row {
+      display: flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 12px;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--bd-card-foreground);
+      transition: background-color 100ms ease;
+      border-left: 3px solid transparent;
+    }
+
+    .cde-tree__folder-row:hover {
+      background-color: var(--bd-muted, #f8fafc);
+    }
+
+    .cde-tree__folder-row--active {
+      background-color: var(--bd-primary-50, #eff6ff);
+      color: var(--bd-primary-600);
+      border-left-color: var(--bd-primary-600);
+      font-weight: 500;
+    }
+
+    .cde-tree__chevron {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--bd-muted-foreground);
+      transition: transform 150ms ease;
+    }
+
+    .cde-tree__folder--collapsed .cde-tree__chevron {
+      transform: rotate(-90deg);
+    }
+
+    .cde-tree__folder-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      color: var(--bd-amber-500);
+    }
+
+    .cde-tree__folder-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cde-tree__folder-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--bd-muted-foreground);
+      flex-shrink: 0;
+    }
+
+    .cde-tree__children {
+      overflow: hidden;
+    }
+
+    .cde-tree__folder--collapsed .cde-tree__children {
+      display: none;
+    }
+
+    .cde-tree__subfolder-row {
+      display: flex;
+      align-items: center;
+      height: 30px;
+      padding: 0 12px 0 36px;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--bd-card-foreground);
+      transition: background-color 100ms ease;
+    }
+
+    .cde-tree__subfolder-row:hover {
+      background-color: var(--bd-muted, #f8fafc);
+    }
+
+    .cde-tree__subfolder-row--active {
+      background-color: var(--bd-primary-50, #eff6ff);
+      color: var(--bd-primary-600);
+      font-weight: 500;
+    }
+
+    .cde-tree__subfolder-icon {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      color: var(--bd-amber-400);
+    }
+
+    /* 右侧文件网格区域 */
+    .cde-files {
+      flex: 1;
+      padding: 0 0 0 16px;
+      overflow-y: auto;
+    }
+
+    .cde-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .cde-card {
+      border: 1px solid var(--bd-border);
+      border-radius: var(--bd-radius-lg, 12px);
+      padding: 16px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cde-card:hover {
+      border-color: var(--bd-primary-400);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .cde-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .cde-card__type-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--bd-radius-sm, 6px);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .cde-card__type-icon--rvt { background: #eef2ff; color: #6366f1; }
+    .cde-card__type-icon--dwg { background: #fffbeb; color: #d97706; }
+    .cde-card__type-icon--pdf { background: #fef2f2; color: #dc2626; }
+    .cde-card__type-icon--3dm { background: #ecfdf5; color: #059669; }
+
+    .cde-card__status {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: var(--bd-radius-full, 9999px);
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .cde-card__status--approved { background: #dcfce7; color: #166534; }
+    .cde-card__status--review { background: #fef3c7; color: #92400e; }
+    .cde-card__status--draft { background: var(--bd-slate-100, #f1f5f9); color: var(--bd-slate-600, #475569); }
+
+    .cde-card__name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--bd-foreground);
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cde-card__meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--bd-muted-foreground);
+    }
+
+    .cde-card__meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cde-card__version {
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--bd-primary-600);
+    }
+
+    .cde-card__bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid var(--bd-slate-100, #f1f5f9);
+    }
+
+    .cde-card__author {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cde-card__avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--bd-radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      color: #ffffff;
+      flex-shrink: 0;
+    }
+
+    .cde-card__author-name {
+      font-size: 12px;
+      color: var(--bd-muted-foreground);
+    }
+
+    .cde-card__date {
+      font-size: 11px;
+      color: var(--bd-muted-foreground);
+    }
+
+    /* 底部状态栏 */
+    .cde-status-bar {
+      position: fixed;
+      bottom: 0;
+      left: var(--shell-sidebar-width);
+      right: 0;
+      height: 32px;
+      background: #ffffff;
+      border-top: 1px solid var(--bd-border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--bd-muted-foreground);
+      z-index: 80;
+      transition: left 200ms ease;
+    }
+
+    .shell-main--sidebar-collapsed ~ .cde-status-bar,
+    .cde-status-bar--sidebar-collapsed {
+      left: var(--shell-sidebar-collapsed-width);
+    }
+
+    .cde-status-bar__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--bd-radius-full);
+      background: #22c55e;
+      flex-shrink: 0;
+    }
+
+    .cde-status-bar__divider {
+      width: 1px;
+      height: 14px;
+      background: var(--bd-border);
+    }
+  </style>
+</body>
+</html>

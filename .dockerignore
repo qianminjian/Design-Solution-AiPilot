@@ -1,0 +1,52 @@
+node_modules
+.git
+.gitignore
+.traegit
+.trae-html-share-packages
+.trae/.local
+.trae/cache
+.trae/logs
+
+# TypeScript / Node
+dist
+.next
+*.tsbuildinfo
+.turbo
+
+# Java
+target
+*.class
+*.jar
+*.war
+.mvn
+mvnw
+mvnw.cmd
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+*.egg-info
+
+# Docker
+docker-compose*.yml
+Dockerfile
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+tests
+coverage
+.nyc_output
+
+# Docs
+design/
+prismscan-extraction-report/

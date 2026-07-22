@@ -1,0 +1,217 @@
+{
+  "data": [
+    {
+      "id": "page-login",
+      "title": "Login",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/login.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-my-work",
+      "title": "My Work",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 620,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/my-work.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-project-home",
+      "title": "Project Home",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 1240,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/project-home.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-requirements",
+      "title": "Requirements",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 1860,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/requirements.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-cde-library",
+      "title": "CDE Asset Library",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 2480,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/cde-library.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-viewer",
+      "title": "Unified Viewer",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 3100,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/viewer.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-design-options",
+      "title": "Design Options",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 3720,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/design-options.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-coordination",
+      "title": "Coordination",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 4340,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/coordination.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-rule-check",
+      "title": "Rule Check",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 4960,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/rule-check.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-ai-review",
+      "title": "AI Review Center",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 5580,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/ai-review.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-engineering",
+      "title": "Engineering Analysis",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 6200,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/engineering.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-publish",
+      "title": "Publish Wizard",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 6820,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/publish.html",
+        "interactions": []
+      }
+    },
+    {
+      "id": "page-change-impact",
+      "title": "Change Impact",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1721625600000,
+      "canvasData": {
+        "x": 7440,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/change-impact.html",
+        "interactions": []
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "desktop",
+    "projectName": "Construction Drawings AI Platform - UI Design System"
+  }
+}

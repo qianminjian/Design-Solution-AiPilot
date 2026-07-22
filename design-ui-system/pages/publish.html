@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en" class="light" data-bd-preflight="passed">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publish - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body>
+
+<!-- SHARED SHELL: project-shell -->
+<!-- AiPilot 平台公共 Shell 片段 — 被除登录页外的所有页面 include -->
+<!-- 依赖: colors_and_type.css 中的 --bd-* CSS 自定义属性 -->
+<!-- Slot 标记: 页面级子 Agent 通过替换 SLOT 注入页面内容 -->
+<style>
+  /* ── Shell 布局变量 ── */
+  :root {
+    --shell-header-height: 56px;
+    --shell-sidebar-width: 240px;
+    --shell-sidebar-collapsed-width: 56px;
+    --shell-content-padding: 24px;
+  }
+
+  /* ── 顶部 Header Bar ── */
+  .shell-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--shell-header-height);
+    padding: 0 16px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--bd-border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shell-header__left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 200px;
+  }
+
+  .shell-header__logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--bd-foreground);
+  }
+
+  .shell-header__logo svg {
+    flex-shrink: 0;
+  }
+
+  .shell-header__logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .shell-header__center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shell-header__right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 200px;
+    justify-content: flex-end;
+  }
+
+  .shell-header__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--bd-radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .shell-header__icon-btn:hover {
+    background-color: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+
+  .shell-header__icon-btn:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-header__user {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 4px;
+    border-radius: var(--bd-radius-full);
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .shell-header__user:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .shell-header__user:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-header__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--bd-radius-full);
+    background: var(--bd-primary-100);
+    color: var(--bd-primary-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .shell-header__user-chevron {
+    color: var(--bd-muted-foreground);
+  }
+
+  /* ── 左侧 Sidebar ── */
+  .shell-sidebar {
+    position: fixed;
+    top: var(--shell-header-height);
+    left: 0;
+    bottom: 0;
+    width: var(--shell-sidebar-width);
+    background: #ffffff;
+    border-right: 1px solid var(--bd-border);
+    display: flex;
+    flex-direction: column;
+    z-index: 90;
+    transition: width 200ms ease;
+    overflow: hidden;
+  }
+
+  .shell-sidebar--collapsed {
+    width: var(--shell-sidebar-collapsed-width);
+  }
+
+  .shell-sidebar__nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+  }
+
+  .shell-sidebar__nav::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .shell-sidebar__nav::-webkit-scrollbar-thumb {
+    background: var(--bd-slate-200);
+    border-radius: var(--bd-radius-full);
+  }
+
+  .shell-sidebar__nav-group-label {
+    padding: 12px 12px 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--bd-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .shell-sidebar__item {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 12px;
+    gap: 10px;
+    color: var(--bd-card-foreground);
+    text-decoration: none;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  .shell-sidebar__item:hover {
+    background-color: var(--bd-muted);
+  }
+
+  .shell-sidebar__item:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: -2px;
+  }
+
+  /* 活跃导航项状态 */
+  .shell-sidebar__item--active {
+    background-color: var(--bd-primary-50);
+    color: var(--bd-primary-600);
+    border-left-color: var(--bd-primary-600);
+    font-weight: 500;
+  }
+
+  .shell-sidebar__item svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+
+  .shell-sidebar__item-label {
+    font-size: 14px;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 折叠态隐藏文本 */
+  .shell-sidebar--collapsed .shell-sidebar__item-label,
+  .shell-sidebar--collapsed .shell-sidebar__nav-group-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  /* ── 侧栏底部切换按钮 ── */
+  .shell-sidebar__footer {
+    border-top: 1px solid var(--bd-border);
+    padding: 8px;
+  }
+
+  .shell-sidebar__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    border-radius: var(--bd-radius-sm);
+    border: 1px solid var(--bd-border);
+    background: #ffffff;
+    color: var(--bd-muted-foreground);
+    cursor: pointer;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 120ms ease, color 120ms ease;
+  }
+
+  .shell-sidebar__toggle:hover {
+    background-color: var(--bd-muted);
+    color: var(--bd-foreground);
+  }
+
+  .shell-sidebar__toggle:focus-visible {
+    outline: 2px solid var(--bd-ring);
+    outline-offset: 2px;
+  }
+
+  .shell-sidebar__toggle svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    transition: transform 200ms ease;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__toggle-label {
+    display: none;
+  }
+
+  .shell-sidebar--collapsed .shell-sidebar__toggle svg {
+    transform: rotate(180deg);
+  }
+
+  /* ── 主内容区域 ── */
+  .shell-main {
+    margin-left: var(--shell-sidebar-width);
+    padding-top: var(--shell-header-height);
+    min-height: 100vh;
+    transition: margin-left 200ms ease;
+  }
+
+  .shell-main--sidebar-collapsed {
+    margin-left: var(--shell-sidebar-collapsed-width);
+  }
+
+  .shell-content {
+    padding: var(--shell-content-padding);
+    min-height: calc(100vh - var(--shell-header-height));
+  }
+
+  /* ── 页面标题区域 ── */
+  .shell-page-header {
+    margin-bottom: 24px;
+  }
+
+  .shell-page-title {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+    color: var(--bd-foreground);
+    margin: 0 0 4px;
+  }
+
+  .shell-page-subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--bd-muted-foreground);
+    margin: 0;
+  }
+
+  /* ── Breadcrumb ── */
+  .shell-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--bd-muted-foreground);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .shell-breadcrumb li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .shell-breadcrumb a {
+    color: var(--bd-muted-foreground);
+    text-decoration: none;
+    transition: color 120ms ease;
+  }
+
+  .shell-breadcrumb a:hover {
+    color: var(--bd-primary-600);
+  }
+
+  .shell-breadcrumb__sep {
+    color: var(--bd-slate-300);
+    flex-shrink: 0;
+  }
+
+  .shell-breadcrumb__current {
+    color: var(--bd-foreground);
+    font-weight: 500;
+  }
+</style>
+
+<!-- ========== 顶部 Header Bar ========== -->
+<header class="shell-header">
+  <!-- 左侧: Logo -->
+  <div class="shell-header__left">
+    <a class="shell-header__logo" href="/">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+        <path d="M10 6h4"/>
+        <path d="M10 10h4"/>
+        <path d="M10 14h4"/>
+        <path d="M10 18h4"/>
+      </svg>
+      <span class="shell-header__logo-text">AiPilot</span>
+    </a>
+  </div>
+
+  <!-- 中间: 面包屑 — activeNavItem=publish -->
+  <div class="shell-header__center">
+    <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+      <li><a href="/">Home</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><a href="/projects">Projects</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><span class="shell-breadcrumb__current">Submission &amp; Publish</span></li>
+    </nav>
+  </div>
+
+  <!-- 右侧: 操作按钮 -->
+  <div class="shell-header__right">
+    <button class="shell-header__icon-btn" type="button" aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+    </button>
+
+    <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      </svg>
+    </button>
+
+    <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+      <div class="shell-header__avatar">AP</div>
+      <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 左侧 Sidebar ========== -->
+<aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+  <nav class="shell-sidebar__nav">
+    <!-- 工作区 -->
+    <div class="shell-sidebar__nav-group-label">工作区</div>
+
+    <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      <span class="shell-sidebar__item-label">My Work</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Projects</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Requirements</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">设计协作</div>
+
+    <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>
+      </svg>
+      <span class="shell-sidebar__item-label">CDE Library</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="viewer" href="/viewer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Viewer</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Design Options</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Coordination</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Rule Check</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+
+    <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+      </svg>
+      <span class="shell-sidebar__item-label">AI Review</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Engineering</span>
+    </a>
+
+    <!-- Publish — ACTIVE -->
+    <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="publish" href="/publish">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Publish</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Change Impact</span>
+    </a>
+  </nav>
+
+  <div class="shell-sidebar__footer">
+    <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      <span class="shell-sidebar__toggle-label">Collapse</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ========== 主内容区域 ========== -->
+<main class="shell-main" id="shell-main">
+  <div class="shell-content">
+
+    <!-- SLOT: pageTitle -->
+    <div class="shell-page-header">
+      <h1 class="shell-page-title">Submission &amp; Publish</h1>
+      <p class="shell-page-subtitle">Prepare, review, and submit your drawing package for approval.</p>
+    </div>
+    <!-- /SLOT: pageTitle -->
+
+    <!-- ======================================== -->
+    <!-- PAGE BODY: Publish Wizard               -->
+    <!-- ======================================== -->
+    <style>
+      /* ── Publish Wizard 布局 ── */
+      .pub-layout {
+        display: flex;
+        gap: 24px;
+        padding-bottom: 80px; /* 为底部操作栏留出空间 */
+      }
+
+      .pub-main {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .pub-sidebar {
+        width: 300px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* ── Stepper ── */
+      .pub-stepper {
+        display: flex;
+        align-items: flex-start;
+        gap: 0;
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        padding: 24px 32px;
+        margin-bottom: 24px;
+      }
+
+      .pub-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        position: relative;
+        flex: 1;
+      }
+
+      /* 连接线 */
+      .pub-step + .pub-step::before {
+        content: '';
+        position: absolute;
+        top: 17px;
+        right: 50%;
+        left: -50%;
+        height: 2px;
+        background: var(--bd-slate-200);
+        z-index: 0;
+      }
+
+      /* 已完成的连接线 */
+      .pub-step--completed + .pub-step::before {
+        background: var(--bd-primary-500);
+      }
+
+      /* 激活步骤的连接线（从已完成到当前） */
+      .pub-step--completed + .pub-step--active::before {
+        background: var(--bd-primary-500);
+      }
+
+      .pub-step__circle {
+        width: 34px;
+        height: 34px;
+        border-radius: var(--bd-radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+      }
+
+      /* 待处理状态 */
+      .pub-step--pending .pub-step__circle {
+        background: var(--bd-card);
+        border: 2px solid var(--bd-slate-300);
+        color: var(--bd-slate-400);
+      }
+
+      /* 激活状态 */
+      .pub-step--active .pub-step__circle {
+        background: var(--bd-primary-600);
+        border: 2px solid var(--bd-primary-600);
+        color: #ffffff;
+      }
+
+      /* 已完成状态 */
+      .pub-step--completed .pub-step__circle {
+        background: var(--bd-primary-50);
+        border: 2px solid var(--bd-primary-500);
+        color: var(--bd-primary-600);
+      }
+
+      .pub-step__info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .pub-step__label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--bd-slate-400);
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pub-step--active .pub-step__label {
+        color: var(--bd-foreground);
+        font-weight: 600;
+      }
+
+      .pub-step--completed .pub-step__label {
+        color: var(--bd-card-foreground);
+      }
+
+      .pub-step__desc {
+        font-size: 12px;
+        color: var(--bd-slate-400);
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pub-step--active .pub-step__desc {
+        color: var(--bd-muted-foreground);
+      }
+
+      /* ── 文件类型过滤器标签 ── */
+      .pub-filter-tabs {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 16px;
+      }
+
+      .pub-filter-tab {
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: var(--bd-radius-full);
+        border: 1px solid var(--bd-border);
+        background: var(--bd-card);
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: all 120ms ease;
+        white-space: nowrap;
+      }
+
+      .pub-filter-tab:hover {
+        border-color: var(--bd-slate-300);
+        color: var(--bd-card-foreground);
+      }
+
+      .pub-filter-tab--active {
+        background: var(--bd-primary-600);
+        border-color: var(--bd-primary-600);
+        color: #ffffff;
+      }
+
+      .pub-filter-tab--active:hover {
+        background: var(--bd-primary-700);
+        border-color: var(--bd-primary-700);
+        color: #ffffff;
+      }
+
+      /* ── 表格工具栏 ── */
+      .pub-table-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .pub-table-toolbar__left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .pub-select-all-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: var(--bd-radius-sm);
+        border: 1px solid var(--bd-border);
+        background: var(--bd-card);
+        color: var(--bd-card-foreground);
+        cursor: pointer;
+        transition: all 120ms ease;
+      }
+
+      .pub-select-all-btn:hover {
+        border-color: var(--bd-primary-300);
+        background: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+      }
+
+      .pub-select-count {
+        font-size: 13px;
+        color: var(--bd-muted-foreground);
+        font-weight: 500;
+      }
+
+      .pub-select-count strong {
+        color: var(--bd-primary-600);
+      }
+
+      /* ── 数据表格 ── */
+      .pub-table-wrap {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        overflow: hidden;
+      }
+
+      .pub-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      .pub-table thead {
+        background: var(--bd-slate-50);
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .pub-table th {
+        padding: 10px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--bd-muted-foreground);
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+
+      .pub-table td {
+        padding: 12px 16px;
+        font-size: 14px;
+        color: var(--bd-card-foreground);
+        border-bottom: 1px solid var(--bd-border);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .pub-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      .pub-table tbody tr {
+        transition: background-color 100ms ease;
+      }
+
+      .pub-table tbody tr:hover {
+        background: var(--bd-slate-50);
+      }
+
+      /* 禁用行（待处理审批） */
+      .pub-table tbody tr.pub-row--disabled {
+        opacity: 0.55;
+      }
+
+      .pub-table tbody tr.pub-row--disabled:hover {
+        background: var(--bd-slate-50);
+      }
+
+      /* 列宽分配 */
+      .pub-table .col-checkbox { width: 44px; }
+      .pub-table .col-name { width: auto; }
+      .pub-table .col-type { width: 80px; }
+      .pub-table .col-discipline { width: 90px; }
+      .pub-table .col-version { width: 80px; }
+      .pub-table .col-status { width: 100px; }
+      .pub-table .col-size { width: 80px; }
+
+      /* 自定义复选框 */
+      .pub-checkbox {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 2px solid var(--bd-slate-300);
+        background: var(--bd-card);
+        cursor: pointer;
+        transition: all 120ms ease;
+        flex-shrink: 0;
+      }
+
+      .pub-checkbox:hover {
+        border-color: var(--bd-primary-400);
+      }
+
+      .pub-checkbox--checked {
+        background: var(--bd-primary-600);
+        border-color: var(--bd-primary-600);
+      }
+
+      .pub-checkbox--checked::after {
+        content: '';
+        display: block;
+        width: 5px;
+        height: 9px;
+        border: solid #ffffff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        margin-top: -2px;
+      }
+
+      .pub-checkbox--disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .pub-checkbox--disabled:hover {
+        border-color: var(--bd-slate-300);
+      }
+
+      /* 文件名样式 */
+      .pub-file-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pub-file-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--bd-radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .pub-file-icon--rvt {
+        background: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+      }
+
+      .pub-file-icon--dwg {
+        background: #fef3c7;
+        color: #d97706;
+      }
+
+      .pub-file-icon--pdf {
+        background: var(--state-error-light);
+        color: var(--state-error);
+      }
+
+      .pub-file-name-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* 类型标签 */
+      .pub-type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: var(--bd-radius-sm);
+        letter-spacing: 0.02em;
+      }
+
+      .pub-type-badge--rvt {
+        background: var(--bd-primary-50);
+        color: var(--bd-primary-700);
+      }
+
+      .pub-type-badge--dwg {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .pub-type-badge--pdf {
+        background: var(--state-error-light);
+        color: #991b1b;
+      }
+
+      /* 状态标签 */
+      .pub-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: var(--bd-radius-full);
+      }
+
+      .pub-status-badge--approved {
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .pub-status-badge--pending {
+        background: var(--state-warning-light);
+        color: var(--state-warning);
+      }
+
+      .pub-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: var(--bd-radius-full);
+      }
+
+      .pub-status-badge--approved .pub-status-dot {
+        background: var(--state-success);
+      }
+
+      .pub-status-badge--pending .pub-status-dot {
+        background: var(--state-warning);
+      }
+
+      /* ── 右侧侧边栏卡片 ── */
+      .pub-summary-card {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        border-radius: var(--bd-radius-md);
+        padding: 20px;
+      }
+
+      .pub-summary-card__title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        margin: 0 0 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .pub-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+      }
+
+      .pub-summary-row__label {
+        font-size: 13px;
+        color: var(--bd-muted-foreground);
+      }
+
+      .pub-summary-row__value {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--bd-card-foreground);
+      }
+
+      .pub-summary-row__value--highlight {
+        color: var(--bd-primary-600);
+      }
+
+      /* 清单进度条 */
+      .pub-checklist-item {
+        margin-bottom: 14px;
+      }
+
+      .pub-checklist-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .pub-checklist-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 6px;
+      }
+
+      .pub-checklist-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--bd-card-foreground);
+      }
+
+      .pub-checklist-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--bd-muted-foreground);
+      }
+
+      .pub-checklist-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--bd-slate-100);
+        border-radius: var(--bd-radius-full);
+        overflow: hidden;
+      }
+
+      .pub-checklist-bar__fill {
+        height: 100%;
+        border-radius: var(--bd-radius-full);
+        transition: width 300ms ease;
+      }
+
+      .pub-checklist-bar__fill--success {
+        background: var(--state-success);
+      }
+
+      .pub-checklist-bar__fill--warning {
+        background: var(--state-warning);
+      }
+
+      /* 警告提示框 */
+      .pub-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+        border-radius: var(--bd-radius-md);
+        border: 1px solid;
+      }
+
+      .pub-alert--warning {
+        background: var(--state-warning-bg);
+        border-color: #fde68a;
+      }
+
+      .pub-alert__icon {
+        flex-shrink: 0;
+        color: var(--state-warning);
+        margin-top: 1px;
+      }
+
+      .pub-alert__text {
+        font-size: 13px;
+        line-height: 1.5;
+        color: #92400e;
+      }
+
+      /* ── 底部操作栏 ── */
+      .pub-bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: var(--shell-sidebar-width);
+        right: 0;
+        z-index: 80;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 24px;
+        background: var(--bd-card);
+        border-top: 1px solid var(--bd-border);
+        box-shadow: 0 -2px 8px rgba(15, 23, 42, 0.04);
+      }
+
+      .pub-bottom-bar__left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .pub-bottom-bar__right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      /* 按钮样式 */
+      .pub-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 20px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: var(--bd-radius-sm);
+        cursor: pointer;
+        transition: all 150ms ease;
+        white-space: nowrap;
+        border: none;
+        line-height: 1;
+      }
+
+      .pub-btn--secondary {
+        background: var(--bd-card);
+        border: 1px solid var(--bd-border);
+        color: var(--bd-card-foreground);
+      }
+
+      .pub-btn--secondary:hover {
+        background: var(--bd-slate-50);
+        border-color: var(--bd-slate-300);
+      }
+
+      .pub-btn--primary {
+        background: var(--bd-primary-600);
+        color: #ffffff;
+      }
+
+      .pub-btn--primary:hover {
+        background: var(--bd-primary-700);
+      }
+
+      .pub-btn--text {
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        padding: 8px 12px;
+      }
+
+      .pub-btn--text:hover {
+        color: var(--bd-primary-600);
+        background: var(--bd-primary-50);
+      }
+
+      /* 学科标签 */
+      .pub-discipline-badge {
+        display: inline-flex;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: var(--bd-radius-sm);
+        background: var(--bd-slate-100);
+        color: var(--bd-slate-700);
+      }
+    </style>
+
+    <div class="pub-layout">
+      <!-- ── 左侧主区域 ── -->
+      <div class="pub-main">
+
+        <!-- Stepper -->
+        <div class="pub-stepper">
+          <!-- Step 1: 激活 -->
+          <div class="pub-step pub-step--active">
+            <div class="pub-step__circle">1</div>
+            <div class="pub-step__info">
+              <span class="pub-step__label">Select Deliverables</span>
+              <span class="pub-step__desc">Choose files for submission</span>
+            </div>
+          </div>
+
+          <!-- Step 2: 待处理 -->
+          <div class="pub-step pub-step--pending">
+            <div class="pub-step__circle">2</div>
+            <div class="pub-step__info">
+              <span class="pub-step__label">Review Checklists</span>
+              <span class="pub-step__desc">Validate compliance</span>
+            </div>
+          </div>
+
+          <!-- Step 3: 待处理 -->
+          <div class="pub-step pub-step--pending">
+            <div class="pub-step__circle">3</div>
+            <div class="pub-step__info">
+              <span class="pub-step__label">Approval Chain</span>
+              <span class="pub-step__desc">Route for sign-off</span>
+            </div>
+          </div>
+
+          <!-- Step 4: 待处理 -->
+          <div class="pub-step pub-step--pending">
+            <div class="pub-step__circle">4</div>
+            <div class="pub-step__info">
+              <span class="pub-step__label">Submit &amp; Publish</span>
+              <span class="pub-step__desc">Final review and submit</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 文件类型过滤器标签 -->
+        <div class="pub-filter-tabs">
+          <button class="pub-filter-tab pub-filter-tab--active">All Files</button>
+          <button class="pub-filter-tab">RVT</button>
+          <button class="pub-filter-tab">DWG</button>
+          <button class="pub-filter-tab">PDF</button>
+          <button class="pub-filter-tab">Arch</button>
+          <button class="pub-filter-tab">Struct</button>
+          <button class="pub-filter-tab">MEP</button>
+        </div>
+
+        <!-- 表格工具栏 -->
+        <div class="pub-table-toolbar">
+          <div class="pub-table-toolbar__left">
+            <button class="pub-select-all-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              Select All Approved
+            </button>
+            <span class="pub-select-count"><strong>3</strong> of <strong>8</strong> selected</span>
+          </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="pub-table-wrap">
+          <table class="pub-table">
+            <thead>
+              <tr>
+                <th class="col-checkbox"></th>
+                <th class="col-name">File Name</th>
+                <th class="col-type">Type</th>
+                <th class="col-discipline">Discipline</th>
+                <th class="col-version">Version</th>
+                <th class="col-status">Status</th>
+                <th class="col-size">Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 — 已勾选，已批准 -->
+              <tr>
+                <td class="col-checkbox">
+                  <div class="pub-checkbox pub-checkbox--checked"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--rvt">Rv</div>
+                    <span class="pub-file-name-text">Archi_Design_Model_v04.rvt</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--rvt">RVT</span></td>
+                <td><span class="pub-discipline-badge">Arch</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v4.0</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--approved">
+                    <span class="pub-status-dot"></span>Approved
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">148 MB</td>
+              </tr>
+
+              <!-- Row 2 — 已勾选，已批准 -->
+              <tr>
+                <td class="col-checkbox">
+                  <div class="pub-checkbox pub-checkbox--checked"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--dwg">Dw</div>
+                    <span class="pub-file-name-text">Struct_FloorPlan_02.dwg</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--dwg">DWG</span></td>
+                <td><span class="pub-discipline-badge">Struct</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v2.1</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--approved">
+                    <span class="pub-status-dot"></span>Approved
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">32 MB</td>
+              </tr>
+
+              <!-- Row 3 — 未勾选，已批准 -->
+              <tr>
+                <td class="col-checkbox">
+                  <div class="pub-checkbox pub-checkbox--checked"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--pdf">Pd</div>
+                    <span class="pub-file-name-text">MEP_Schematic_Diagram.pdf</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--pdf">PDF</span></td>
+                <td><span class="pub-discipline-badge">MEP</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v3.0</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--approved">
+                    <span class="pub-status-dot"></span>Approved
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">8.4 MB</td>
+              </tr>
+
+              <!-- Row 4 — 未勾选，已批准 -->
+              <tr>
+                <td class="col-checkbox">
+                  <div class="pub-checkbox"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--rvt">Rv</div>
+                    <span class="pub-file-name-text">Archi_3D_Views_v04.rvt</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--rvt">RVT</span></td>
+                <td><span class="pub-discipline-badge">Arch</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v4.0</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--approved">
+                    <span class="pub-status-dot"></span>Approved
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">215 MB</td>
+              </tr>
+
+              <!-- Row 5 — 禁用，待处理审批 -->
+              <tr class="pub-row--disabled">
+                <td class="col-checkbox">
+                  <div class="pub-checkbox pub-checkbox--disabled"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--dwg">Dw</div>
+                    <span class="pub-file-name-text">Struct_Detail_Beams.dwg</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--dwg">DWG</span></td>
+                <td><span class="pub-discipline-badge">Struct</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v1.3</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--pending">
+                    <span class="pub-status-dot"></span>Pending
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">18 MB</td>
+              </tr>
+
+              <!-- Row 6 — 禁用，待处理审批 -->
+              <tr class="pub-row--disabled">
+                <td class="col-checkbox">
+                  <div class="pub-checkbox pub-checkbox--disabled"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--pdf">Pd</div>
+                    <span class="pub-file-name-text">MEP_HVAC_Layout.pdf</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--pdf">PDF</span></td>
+                <td><span class="pub-discipline-badge">MEP</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v2.5</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--pending">
+                    <span class="pub-status-dot"></span>Pending
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">12.1 MB</td>
+              </tr>
+
+              <!-- Row 7 — 未勾选，已批准 -->
+              <tr>
+                <td class="col-checkbox">
+                  <div class="pub-checkbox"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--rvt">Rv</div>
+                    <span class="pub-file-name-text">Struct_Analytical_Model.rvt</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--rvt">RVT</span></td>
+                <td><span class="pub-discipline-badge">Struct</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v1.7</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--approved">
+                    <span class="pub-status-dot"></span>Approved
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">89 MB</td>
+              </tr>
+
+              <!-- Row 8 — 未勾选，已批准 -->
+              <tr>
+                <td class="col-checkbox">
+                  <div class="pub-checkbox"></div>
+                </td>
+                <td class="col-name">
+                  <div class="pub-file-name">
+                    <div class="pub-file-icon pub-file-icon--pdf">Pd</div>
+                    <span class="pub-file-name-text">Archi_GeneralNotes.pdf</span>
+                  </div>
+                </td>
+                <td><span class="pub-type-badge pub-type-badge--pdf">PDF</span></td>
+                <td><span class="pub-discipline-badge">Arch</span></td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">v3.2</td>
+                <td>
+                  <span class="pub-status-badge pub-status-badge--approved">
+                    <span class="pub-status-dot"></span>Approved
+                  </span>
+                </td>
+                <td style="color: var(--bd-muted-foreground); font-size: 13px;">2.6 MB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- ── 右侧侧边栏 ── -->
+      <div class="pub-sidebar">
+
+        <!-- 提交包摘要 -->
+        <div class="pub-summary-card">
+          <h3 class="pub-summary-card__title">Submission Package Summary</h3>
+
+          <div class="pub-summary-row">
+            <span class="pub-summary-row__label">Selected Files</span>
+            <span class="pub-summary-row__value pub-summary-row__value--highlight">3 files</span>
+          </div>
+
+          <div class="pub-summary-row">
+            <span class="pub-summary-row__label">Total Size</span>
+            <span class="pub-summary-row__value">188.4 MB</span>
+          </div>
+
+          <div class="pub-summary-row">
+            <span class="pub-summary-row__label">Disciplines</span>
+            <span class="pub-summary-row__value">Arch, Struct, MEP</span>
+          </div>
+
+          <div class="pub-summary-row">
+            <span class="pub-summary-row__label">File Types</span>
+            <span class="pub-summary-row__value">RVT, DWG, PDF</span>
+          </div>
+        </div>
+
+        <!-- 清单状态 -->
+        <div class="pub-summary-card">
+          <h3 class="pub-summary-card__title">Checklist Status</h3>
+
+          <div class="pub-checklist-item">
+            <div class="pub-checklist-header">
+              <span class="pub-checklist-label">Code Compliance</span>
+              <span class="pub-checklist-count">3 / 5 passed</span>
+            </div>
+            <div class="pub-checklist-bar">
+              <div class="pub-checklist-bar__fill pub-checklist-bar__fill--warning" style="width: 60%;"></div>
+            </div>
+          </div>
+
+          <div class="pub-checklist-item">
+            <div class="pub-checklist-header">
+              <span class="pub-checklist-label">Coordination</span>
+              <span class="pub-checklist-count">2 / 4 cleared</span>
+            </div>
+            <div class="pub-checklist-bar">
+              <div class="pub-checklist-bar__fill pub-checklist-bar__fill--warning" style="width: 50%;"></div>
+            </div>
+          </div>
+
+          <div class="pub-checklist-item">
+            <div class="pub-checklist-header">
+              <span class="pub-checklist-label">Drawing Standards</span>
+              <span class="pub-checklist-count">5 / 5 passed</span>
+            </div>
+            <div class="pub-checklist-bar">
+              <div class="pub-checklist-bar__fill pub-checklist-bar__fill--success" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 警告提示 -->
+        <div class="pub-alert pub-alert--warning">
+          <svg class="pub-alert__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <path d="M12 9v4"/><path d="M12 17h.01"/>
+          </svg>
+          <span class="pub-alert__text">
+            2 files pending approval &mdash; cannot include in submission package until approved.
+          </span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── 底部操作栏（固定） ── -->
+    <div class="pub-bottom-bar">
+      <div class="pub-bottom-bar__left">
+        <button class="pub-btn pub-btn--secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Back
+        </button>
+      </div>
+      <div class="pub-bottom-bar__right">
+        <button class="pub-btn pub-btn--text">Save Draft</button>
+        <button class="pub-btn pub-btn--primary">
+          Continue to Review
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

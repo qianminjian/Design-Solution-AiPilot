@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer - AiPilot</title>
+    <style id="theme-vars">
+/*
+ * 施工图全流程 AI 平台 — Design System Brand CSS
+ * Brand prefix: bd (building-design)
+ * Style: Professional / Slate-blue / Dense enterprise workbench
+ */
+
+:root {
+  /* ── Brand Primary: Slate Blue ── */
+  --bd-primary-50: #eff6ff;
+  --bd-primary-100: #dbeafe;
+  --bd-primary-200: #bfdbfe;
+  --bd-primary-300: #93c5fd;
+  --bd-primary-400: #60a5fa;
+  --bd-primary-500: #3b82f6;
+  --bd-primary-600: #2563eb;
+  --bd-primary-700: #1d4ed8;
+  --bd-primary-800: #1e40af;
+  --bd-primary-900: #1e3a8a;
+  --bd-primary-950: #172554;
+
+  /* ── Neutral: Slate ── */
+  --bd-slate-50: #f8fafc;
+  --bd-slate-100: #f1f5f9;
+  --bd-slate-200: #e2e8f0;
+  --bd-slate-300: #cbd5e1;
+  --bd-slate-400: #94a3b8;
+  --bd-slate-500: #64748b;
+  --bd-slate-600: #475569;
+  --bd-slate-700: #334155;
+  --bd-slate-800: #1e293b;
+  --bd-slate-900: #0f172a;
+  --bd-slate-950: #020617;
+
+  /* ── Semantic State Colors ── */
+  --state-success: #16a34a;
+  --state-success-light: #dcfce7;
+  --state-success-bg: #f0fdf4;
+  --state-warning: #d97706;
+  --state-warning-light: #fef3c7;
+  --state-warning-bg: #fffbeb;
+  --state-error: #dc2626;
+  --state-error-light: #fee2e2;
+  --state-error-bg: #fef2f2;
+  --state-info: #0891b2;
+  --state-info-light: #cffafe;
+  --state-info-bg: #ecfeff;
+
+  /* ── Semantic Aliases (fill-html-head.mjs compatible) ── */
+  --bd-background: #f8fafc;
+  --bd-foreground: #0f172a;
+  --bd-card: #ffffff;
+  --bd-card-foreground: #1e293b;
+  --bd-popover: #ffffff;
+  --bd-popover-foreground: #1e293b;
+  --bd-primary: #2563eb;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #f1f5f9;
+  --bd-muted-foreground: #64748b;
+  --bd-border: #e2e8f0;
+  --bd-input: #e2e8f0;
+  --bd-ring: #3b82f6;
+
+  /* ── Radius Scale ── */
+  --bd-radius-sm: 4px;
+  --bd-radius-md: 8px;
+  --bd-radius-lg: 12px;
+  --bd-radius-full: 9999px;
+
+  /* ── Shadows (static ≤ 0.05 alpha, floating only) ── */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+}
+
+.dark {
+  --bd-background: #0f172a;
+  --bd-foreground: #f8fafc;
+  --bd-card: #1e293b;
+  --bd-card-foreground: #e2e8f0;
+  --bd-popover: #1e293b;
+  --bd-popover-foreground: #e2e8f0;
+  --bd-primary: #3b82f6;
+  --bd-primary-foreground: #ffffff;
+  --bd-muted: #334155;
+  --bd-muted-foreground: #94a3b8;
+  --bd-border: #334155;
+  --bd-input: #334155;
+  --bd-ring: #60a5fa;
+
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Typography ── */
+body {
+  font-family: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--bd-foreground);
+  background-color: var(--bd-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.bd-title-lg {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--bd-foreground);
+}
+
+.bd-title-md {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bd-foreground);
+}
+
+.bd-title-sm {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--bd-foreground);
+}
+
+.bd-body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--bd-card-foreground);
+}
+
+.bd-body-sm {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--bd-muted-foreground);
+}
+
+.bd-caption {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--bd-muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--bd-background);
+    --color-foreground: var(--bd-foreground);
+    --color-card: var(--bd-card);
+    --color-card-foreground: var(--bd-card-foreground);
+    --color-popover: var(--bd-popover);
+    --color-popover-foreground: var(--bd-popover-foreground);
+    --color-primary: var(--bd-primary);
+    --color-primary-foreground: var(--bd-primary-foreground);
+    --color-muted: var(--bd-muted);
+    --color-muted-foreground: var(--bd-muted-foreground);
+    --color-border: var(--bd-border);
+    --color-input: var(--bd-input);
+    --color-ring: var(--bd-ring);
+    --radius-sm: var(--bd-radius-sm);
+    --radius-md: var(--bd-radius-md);
+    --radius-lg: var(--bd-radius-lg);
+  }
+  @layer base {
+    body { background: var(--bd-background); color: var(--bd-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--bd-background); }
+      .text-background { color: var(--bd-background); }
+      .border-background { border-color: var(--bd-background); }
+      .ring-background { --tw-ring-color: var(--bd-background); }
+      .bg-foreground { background-color: var(--bd-foreground); }
+      .text-foreground { color: var(--bd-foreground); }
+      .border-foreground { border-color: var(--bd-foreground); }
+      .ring-foreground { --tw-ring-color: var(--bd-foreground); }
+      .bg-card { background-color: var(--bd-card); }
+      .text-card { color: var(--bd-card); }
+      .border-card { border-color: var(--bd-card); }
+      .ring-card { --tw-ring-color: var(--bd-card); }
+      .bg-card-foreground { background-color: var(--bd-card-foreground); }
+      .text-card-foreground { color: var(--bd-card-foreground); }
+      .border-card-foreground { border-color: var(--bd-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--bd-card-foreground); }
+      .bg-popover { background-color: var(--bd-popover); }
+      .text-popover { color: var(--bd-popover); }
+      .border-popover { border-color: var(--bd-popover); }
+      .ring-popover { --tw-ring-color: var(--bd-popover); }
+      .bg-popover-foreground { background-color: var(--bd-popover-foreground); }
+      .text-popover-foreground { color: var(--bd-popover-foreground); }
+      .border-popover-foreground { border-color: var(--bd-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--bd-popover-foreground); }
+      .bg-primary { background-color: var(--bd-primary); }
+      .text-primary { color: var(--bd-primary); }
+      .border-primary { border-color: var(--bd-primary); }
+      .ring-primary { --tw-ring-color: var(--bd-primary); }
+      .bg-primary-foreground { background-color: var(--bd-primary-foreground); }
+      .text-primary-foreground { color: var(--bd-primary-foreground); }
+      .border-primary-foreground { border-color: var(--bd-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--bd-primary-foreground); }
+      .bg-muted { background-color: var(--bd-muted); }
+      .text-muted { color: var(--bd-muted); }
+      .border-muted { border-color: var(--bd-muted); }
+      .ring-muted { --tw-ring-color: var(--bd-muted); }
+      .bg-muted-foreground { background-color: var(--bd-muted-foreground); }
+      .text-muted-foreground { color: var(--bd-muted-foreground); }
+      .border-muted-foreground { border-color: var(--bd-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--bd-muted-foreground); }
+      .bg-border { background-color: var(--bd-border); }
+      .text-border { color: var(--bd-border); }
+      .border-border { border-color: var(--bd-border); }
+      .ring-border { --tw-ring-color: var(--bd-border); }
+      .bg-input { background-color: var(--bd-input); }
+      .text-input { color: var(--bd-input); }
+      .border-input { border-color: var(--bd-input); }
+      .ring-input { --tw-ring-color: var(--bd-input); }
+      .bg-ring { background-color: var(--bd-ring); }
+      .text-ring { color: var(--bd-ring); }
+      .border-ring { border-color: var(--bd-ring); }
+      .ring-ring { --tw-ring-color: var(--bd-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+
+      /* ── Shell 布局变量 ── */
+      :root {
+        --shell-header-height: 56px;
+        --shell-sidebar-width: 240px;
+        --shell-sidebar-collapsed-width: 56px;
+        --shell-content-padding: 24px;
+      }
+
+      /* ── 顶部 Header Bar ── */
+      .shell-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: var(--shell-header-height);
+        padding: 0 16px;
+        background: #ffffff;
+        border-bottom: 1px solid var(--bd-border);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .shell-header__left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 200px;
+      }
+
+      .shell-header__logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: var(--bd-foreground);
+      }
+
+      .shell-header__logo svg { flex-shrink: 0; }
+
+      .shell-header__logo-text {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+
+      .shell-header__center {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .shell-header__right {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 200px;
+        justify-content: flex-end;
+      }
+
+      .shell-header__icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--bd-radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .shell-header__icon-btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .shell-header__icon-btn:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-header__user {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px 4px 4px;
+        border-radius: var(--bd-radius-full);
+        cursor: pointer;
+        transition: background-color 120ms ease;
+      }
+
+      .shell-header__user:hover { background-color: var(--bd-muted); }
+
+      .shell-header__user:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-header__avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--bd-radius-full);
+        background: var(--bd-primary-100);
+        color: var(--bd-primary-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .shell-header__user-chevron { color: var(--bd-muted-foreground); }
+
+      /* ── 左侧 Sidebar ── */
+      .shell-sidebar {
+        position: fixed;
+        top: var(--shell-header-height);
+        left: 0;
+        bottom: 0;
+        width: var(--shell-sidebar-width);
+        background: #ffffff;
+        border-right: 1px solid var(--bd-border);
+        display: flex;
+        flex-direction: column;
+        z-index: 90;
+        transition: width 200ms ease;
+        overflow: hidden;
+      }
+
+      .shell-sidebar--collapsed { width: var(--shell-sidebar-collapsed-width); }
+
+      .shell-sidebar__nav {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 8px 0;
+      }
+
+      .shell-sidebar__nav::-webkit-scrollbar { width: 4px; }
+
+      .shell-sidebar__nav::-webkit-scrollbar-thumb {
+        background: var(--bd-slate-200);
+        border-radius: var(--bd-radius-full);
+      }
+
+      .shell-sidebar__nav-group-label {
+        padding: 12px 12px 6px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+        overflow: hidden;
+      }
+
+      .shell-sidebar__item {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        padding: 0 12px;
+        gap: 10px;
+        color: var(--bd-card-foreground);
+        text-decoration: none;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+      }
+
+      .shell-sidebar__item:hover { background-color: var(--bd-muted); }
+
+      .shell-sidebar__item:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: -2px;
+      }
+
+      .shell-sidebar__item--active {
+        background-color: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+        border-left-color: var(--bd-primary-600);
+        font-weight: 500;
+      }
+
+      .shell-sidebar__item svg {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+      }
+
+      .shell-sidebar__item-label {
+        font-size: 14px;
+        line-height: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__item-label,
+      .shell-sidebar--collapsed .shell-sidebar__nav-group-label {
+        opacity: 0;
+        width: 0;
+        overflow: hidden;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__item {
+        justify-content: center;
+        padding: 0;
+      }
+
+      .shell-sidebar__footer {
+        border-top: 1px solid var(--bd-border);
+        padding: 8px;
+      }
+
+      .shell-sidebar__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 36px;
+        border-radius: var(--bd-radius-sm);
+        border: 1px solid var(--bd-border);
+        background: #ffffff;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .shell-sidebar__toggle:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .shell-sidebar__toggle:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 2px;
+      }
+
+      .shell-sidebar__toggle svg {
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        transition: transform 200ms ease;
+      }
+
+      .shell-sidebar--collapsed .shell-sidebar__toggle-label { display: none; }
+
+      .shell-sidebar--collapsed .shell-sidebar__toggle svg {
+        transform: rotate(180deg);
+      }
+
+      /* ── 主内容区域 ── */
+      .shell-main {
+        margin-left: var(--shell-sidebar-width);
+        padding-top: var(--shell-header-height);
+        min-height: 100vh;
+        transition: margin-left 200ms ease;
+      }
+
+      .shell-main--sidebar-collapsed {
+        margin-left: var(--shell-sidebar-collapsed-width);
+      }
+
+      /* ── Breadcrumb ── */
+      .shell-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--bd-muted-foreground);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .shell-breadcrumb li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .shell-breadcrumb a {
+        color: var(--bd-muted-foreground);
+        text-decoration: none;
+        transition: color 120ms ease;
+      }
+
+      .shell-breadcrumb a:hover { color: var(--bd-primary-600); }
+
+      .shell-breadcrumb__sep { color: var(--bd-slate-300); flex-shrink: 0; }
+
+      .shell-breadcrumb__current {
+        color: var(--bd-foreground);
+        font-weight: 500;
+      }
+
+      /* ── Viewer 页面专用样式 ── */
+      :root {
+        --viewer-toolbar-height: 44px;
+        --viewer-statusbar-height: 32px;
+        --viewer-left-panel-width: 250px;
+        --viewer-right-panel-width: 280px;
+        --viewer-bottom-panel-height: 200px;
+      }
+
+      /* 应用 Shell 模式 — viewer 内容区无 padding，全屏视口 */
+      .viewer-shell-content {
+        padding: 0 !important;
+        height: calc(100vh - var(--shell-header-height));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bd-slate-100);
+      }
+
+      /* ── Viewer 工具栏 ── */
+      .viewer-toolbar {
+        height: var(--viewer-toolbar-height);
+        min-height: var(--viewer-toolbar-height);
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 8px;
+        background: var(--bd-card);
+        border-bottom: 1px solid var(--bd-border);
+        z-index: 10;
+      }
+
+      .viewer-toolbar__filename {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 220px;
+        margin-right: 4px;
+      }
+
+      .viewer-toolbar__separator {
+        width: 1px;
+        height: 24px;
+        background: var(--bd-border);
+        flex-shrink: 0;
+      }
+
+      .viewer-toolbar__group {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .viewer-toolbar__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        min-width: 32px;
+        padding: 0 8px;
+        gap: 6px;
+        border-radius: var(--bd-radius-sm);
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        font-size: 13px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+      }
+
+      .viewer-toolbar__btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .viewer-toolbar__btn:focus-visible {
+        outline: 2px solid var(--bd-ring);
+        outline-offset: 1px;
+      }
+
+      .viewer-toolbar__btn svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      /* 活跃的工具栏按钮 */
+      .viewer-toolbar__btn--active {
+        background-color: var(--bd-primary-50);
+        color: var(--bd-primary-600);
+        border-color: var(--bd-primary-200);
+      }
+
+      .viewer-toolbar__btn--active:hover {
+        background-color: var(--bd-primary-100);
+        color: var(--bd-primary-700);
+      }
+
+      .viewer-toolbar__btn-label {
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .viewer-toolbar__spacer { flex: 1; }
+
+      /* ── Viewer 面板布局 ── */
+      .viewer-body {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* 左侧面板 */
+      .viewer-panel-left {
+        width: var(--viewer-left-panel-width);
+        min-width: 0;
+        max-width: 400px;
+        background: var(--bd-card);
+        border-right: 1px solid var(--bd-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        resize: horizontal;
+      }
+
+      .viewer-panel-left--collapsed {
+        width: 0 !important;
+        min-width: 0;
+        border-right: none;
+        overflow: hidden;
+      }
+
+      /* 右侧面板 */
+      .viewer-panel-right {
+        width: var(--viewer-right-panel-width);
+        min-width: 0;
+        max-width: 400px;
+        background: var(--bd-card);
+        border-left: 1px solid var(--bd-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        resize: horizontal;
+      }
+
+      .viewer-panel-right--collapsed {
+        width: 0 !important;
+        min-width: 0;
+        border-left: none;
+        overflow: hidden;
+      }
+
+      /* 面板头 */
+      .viewer-panel__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 40px;
+        min-height: 40px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .viewer-panel__title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .viewer-panel__close-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: var(--bd-radius-sm);
+        border: none;
+        background: transparent;
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .viewer-panel__close-btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .viewer-panel__close-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* 面板内容 */
+      .viewer-panel__body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .viewer-panel__body::-webkit-scrollbar { width: 4px; }
+
+      .viewer-panel__body::-webkit-scrollbar-thumb {
+        background: var(--bd-slate-200);
+        border-radius: var(--bd-radius-full);
+      }
+
+      /* ── 模型树样式 ── */
+      .model-tree-group {
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .model-tree-group:last-child { border-bottom: none; }
+
+      .model-tree-group__header {
+        display: flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 12px;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 120ms ease;
+        user-select: none;
+      }
+
+      .model-tree-group__header:hover { background-color: var(--bd-muted); }
+
+      .model-tree-group__chevron {
+        width: 14px;
+        height: 14px;
+        color: var(--bd-muted-foreground);
+        flex-shrink: 0;
+        transition: transform 150ms ease;
+      }
+
+      .model-tree-group--open .model-tree-group__chevron {
+        transform: rotate(90deg);
+      }
+
+      .model-tree-group__icon {
+        width: 16px;
+        height: 16px;
+        color: var(--bd-muted-foreground);
+        flex-shrink: 0;
+      }
+
+      .model-tree-group__label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--bd-card-foreground);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .model-tree-group__badge {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        background: var(--bd-muted);
+        padding: 0 6px;
+        height: 18px;
+        line-height: 18px;
+        border-radius: var(--bd-radius-full);
+        flex-shrink: 0;
+      }
+
+      .model-tree-children {
+        display: none;
+      }
+
+      .model-tree-group--open .model-tree-children {
+        display: block;
+      }
+
+      .model-tree-item {
+        display: flex;
+        align-items: center;
+        height: 32px;
+        padding: 0 12px 0 40px;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 120ms ease;
+        user-select: none;
+      }
+
+      .model-tree-item:hover { background-color: var(--bd-muted); }
+
+      .model-tree-item--selected {
+        background-color: var(--bd-primary-50);
+      }
+
+      .model-tree-item__icon {
+        width: 14px;
+        height: 14px;
+        color: var(--bd-muted-foreground);
+        flex-shrink: 0;
+      }
+
+      .model-tree-item__label {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--bd-card-foreground);
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .model-tree-item__badge {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        flex-shrink: 0;
+      }
+
+      /* ── 属性面板样式 ── */
+      .props-section {
+        padding: 12px;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .props-section:last-child { border-bottom: none; }
+
+      .props-section__title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--bd-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+      }
+
+      .props-row {
+        display: flex;
+        align-items: baseline;
+        padding: 4px 0;
+        gap: 8px;
+      }
+
+      .props-row__label {
+        font-size: 12px;
+        font-weight: 400;
+        color: var(--bd-muted-foreground);
+        white-space: nowrap;
+        min-width: 90px;
+      }
+
+      .props-row__value {
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--bd-card-foreground);
+        word-break: break-word;
+        flex: 1;
+      }
+
+      .props-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: var(--bd-radius-sm);
+        font-size: 12px;
+        color: var(--bd-primary-600);
+        text-decoration: none;
+        transition: background-color 120ms ease;
+        cursor: pointer;
+      }
+
+      .props-link:hover {
+        background-color: var(--bd-primary-50);
+      }
+
+      .props-link svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+
+      /* ── 中心视口 ── */
+      .viewer-viewport {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--bd-slate-50);
+        position: relative;
+      }
+
+      .viewer-canvas {
+        flex: 1;
+        position: relative;
+        overflow: auto;
+        /* 网格背景 */
+        background-image:
+          linear-gradient(var(--bd-slate-200) 1px, transparent 1px),
+          linear-gradient(90deg, var(--bd-slate-200) 1px, transparent 1px);
+        background-size: 40px 40px;
+        background-position: -1px -1px;
+      }
+
+      .viewer-canvas__content {
+        width: 100%;
+        height: 100%;
+        min-width: 800px;
+        min-height: 600px;
+        position: relative;
+      }
+
+      /* CSS 绘制的平面图占位元素 */
+      .floor-plan-room {
+        position: absolute;
+        border: 2px solid var(--bd-slate-400);
+        background: transparent;
+      }
+
+      .floor-plan-room--highlighted {
+        border-color: var(--bd-primary-600);
+        background: rgba(37, 99, 235, 0.04);
+      }
+
+      .floor-plan-room__label {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      /* 门符号 */
+      .floor-plan-door {
+        position: absolute;
+        width: 8px;
+        height: 40px;
+        border: 1.5px solid var(--bd-slate-400);
+        background: transparent;
+        border-radius: 0 0 4px 4px;
+      }
+
+      /* 窗户符号 */
+      .floor-plan-window {
+        position: absolute;
+        height: 4px;
+        background: var(--bd-slate-300);
+        border: 1px solid var(--bd-slate-400);
+      }
+
+      /* 尺寸标注线 */
+      .floor-plan-dim {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        color: var(--bd-muted-foreground);
+      }
+
+      .floor-plan-dim__line {
+        flex: 1;
+        height: 1px;
+        background: var(--bd-slate-300);
+      }
+
+      .floor-plan-dim__text {
+        padding: 0 4px;
+        font-size: 10px;
+        white-space: nowrap;
+      }
+
+      /* 状态栏 */
+      .viewer-statusbar {
+        height: var(--viewer-statusbar-height);
+        min-height: var(--viewer-statusbar-height);
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 16px;
+        background: var(--bd-card);
+        border-top: 1px solid var(--bd-border);
+        font-size: 12px;
+        color: var(--bd-muted-foreground);
+      }
+
+      .viewer-statusbar__sep {
+        width: 1px;
+        height: 16px;
+        background: var(--bd-border);
+      }
+
+      .viewer-statusbar__item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+      }
+
+      .viewer-statusbar__item svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* ── 底部面板 ── */
+      .viewer-bottom-panel {
+        height: var(--viewer-bottom-panel-height);
+        min-height: 0;
+        background: var(--bd-card);
+        border-top: 1px solid var(--bd-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        resize: vertical;
+      }
+
+      .viewer-bottom-panel--collapsed {
+        height: 0 !important;
+        min-height: 0;
+        border-top: none;
+        overflow: hidden;
+      }
+
+      .viewer-bottom-panel__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 36px;
+        min-height: 36px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--bd-border);
+      }
+
+      .viewer-bottom-panel__title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--bd-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .viewer-bottom-panel__count {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--bd-muted-foreground);
+        background: var(--bd-muted);
+        padding: 0 6px;
+        height: 18px;
+        line-height: 18px;
+        border-radius: var(--bd-radius-full);
+      }
+
+      .viewer-bottom-panel__body {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      .viewer-bottom-panel__body::-webkit-scrollbar { width: 4px; }
+
+      .viewer-bottom-panel__body::-webkit-scrollbar-thumb {
+        background: var(--bd-slate-200);
+        border-radius: var(--bd-radius-full);
+      }
+
+      /* 批注列表项 */
+      .annotation-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--bd-border);
+        transition: background-color 120ms ease;
+        cursor: pointer;
+      }
+
+      .annotation-item:last-child { border-bottom: none; }
+      .annotation-item:hover { background-color: var(--bd-muted); }
+
+      .annotation-item__marker {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--bd-radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .annotation-item__marker--red {
+        background: var(--state-error-light);
+        color: var(--state-error);
+      }
+
+      .annotation-item__marker--yellow {
+        background: var(--state-warning-light);
+        color: var(--state-warning);
+      }
+
+      .annotation-item__marker--blue {
+        background: var(--bd-primary-100);
+        color: var(--bd-primary-600);
+      }
+
+      .annotation-item__marker--green {
+        background: var(--state-success-light);
+        color: var(--state-success);
+      }
+
+      .annotation-item__marker--cyan {
+        background: var(--state-info-light);
+        color: var(--state-info);
+      }
+
+      .annotation-item__content { flex: 1; min-width: 0; }
+
+      .annotation-item__desc {
+        font-size: 13px;
+        font-weight: 400;
+        color: var(--bd-card-foreground);
+        line-height: 1.4;
+        margin-bottom: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .annotation-item__meta {
+        font-size: 11px;
+        color: var(--bd-muted-foreground);
+      }
+
+      /* ── 面板切换标签 ── */
+      .panel-toggle-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 48px;
+        border: 1px solid var(--bd-border);
+        background: var(--bd-card);
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .panel-toggle-btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .panel-toggle-btn--left {
+        right: -20px;
+        border-radius: 0 var(--bd-radius-sm) var(--bd-radius-sm) 0;
+        border-left: none;
+      }
+
+      .panel-toggle-btn--right {
+        left: -20px;
+        border-radius: var(--bd-radius-sm) 0 0 var(--bd-radius-sm);
+        border-right: none;
+      }
+
+      .panel-toggle-btn svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      /* 隐藏面板后的浮动恢复按钮 */
+      .viewer-restore-btn {
+        position: absolute;
+        top: 8px;
+        z-index: 5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--bd-radius-sm);
+        border: 1px solid var(--bd-border);
+        background: var(--bd-card);
+        color: var(--bd-muted-foreground);
+        cursor: pointer;
+        box-shadow: var(--shadow-xs);
+        transition: background-color 120ms ease, color 120ms ease;
+      }
+
+      .viewer-restore-btn:hover {
+        background-color: var(--bd-muted);
+        color: var(--bd-foreground);
+      }
+
+      .viewer-restore-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .viewer-restore-btn--left { left: 8px; }
+      .viewer-restore-btn--right { right: 8px; }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+<!-- ========== 顶部 Header Bar ========== -->
+<header class="shell-header">
+  <div class="shell-header__left">
+    <a class="shell-header__logo" href="/">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/>
+        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
+        <path d="M10 6h4"/>
+        <path d="M10 10h4"/>
+        <path d="M10 14h4"/>
+        <path d="M10 18h4"/>
+      </svg>
+      <span class="shell-header__logo-text">AiPilot</span>
+    </a>
+  </div>
+
+  <div class="shell-header__center">
+    <nav class="shell-breadcrumb" aria-label="Breadcrumb">
+      <li><a href="/">Home</a></li>
+      <li class="shell-breadcrumb__sep"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+      <li><span class="shell-breadcrumb__current">Viewer</span></li>
+    </nav>
+  </div>
+
+  <div class="shell-header__right">
+    <button class="shell-header__icon-btn" type="button" aria-label="Search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+    </button>
+    <button class="shell-header__icon-btn" type="button" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      </svg>
+    </button>
+    <div class="shell-header__user" role="button" tabindex="0" aria-label="User menu" aria-haspopup="true">
+      <div class="shell-header__avatar">AP</div>
+      <svg class="shell-header__user-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m6 9 6 6 6-6"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ========== 左侧 Sidebar ========== -->
+<aside class="shell-sidebar" id="shell-sidebar" aria-label="Main navigation">
+  <nav class="shell-sidebar__nav">
+    <div class="shell-sidebar__nav-group-label">工作区</div>
+
+    <a class="shell-sidebar__item" data-nav-key="my-work" href="/my-work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      <span class="shell-sidebar__item-label">My Work</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="projects" href="/projects">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Projects</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="requirements" href="/requirements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Requirements</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">设计协作</div>
+
+    <a class="shell-sidebar__item" data-nav-key="cde-library" href="/cde-library">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>
+      </svg>
+      <span class="shell-sidebar__item-label">CDE Library</span>
+    </a>
+
+    <!-- Viewer — 活跃状态 -->
+    <a class="shell-sidebar__item shell-sidebar__item--active" data-nav-key="viewer" data-active="true" href="/viewer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Viewer</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="design-options" href="/design-options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Design Options</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="coordination" href="/coordination">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Coordination</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="rule-check" href="/rule-check">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Rule Check</span>
+    </a>
+
+    <div style="height: 8px;"></div>
+    <div class="shell-sidebar__nav-group-label">AI 与交付</div>
+
+    <a class="shell-sidebar__item" data-nav-key="ai-review" href="/ai-review">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+      </svg>
+      <span class="shell-sidebar__item-label">AI Review</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="engineering" href="/engineering">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="16" height="12" x="4" y="4" rx="2"/><path d="M8 2v2"/><path d="M16 2v2"/><path d="M4 10h16"/><path d="m9 16 3 3 3-3"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Engineering</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="publish" href="/publish">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Publish</span>
+    </a>
+
+    <a class="shell-sidebar__item" data-nav-key="change-impact" href="/change-impact">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/>
+      </svg>
+      <span class="shell-sidebar__item-label">Change Impact</span>
+    </a>
+  </nav>
+
+  <div class="shell-sidebar__footer">
+    <button class="shell-sidebar__toggle" type="button" aria-label="Toggle sidebar" onclick="(function(){var s=document.getElementById('shell-sidebar');var m=document.getElementById('shell-main');s.classList.toggle('shell-sidebar--collapsed');m.classList.toggle('shell-main--sidebar-collapsed')})()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m15 18-6-6 6-6"/>
+      </svg>
+      <span class="shell-sidebar__toggle-label">Collapse</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ========== 主内容区域 ========== -->
+<main class="shell-main" id="shell-main">
+  <div class="shell-content viewer-shell-content">
+
+    <!-- ===== Viewer 工具栏 ===== -->
+    <div class="viewer-toolbar">
+      <!-- 文件名 -->
+      <div class="viewer-toolbar__filename">Floor Plan - Level 3.rvt</div>
+
+      <div class="viewer-toolbar__separator"></div>
+
+      <!-- 视图模式切换 -->
+      <div class="viewer-toolbar__group">
+        <button class="viewer-toolbar__btn viewer-toolbar__btn--active" type="button" title="2D Plan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18"/>
+            <path d="M3 15h18"/>
+            <path d="M9 3v18"/>
+            <path d="M15 3v18"/>
+          </svg>
+          <span class="viewer-toolbar__btn-label">2D Plan</span>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="3D Model">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/>
+            <path d="M12 12l8-4.5"/>
+            <path d="M12 12v9"/>
+            <path d="M12 12L4 7.5"/>
+          </svg>
+          <span class="viewer-toolbar__btn-label">3D Model</span>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Sheet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+            <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+            <path d="M10 9H8"/>
+            <path d="M16 13H8"/>
+            <path d="M16 17H8"/>
+          </svg>
+          <span class="viewer-toolbar__btn-label">Sheet</span>
+        </button>
+      </div>
+
+      <div class="viewer-toolbar__separator"></div>
+
+      <!-- 缩放控制 -->
+      <div class="viewer-toolbar__group">
+        <button class="viewer-toolbar__btn" type="button" title="Zoom In">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+            <path d="M11 8v6"/>
+            <path d="M8 11h6"/>
+          </svg>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Zoom Out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.3-4.3"/>
+            <path d="M8 11h6"/>
+          </svg>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Fit to View">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h6v6"/>
+            <path d="M9 21H3v-6"/>
+            <path d="m21 3-7 7"/>
+            <path d="m3 21 7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="viewer-toolbar__separator"></div>
+
+      <!-- 工具按钮 -->
+      <div class="viewer-toolbar__group">
+        <button class="viewer-toolbar__btn" type="button" title="Layer Visibility">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Measure">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Annotate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Compare Mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="8" height="12" rx="1"/>
+            <rect x="14" y="6" width="8" height="12" rx="1"/>
+            <path d="M9 12h6"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="viewer-toolbar__spacer"></div>
+
+      <!-- 右侧辅助操作 -->
+      <div class="viewer-toolbar__group">
+        <button class="viewer-toolbar__btn" type="button" title="Toggle Markups Panel" onclick="document.getElementById('bottom-panel').classList.toggle('viewer-bottom-panel--collapsed')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span class="viewer-toolbar__btn-label">Markups</span>
+        </button>
+        <button class="viewer-toolbar__btn" type="button" title="Toggle Properties Panel" onclick="document.getElementById('panel-right').classList.toggle('viewer-panel-right--collapsed')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>
+            <path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/>
+            <path d="M16 3v4"/>
+            <path d="M8 3v4"/>
+            <path d="M12 16v4"/>
+          </svg>
+          <span class="viewer-toolbar__btn-label">Properties</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== Viewer 主体区域 ===== -->
+    <div class="viewer-body">
+
+      <!-- ===== 左侧面板: 模型树 ===== -->
+      <div class="viewer-panel-left" id="panel-left">
+        <div class="viewer-panel__header">
+          <span class="viewer-panel__title">Model Tree</span>
+          <button class="viewer-panel__close-btn" type="button" aria-label="Close left panel" onclick="document.getElementById('panel-left').classList.add('viewer-panel-left--collapsed')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="viewer-panel__body">
+
+          <!-- Levels 分组 -->
+          <div class="model-tree-group model-tree-group--open">
+            <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+              <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span class="model-tree-group__label">Levels</span>
+              <span class="model-tree-group__badge">4</span>
+            </div>
+            <div class="model-tree-children">
+              <div class="model-tree-item">
+                <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                <span class="model-tree-item__label">Level 1</span>
+                <span class="model-tree-item__badge">24</span>
+              </div>
+              <div class="model-tree-item">
+                <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                <span class="model-tree-item__label">Level 2</span>
+                <span class="model-tree-item__badge">31</span>
+              </div>
+              <div class="model-tree-item model-tree-item--selected">
+                <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                <span class="model-tree-item__label">Level 3</span>
+                <span class="model-tree-item__badge">28</span>
+              </div>
+              <div class="model-tree-item">
+                <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                <span class="model-tree-item__label">Level 4</span>
+                <span class="model-tree-item__badge">18</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- By Category 分组 -->
+          <div class="model-tree-group model-tree-group--open">
+            <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+              <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+              <span class="model-tree-group__label">By Category</span>
+              <span class="model-tree-group__badge">6</span>
+            </div>
+            <div class="model-tree-children">
+              <!-- Walls -->
+              <div class="model-tree-group">
+                <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+                  <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M8 20V8l4-4 4 4v12"/></svg>
+                  <span class="model-tree-group__label">Walls</span>
+                  <span class="model-tree-group__badge">12</span>
+                </div>
+                <div class="model-tree-children">
+                  <div class="model-tree-item model-tree-item--selected">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">W-101</span>
+                  </div>
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">W-102</span>
+                  </div>
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">W-103</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Doors -->
+              <div class="model-tree-group">
+                <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+                  <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5H5v14h14V5z"/><path d="M16 5v14"/><circle cx="12" cy="12" r="1"/></svg>
+                  <span class="model-tree-group__label">Doors</span>
+                  <span class="model-tree-group__badge">6</span>
+                </div>
+                <div class="model-tree-children">
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">D-201</span>
+                  </div>
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">D-202</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Windows -->
+              <div class="model-tree-group">
+                <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+                  <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 4v16"/><path d="M2 12h20"/></svg>
+                  <span class="model-tree-group__label">Windows</span>
+                  <span class="model-tree-group__badge">8</span>
+                </div>
+                <div class="model-tree-children">
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">WIN-301</span>
+                  </div>
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">WIN-302</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Floors -->
+              <div class="model-tree-group">
+                <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+                  <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M8 20v-6l4-4 4 4v6"/></svg>
+                  <span class="model-tree-group__label">Floors</span>
+                  <span class="model-tree-group__badge">4</span>
+                </div>
+                <div class="model-tree-children">
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">F-401</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Ceilings -->
+              <div class="model-tree-group">
+                <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+                  <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18v4H3z"/><path d="M5 8v6l7-3 7 3V8"/></svg>
+                  <span class="model-tree-group__label">Ceilings</span>
+                  <span class="model-tree-group__badge">3</span>
+                </div>
+                <div class="model-tree-children">
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">C-501</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Roofs -->
+              <div class="model-tree-group">
+                <div class="model-tree-group__header" onclick="this.parentElement.classList.toggle('model-tree-group--open')">
+                  <svg class="model-tree-group__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  <svg class="model-tree-group__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg>
+                  <span class="model-tree-group__label">Roofs</span>
+                  <span class="model-tree-group__badge">2</span>
+                </div>
+                <div class="model-tree-children">
+                  <div class="model-tree-item">
+                    <svg class="model-tree-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                    <span class="model-tree-item__label">R-601</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== 中心视口 ===== -->
+      <div class="viewer-viewport">
+        <div class="viewer-canvas">
+          <div class="viewer-canvas__content">
+
+            <!-- CSS 绘制的平面图占位图形 -->
+            <!-- 外墙轮廓 -->
+            <div style="position: absolute; left: 120px; top: 80px; width: 520px; height: 380px; border: 3px solid var(--bd-slate-600); background: transparent;"></div>
+
+            <!-- 内部房间 -->
+            <div class="floor-plan-room floor-plan-room--highlighted" style="left: 120px; top: 80px; width: 200px; height: 180px;">
+              <span class="floor-plan-room__label">Office A</span>
+            </div>
+
+            <div class="floor-plan-room" style="left: 320px; top: 80px; width: 160px; height: 180px;">
+              <span class="floor-plan-room__label">Meeting Room</span>
+            </div>
+
+            <div class="floor-plan-room" style="left: 480px; top: 80px; width: 160px; height: 180px;">
+              <span class="floor-plan-room__label">Office B</span>
+            </div>
+
+            <div class="floor-plan-room" style="left: 120px; top: 260px; width: 280px; height: 200px;">
+              <span class="floor-plan-room__label">Open Workspace</span>
+            </div>
+
+            <div class="floor-plan-room" style="left: 400px; top: 260px; width: 120px; height: 100px;">
+              <span class="floor-plan-room__label">Storage</span>
+            </div>
+
+            <div class="floor-plan-room" style="left: 520px; top: 260px; width: 120px; height: 200px;">
+              <span class="floor-plan-room__label">Corridor</span>
+            </div>
+
+            <div class="floor-plan-room" style="left: 400px; top: 360px; width: 120px; height: 100px;">
+              <span class="floor-plan-room__label">Utility</span>
+            </div>
+
+            <!-- 门的占位 -->
+            <div class="floor-plan-door" style="left: 315px; top: 200px;"></div>
+            <div class="floor-plan-door" style="left: 475px; top: 200px;"></div>
+            <div class="floor-plan-door" style="left: 200px; top: 256px;"></div>
+            <div class="floor-plan-door" style="left: 515px; top: 340px;"></div>
+
+            <!-- 窗户的占位 -->
+            <div class="floor-plan-window" style="left: 180px; top: 77px; width: 80px;"></div>
+            <div class="floor-plan-window" style="left: 380px; top: 77px; width: 80px;"></div>
+            <div class="floor-plan-window" style="left: 540px; top: 77px; width: 60px;"></div>
+            <div class="floor-plan-window" style="left: 117px; top: 140px; width: 3px; height: 80px;"></div>
+            <div class="floor-plan-window" style="left: 117px; top: 320px; width: 3px; height: 80px;"></div>
+            <div class="floor-plan-window" style="left: 640px; top: 140px; width: 3px; height: 80px;"></div>
+
+            <!-- 尺寸标注 -->
+            <div class="floor-plan-dim" style="left: 120px; top: 62px; width: 200px;">
+              <span class="floor-plan-dim__line"></span>
+              <span class="floor-plan-dim__text">6.0m</span>
+              <span class="floor-plan-dim__line"></span>
+            </div>
+            <div class="floor-plan-dim" style="left: 120px; top: 62px; width: 360px; margin-left: 200px;">
+              <span class="floor-plan-dim__line"></span>
+              <span class="floor-plan-dim__text">12.0m</span>
+              <span class="floor-plan-dim__line"></span>
+            </div>
+            <div class="floor-plan-dim" style="left: 100px; top: 80px; width: 180px; transform: rotate(-90deg); transform-origin: left center;">
+              <span class="floor-plan-dim__line"></span>
+              <span class="floor-plan-dim__text">5.4m</span>
+              <span class="floor-plan-dim__line"></span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 状态栏 -->
+        <div class="viewer-statusbar">
+          <div class="viewer-statusbar__item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            Level 3
+          </div>
+          <div class="viewer-statusbar__sep"></div>
+          <div class="viewer-statusbar__item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3H3v7h18V3z"/><path d="M21 14H3v7h18v-7z"/></svg>
+            Scale 1:100
+          </div>
+          <div class="viewer-statusbar__sep"></div>
+          <div class="viewer-statusbar__item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+            Zoom 85%
+          </div>
+          <div class="viewer-statusbar__sep"></div>
+          <div class="viewer-statusbar__item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4z"/><path d="M14 4h6v6h-6z"/><path d="M4 14h6v6H4z"/><path d="M14 14h6v6h-6z"/></svg>
+            Cursor: (12.45, 8.32)m
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 右侧面板: 属性 ===== -->
+      <div class="viewer-panel-right" id="panel-right">
+        <div class="viewer-panel__header">
+          <span class="viewer-panel__title">Properties</span>
+          <button class="viewer-panel__close-btn" type="button" aria-label="Close right panel" onclick="document.getElementById('panel-right').classList.add('viewer-panel-right--collapsed')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="viewer-panel__body">
+
+          <!-- 元素类型 -->
+          <div class="props-section">
+            <div class="props-section__title">Element Type</div>
+            <div class="props-row">
+              <span class="props-row__label">Type</span>
+              <span class="props-row__value">Wall</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Family</span>
+              <span class="props-row__value">Basic Wall</span>
+            </div>
+          </div>
+
+          <!-- 材质 -->
+          <div class="props-section">
+            <div class="props-section__title">Material</div>
+            <div class="props-row">
+              <span class="props-row__label">Name</span>
+              <span class="props-row__value">Concrete 300mm</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Thickness</span>
+              <span class="props-row__value">300 mm</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Structural</span>
+              <span class="props-row__value">Yes</span>
+            </div>
+          </div>
+
+          <!-- 尺寸 -->
+          <div class="props-section">
+            <div class="props-section__title">Dimensions</div>
+            <div class="props-row">
+              <span class="props-row__label">Length</span>
+              <span class="props-row__value">4.2 m</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Height</span>
+              <span class="props-row__value">3.0 m</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Thickness</span>
+              <span class="props-row__value">0.3 m</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Volume</span>
+              <span class="props-row__value">3.78 m3</span>
+            </div>
+          </div>
+
+          <!-- 定位 -->
+          <div class="props-section">
+            <div class="props-section__title">Location</div>
+            <div class="props-row">
+              <span class="props-row__label">Level</span>
+              <span class="props-row__value">Level 3</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Base Offset</span>
+              <span class="props-row__value">0.0 m</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Top Offset</span>
+              <span class="props-row__value">Connected</span>
+            </div>
+          </div>
+
+          <!-- 标记 -->
+          <div class="props-section">
+            <div class="props-section__title">Identification</div>
+            <div class="props-row">
+              <span class="props-row__label">Mark</span>
+              <span class="props-row__value">W-101</span>
+            </div>
+            <div class="props-row">
+              <span class="props-row__label">Created By</span>
+              <span class="props-row__value">Architect A</span>
+            </div>
+          </div>
+
+          <!-- 关联需求 -->
+          <div class="props-section">
+            <div class="props-section__title">Linked Requirements</div>
+            <a class="props-link" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              REQ-101: Fire-rated wall min. 2h
+            </a>
+            <a class="props-link" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              REQ-205: Acoustic insulation STC 50
+            </a>
+            <a class="props-link" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              REQ-312: Structural load-bearing
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== 底部面板: 批注列表 ===== -->
+    <div class="viewer-bottom-panel" id="bottom-panel">
+      <div class="viewer-bottom-panel__header">
+        <span class="viewer-bottom-panel__title">
+          Markups / Annotations
+          <span class="viewer-bottom-panel__count">5</span>
+        </span>
+        <button class="viewer-panel__close-btn" type="button" aria-label="Close bottom panel" onclick="document.getElementById('bottom-panel').classList.add('viewer-bottom-panel--collapsed')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div class="viewer-bottom-panel__body">
+
+        <!-- 批注 1 -->
+        <div class="annotation-item">
+          <div class="annotation-item__marker annotation-item__marker--red">1</div>
+          <div class="annotation-item__content">
+            <div class="annotation-item__desc">Verify fire rating of wall W-101 meets 2-hour requirement per building code Section 7.2.</div>
+            <div class="annotation-item__meta">Zhang Wei -- 2026-07-20 14:32</div>
+          </div>
+        </div>
+
+        <!-- 批注 2 -->
+        <div class="annotation-item">
+          <div class="annotation-item__marker annotation-item__marker--yellow">2</div>
+          <div class="annotation-item__content">
+            <div class="annotation-item__desc">Door D-201 swing direction conflicts with corridor clearance requirements. Needs revision.</div>
+            <div class="annotation-item__meta">Li Ming -- 2026-07-20 10:15</div>
+          </div>
+        </div>
+
+        <!-- 批注 3 -->
+        <div class="annotation-item">
+          <div class="annotation-item__marker annotation-item__marker--blue">3</div>
+          <div class="annotation-item__content">
+            <div class="annotation-item__desc">Add window schedule reference for WIN-301 and WIN-302 on Level 3 south elevation.</div>
+            <div class="annotation-item__meta">Sarah Chen -- 2026-07-19 16:48</div>
+          </div>
+        </div>
+
+        <!-- 批注 4 -->
+        <div class="annotation-item">
+          <div class="annotation-item__marker annotation-item__marker--green">4</div>
+          <div class="annotation-item__content">
+            <div class="annotation-item__desc">Confirmed: Open Workspace area meets minimum 12 sqm per occupant density requirement.</div>
+            <div class="annotation-item__meta">Zhang Wei -- 2026-07-19 09:20</div>
+          </div>
+        </div>
+
+        <!-- 批注 5 -->
+        <div class="annotation-item">
+          <div class="annotation-item__marker annotation-item__marker--cyan">5</div>
+          <div class="annotation-item__content">
+            <div class="annotation-item__desc">Coordinate MEP penetration sleeves through wall W-101 with HVAC team before CD issue.</div>
+            <div class="annotation-item__meta">James Park -- 2026-07-18 11:05</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>

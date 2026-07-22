@@ -1,0 +1,97 @@
+# V0 Docker Compose — 施工图全流程 AI 平台
+# 对标 D34.24.1 V0 模块化单体部署架构
+# 升级至 K8s 的条件见 §7.3 V0 简化技术栈建议
+
+services:
+  # ── 基础设施 ──
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: platform
+      POSTGRES_PASSWORD: platform_dev
+      POSTGRES_DB: design_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platform -d design_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web Console
+    volumes:
+      - miniodata:/data
+
+  # ── 核心业务服务（Java 21 + Spring Boot 4.1） ──
+  core-service:
+    build:
+      context: ../services/core
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: design_platform
+      DB_USER: platform
+      DB_PASSWORD: platform_dev
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Python AI 服务（Python 3.12 + FastAPI） ──
+  ai-service:
+    build:
+      context: ../services/ai
+      dockerfile: Dockerfile
+    environment:
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_API_BASE: ${LLM_API_BASE:-https://api.openai.com/v1}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - core-service
+
+  # ── BFF（NestJS） ──
+  bff:
+    build:
+      context: ../
+      dockerfile: apps/bff/Dockerfile
+    environment:
+      PORT: "3001"
+      CORE_SERVICE_URL: http://core-service:8080
+      AI_SERVICE_URL: http://ai-service:8000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - core-service
+      - ai-service
+
+  # ── 前端（Next.js） ──
+  web:
+    build:
+      context: ../
+      dockerfile: apps/web/Dockerfile
+    environment:
+      BFF_URL: http://bff:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bff
+
+volumes:
+  pgdata:
+  miniodata:
