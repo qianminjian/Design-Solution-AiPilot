@@ -1,27 +1,24 @@
-# my-spec
+# Design-Solution-AiPilot
 
-> 
 
-**状态**: 探索 | **版本**: 0.1.0
 
-## 快速导航
+## Quick Start
 
-- [设计明灯](BEACON.md) — 目标、范围边界、设计决策
-- [技术规格](spec.md) — 详细技术规格说明
-- [设计决策](design/decisions/) — ADR 架构决策记录
-
-## 项目结构
+```bash
+git clone <repo-url>
+cd Design-Solution-AiPilot
+pnpm install
 
 ```
-my-spec/
-├── BEACON.md              # 项目明灯 — 目标、范围、决策
-├── spec.md                # 技术规格文档
-├── design/
-│   └── decisions/         # ADR 架构决策记录
-├── docs/                  # 补充文档
+
+## Project Structure
+
+```
+Design-Solution-AiPilot/
+├── src/
+├── tests/
+├── docs/
 └── README.md
 ```
 
-## 作者
-
-待填写
+## Tech Stack- Language: typescript- Package: pnpm- CI: github
