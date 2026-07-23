@@ -7,7 +7,7 @@
 
 -- 1.1 capability_revision - AI 能力定义修订
 CREATE TABLE ai.capability_revision (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     stable_id UUID NOT NULL,
     revision_no BIGINT NOT NULL,
@@ -45,7 +45,7 @@ COMMENT ON COLUMN ai.capability_revision.risk_level IS '风险等级：LOW/MEDIU
 
 -- 1.2 ai_run - AI 运行记录
 CREATE TABLE ai.run (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID REFERENCES portfolio.project(id) ON DELETE SET NULL,
     capability_id UUID REFERENCES ai.capability_revision(id),
@@ -90,7 +90,7 @@ COMMENT ON COLUMN ai.run.human_review_required IS '是否需要人工复核（D0
 
 -- 1.3 tool_call - 工具调用
 CREATE TABLE ai.tool_call (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     run_id UUID NOT NULL REFERENCES ai.run(id) ON DELETE CASCADE,
     tool_name VARCHAR(200) NOT NULL,
@@ -116,7 +116,7 @@ COMMENT ON TABLE ai.tool_call IS 'AI 工具调用记录';
 
 -- 1.4 guardrail_result - 护栏检查结果
 CREATE TABLE ai.guardrail_result (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     run_id UUID NOT NULL REFERENCES ai.run(id) ON DELETE CASCADE,
     guardrail_type VARCHAR(100) NOT NULL,
@@ -145,7 +145,7 @@ COMMENT ON TABLE ai.guardrail_result IS 'AI 护栏检查结果（D0 AI 安全）
 -- ============================================================
 
 CREATE TABLE platform.outbox_event (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL,
     project_id UUID,
     aggregate_type VARCHAR(100) NOT NULL,

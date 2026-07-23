@@ -7,7 +7,7 @@
 
 -- 1.1 project - 项目
 CREATE TABLE portfolio.project (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     organization_id UUID REFERENCES iam.organization(id) ON DELETE SET NULL,
     code VARCHAR(100) NOT NULL,
@@ -49,7 +49,7 @@ COMMENT ON COLUMN portfolio.project.gfa IS '总建筑面积 GFA，单位 m²（N
 
 -- 1.2 stage_instance - 阶段实例
 CREATE TABLE portfolio.stage_instance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     stage_code VARCHAR(100) NOT NULL,
@@ -76,7 +76,7 @@ COMMENT ON TABLE portfolio.stage_instance IS '项目阶段实例（D05 阶段）
 
 -- 1.3 gate_decision - 门禁决策
 CREATE TABLE portfolio.gate_decision (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     stage_id UUID REFERENCES portfolio.stage_instance(id) ON DELETE SET NULL,
@@ -105,7 +105,7 @@ COMMENT ON TABLE portfolio.gate_decision IS '门禁决策（D05 阶段门）';
 
 -- 1.4 project_baseline - 项目基线
 CREATE TABLE portfolio.project_baseline (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     revision_no BIGINT NOT NULL,
@@ -137,7 +137,7 @@ COMMENT ON COLUMN portfolio.project_baseline.revision_no IS '基线修订号，�
 
 -- 2.1 source - 需求源（资料）
 CREATE TABLE requirement.source (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     revision_no BIGINT NOT NULL,
@@ -167,7 +167,7 @@ COMMENT ON TABLE requirement.source IS '需求源/资料表';
 
 -- 2.2 requirement_revision - 需求修订
 CREATE TABLE requirement.requirement_revision (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     source_id UUID REFERENCES requirement.source(id) ON DELETE SET NULL,
@@ -202,7 +202,7 @@ COMMENT ON COLUMN requirement.requirement_revision.stable_id IS '稳定对象 ID
 
 -- 2.3 trace_link - 追踪链接
 CREATE TABLE requirement.trace_link (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     from_type VARCHAR(100) NOT NULL,

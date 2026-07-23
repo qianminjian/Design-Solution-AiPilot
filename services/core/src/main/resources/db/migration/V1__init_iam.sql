@@ -42,7 +42,7 @@ END $$;
 
 -- 4.1 tenant - 租户
 CREATE TABLE iam.tenant (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     code VARCHAR(100) NOT NULL UNIQUE,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
@@ -69,7 +69,7 @@ COMMENT ON COLUMN iam.tenant.region IS '数据驻留 Region（OD-01）';
 
 -- 4.2 organization - 组织
 CREATE TABLE iam.organization (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     type VARCHAR(50) NOT NULL DEFAULT 'COMPANY',
@@ -93,7 +93,7 @@ COMMENT ON TABLE iam.organization IS '组织表';
 
 -- 4.3 principal - 主体（用户/服务账号/外部身份）
 CREATE TABLE iam.principal (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL DEFAULT 'USER',
     email VARCHAR(255),
@@ -130,7 +130,7 @@ COMMENT ON COLUMN iam.principal.password_hash IS 'bcrypt/argon2id 密码哈希�
 
 -- 4.4 membership - 成员关系（用户-组织）
 CREATE TABLE iam.membership (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     principal_id UUID NOT NULL REFERENCES iam.principal(id) ON DELETE CASCADE,
     organization_id UUID REFERENCES iam.organization(id) ON DELETE SET NULL,
@@ -157,7 +157,7 @@ COMMENT ON TABLE iam.membership IS '成员关系表';
 
 -- 4.5 role_binding - 角色绑定（RBAC）
 CREATE TABLE iam.role_binding (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     principal_id UUID NOT NULL REFERENCES iam.principal(id) ON DELETE CASCADE,
     role_code VARCHAR(100) NOT NULL,
@@ -185,7 +185,7 @@ COMMENT ON TABLE iam.role_binding IS '角色绑定表（RBAC）';
 
 -- 4.6 access_grant - 访问授权（细粒度）
 CREATE TABLE iam.access_grant (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     principal_id UUID NOT NULL REFERENCES iam.principal(id) ON DELETE CASCADE,
     permission VARCHAR(200) NOT NULL,

@@ -7,7 +7,7 @@
 -- 1. cde.document - 文档（聚合根）
 -- ============================================================
 CREATE TABLE cde.document (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     name VARCHAR(500) NOT NULL,
@@ -50,7 +50,7 @@ COMMENT ON COLUMN cde.document.checksum IS '当前版本内容 SHA-256 哈希';
 -- 2. cde.document_version - 文档版本（不可变修订）
 -- ============================================================
 CREATE TABLE cde.document_version (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     document_id UUID NOT NULL REFERENCES cde.document(id) ON DELETE CASCADE,

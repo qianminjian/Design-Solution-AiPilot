@@ -12,11 +12,13 @@
 --   - check_results.evidence_json: L4 证据数据
 --   - compliance_findings: L5 合规发现（需专业处理）
 
+CREATE SCHEMA IF NOT EXISTS compliance;
+
 -- ============================================================
 -- 1. compliance.compliance_rules - 规则身份（稳定身份，多版本指向同一规则）
 -- ============================================================
 CREATE TABLE compliance.compliance_rules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     rule_code VARCHAR(100) NOT NULL,
     name VARCHAR(255) NOT NULL,
@@ -53,7 +55,7 @@ COMMENT ON COLUMN compliance.compliance_rules.status IS '规则状态：CANDIDAT
 -- 2. compliance.rule_revisions - 可执行规则版本（不可变，DSL JSON 存储）
 -- ============================================================
 CREATE TABLE compliance.rule_revisions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     rule_id UUID NOT NULL REFERENCES compliance.compliance_rules(id) ON DELETE CASCADE,
     revision_no BIGINT NOT NULL,
@@ -91,7 +93,7 @@ COMMENT ON COLUMN compliance.rule_revisions.status IS '版本状态：DRAFT/TEST
 -- 3. compliance.compliance_rule_sets - 规则集（阶段/用途规则集合）
 -- ============================================================
 CREATE TABLE compliance.compliance_rule_sets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -120,12 +122,14 @@ COMMENT ON COLUMN compliance.compliance_rule_sets.stage_code IS '适用阶段编
 -- 4. compliance.rule_set_rules - 规则集-规则版本关联（多对多）
 -- ============================================================
 CREATE TABLE compliance.rule_set_rules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     rule_set_id UUID NOT NULL REFERENCES compliance.compliance_rule_sets(id) ON DELETE CASCADE,
     revision_id UUID NOT NULL REFERENCES compliance.rule_revisions(id) ON DELETE CASCADE,
     priority INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES iam.principal(id),
+    updated_by UUID REFERENCES iam.principal(id),
     row_version BIGINT NOT NULL DEFAULT 1
 );
 
@@ -141,7 +145,7 @@ COMMENT ON COLUMN compliance.rule_set_rules.priority IS '执行优先级（数�
 -- 5. compliance.compliance_check_runs - 检查运行（一次完整检查）
 -- ============================================================
 CREATE TABLE compliance.compliance_check_runs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID REFERENCES portfolio.project(id),
     rule_set_id UUID NOT NULL REFERENCES compliance.compliance_rule_sets(id) ON DELETE CASCADE,
@@ -176,7 +180,7 @@ COMMENT ON COLUMN compliance.compliance_check_runs.outcome_summary IS '结果摘
 -- 6. compliance.rule_executions - 单规则执行记录
 -- ============================================================
 CREATE TABLE compliance.rule_executions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     run_id UUID NOT NULL REFERENCES compliance.compliance_check_runs(id) ON DELETE CASCADE,
     revision_id UUID NOT NULL REFERENCES compliance.rule_revisions(id) ON DELETE CASCADE,
@@ -211,7 +215,7 @@ COMMENT ON COLUMN compliance.rule_executions.status IS '执行状态：PENDING/R
 -- 7. compliance.check_results - 对象级检查结果
 -- ============================================================
 CREATE TABLE compliance.check_results (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     execution_id UUID NOT NULL REFERENCES compliance.rule_executions(id) ON DELETE CASCADE,
     object_id UUID,
@@ -222,7 +226,9 @@ CREATE TABLE compliance.check_results (
     explanation TEXT,
     evidence_json JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_by UUID REFERENCES iam.principal(id),
+    updated_by UUID REFERENCES iam.principal(id),
     row_version BIGINT NOT NULL DEFAULT 1
 );
 
@@ -240,7 +246,7 @@ COMMENT ON COLUMN compliance.check_results.outcome IS '判定结果：PASS/FAIL/
 -- 8. compliance.compliance_findings - 合规发现（需治理的问题）
 -- ============================================================
 CREATE TABLE compliance.compliance_findings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     result_id UUID NOT NULL REFERENCES compliance.check_results(id) ON DELETE CASCADE,
     severity VARCHAR(50) NOT NULL DEFAULT 'MEDIUM',
@@ -278,7 +284,8 @@ BEGIN
         WHERE column_name = 'updated_at'
           AND table_schema = 'compliance'
           AND table_name IN ('compliance_rules', 'rule_revisions', 'compliance_rule_sets',
-                             'compliance_check_runs', 'rule_executions', 'compliance_findings')
+                             'compliance_check_runs', 'rule_executions', 'compliance_findings',
+                             'rule_set_rules', 'check_results')
     LOOP
         EXECUTE format('DROP TRIGGER IF EXISTS set_timestamp ON compliance.%I', t);
         EXECUTE format('CREATE TRIGGER set_timestamp

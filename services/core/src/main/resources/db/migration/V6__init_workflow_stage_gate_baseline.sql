@@ -20,7 +20,7 @@
 -- 1. workflow.stage_instance - 阶段实例（带软删除）
 -- ============================================================
 CREATE TABLE workflow.stage_instance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     stage_code VARCHAR(100) NOT NULL,
@@ -60,7 +60,7 @@ COMMENT ON COLUMN workflow.stage_instance.status IS '阶段状态机见 D05.4.1'
 -- 2. workflow.gate_decision - 门禁决策（带软删除）
 -- ============================================================
 CREATE TABLE workflow.gate_decision (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     stage_id UUID REFERENCES workflow.stage_instance(id) ON DELETE SET NULL,
@@ -102,7 +102,7 @@ COMMENT ON COLUMN workflow.gate_decision.baseline_id IS '关联基线 ID，必�
 -- 3. workflow.project_baseline - 项目基线（带软删除）
 -- ============================================================
 CREATE TABLE workflow.project_baseline (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     -- 修订号（项目内单调递增，冻结时取 max + 1）

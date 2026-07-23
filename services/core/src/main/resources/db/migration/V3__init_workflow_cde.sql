@@ -7,7 +7,7 @@
 
 -- 1.1 workflow_definition_revision - 工作流定义修订
 CREATE TABLE workflow.definition_revision (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     stable_id UUID NOT NULL,
     revision_no BIGINT NOT NULL,
@@ -34,7 +34,7 @@ COMMENT ON TABLE workflow.definition_revision IS '工作流定义修订';
 
 -- 1.2 workflow_instance - 工作流实例
 CREATE TABLE workflow.instance (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID REFERENCES portfolio.project(id) ON DELETE SET NULL,
     definition_id UUID NOT NULL REFERENCES workflow.definition_revision(id),
@@ -63,7 +63,7 @@ COMMENT ON TABLE workflow.instance IS '工作流实例';
 
 -- 1.3 task - 任务
 CREATE TABLE workflow.task (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID REFERENCES portfolio.project(id) ON DELETE SET NULL,
     workflow_instance_id UUID REFERENCES workflow.instance(id) ON DELETE SET NULL,
@@ -99,7 +99,7 @@ COMMENT ON TABLE workflow.task IS '任务表（人工/系统任务）';
 
 -- 1.4 task_attempt - 任务执行尝试
 CREATE TABLE workflow.attempt (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     task_id UUID NOT NULL REFERENCES workflow.task(id) ON DELETE CASCADE,
     attempt_no INTEGER NOT NULL DEFAULT 1,
@@ -125,7 +125,7 @@ COMMENT ON TABLE workflow.attempt IS '任务执行尝试记录';
 
 -- 1.5 timer - 定时器
 CREATE TABLE workflow.timer (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     workflow_instance_id UUID REFERENCES workflow.instance(id) ON DELETE CASCADE,
     task_id UUID REFERENCES workflow.task(id) ON DELETE SET NULL,
@@ -152,7 +152,7 @@ COMMENT ON TABLE workflow.timer IS '工作流定时器';
 
 -- 2.1 asset - 资产（稳定对象）
 CREATE TABLE cde.asset (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     asset_type VARCHAR(100) NOT NULL,
@@ -189,7 +189,7 @@ COMMENT ON COLUMN cde.asset.code IS '资产编号，项目内唯一';
 
 -- 2.2 asset_version - 资产版本（不可变修订）
 CREATE TABLE cde.asset_version (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     asset_id UUID NOT NULL REFERENCES cde.asset(id) ON DELETE CASCADE,
@@ -229,7 +229,7 @@ COMMENT ON COLUMN cde.asset_version.sha256_hash IS '内容 SHA-256 哈希，内�
 
 -- 2.3 object_manifest - 对象存储清单
 CREATE TABLE cde.object_manifest (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     asset_version_id UUID NOT NULL REFERENCES cde.asset_version(id) ON DELETE CASCADE,
     bucket_name VARCHAR(255) NOT NULL,
@@ -257,7 +257,7 @@ COMMENT ON COLUMN cde.object_manifest.object_key IS '对象存储 Key，格式�
 
 -- 2.4 rendition - 渲染/预览
 CREATE TABLE cde.rendition (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     asset_version_id UUID NOT NULL REFERENCES cde.asset_version(id) ON DELETE CASCADE,
     rendition_type VARCHAR(100) NOT NULL,
@@ -284,7 +284,7 @@ COMMENT ON TABLE cde.rendition IS '资产渲染/预览（可重建派生）';
 
 -- 2.5 baseline_item - 基线项
 CREATE TABLE cde.baseline_item (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     baseline_id UUID NOT NULL REFERENCES portfolio.project_baseline(id) ON DELETE CASCADE,
     asset_version_id UUID NOT NULL REFERENCES cde.asset_version(id),
@@ -304,7 +304,7 @@ COMMENT ON TABLE cde.baseline_item IS '基线项（引用精确版本+hash）';
 
 -- 2.6 transmittal - 交付/传送
 CREATE TABLE cde.transmittal (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES iam.tenant(id) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES portfolio.project(id) ON DELETE CASCADE,
     transmittal_no VARCHAR(100) NOT NULL,

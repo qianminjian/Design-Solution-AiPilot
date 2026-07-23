@@ -27,9 +27,10 @@ CREATE TABLE golden_dataset (
     frozen_by       UUID,
     -- 审计字段
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_by      UUID NOT NULL,
+    created_by      UUID,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by      UUID NOT NULL
+    updated_by      UUID,
+    row_version     BIGINT NOT NULL DEFAULT 1
 );
 
 CREATE INDEX idx_golden_dataset_tenant ON golden_dataset(tenant_id);
@@ -66,9 +67,10 @@ CREATE TABLE verification_item (
     waiver_reason   TEXT,
     -- 审计字段
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    created_by      UUID NOT NULL,
+    created_by      UUID,
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_by      UUID NOT NULL
+    updated_by      UUID,
+    row_version     BIGINT NOT NULL DEFAULT 1
 );
 
 CREATE INDEX idx_verification_item_dataset ON verification_item(dataset_id);
