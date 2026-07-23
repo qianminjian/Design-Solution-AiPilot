@@ -6,22 +6,38 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main",
-    "lint": "eslint \"{src,test}/**/*.ts\"",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint \"{src,tests}/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "@design-platform/shared": "workspace:*",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^3.3.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/terminus": "^10.3.0",
+    "@nestjs/axios": "^4.0.0",
+    "axios": "^1.7.0",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.0"
+    "rxjs": "^7.8.0",
+    "class-validator": "^0.14.1",
+    "class-transformer": "^0.5.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.0",
-    "typescript": "^5.7.0"
+    "@types/supertest": "^6.0.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "pino-pretty": "^11.3.0",
+    "supertest": "^7.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
   }
 }
