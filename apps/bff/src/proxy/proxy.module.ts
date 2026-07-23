@@ -10,6 +10,7 @@ import { AiProxyService } from "./ai/ai-proxy.service";
 import { GoldenDatasetProxyController } from "./tevv/tevv-proxy.controller";
 import { VerificationItemProxyController } from "./tevv/verification-item-proxy.controller";
 import { WorkflowProxyController } from "./workflow/workflow-proxy.controller";
+import { DesignOptionProxyController } from "./design/design-option-proxy.controller";
 
 /**
  * 代理模块
@@ -19,7 +20,7 @@ import { WorkflowProxyController } from "./workflow/workflow-proxy.controller";
  * - controllers 数组顺序确保路由优先匹配：
  *   AuthProxyController → AiCapabilityProxyController → AiPromptProxyController →
  *   GoldenDatasetProxyController → VerificationItemProxyController →
- *   WorkflowProxyController → ProxyController
+ *   DesignOptionProxyController → WorkflowProxyController → ProxyController
  *   （NestJS 基于 Express，按声明顺序匹配路由）
  */
 @Module({
@@ -35,6 +36,7 @@ import { WorkflowProxyController } from "./workflow/workflow-proxy.controller";
     AiPromptProxyController,
     GoldenDatasetProxyController,
     VerificationItemProxyController,
+    DesignOptionProxyController,
     WorkflowProxyController,
     ProxyController,
   ],

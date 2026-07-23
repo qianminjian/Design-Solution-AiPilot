@@ -60,3 +60,6 @@ export * from "./contracts/ai.contract";
 
 // ── TEVV 契约（金样数据集 + Gate 准入验证） ──
 export * from "./contracts/tevv.contract";
+
+// ── Design 契约（设计选项 + 反馈） ──
+export * from "./contracts/design.contract";
