@@ -78,31 +78,34 @@ export interface ListGateDecisionsRequest {
 
 /**
  * Workflow API 端点
- * 基础路径：/api/v1
+ * 基础路径：/api/v1/workflow
  *
- * 与 portfolio.contract.ts §PortfolioApiPaths 的区别：
- *   - action 端点直接以资源 ID 为路径前缀（/stages/{id}/transition），不再嵌套在 project 下
- *   - 列表端点仍嵌套在 project 下（/projects/{projectId}/stages），符合 RESTful 资源层级
+ * workflow 域独立路径前缀，避免与 portfolio 域路径冲突。
+ * 自定义动作采用 Google AIP 风格（:transition / :decide / :freeze）。
+ * 列表端点通过 query 参数过滤（projectId / stageId）。
  *
  * 稳定契约 ID 见 @design/r2-contract-catalog/
  */
 export const WorkflowApiPaths = {
   // 阶段实例
-  /** 列出项目下所有阶段实例 */
-  stages: (projectId: string) => `/api/v1/projects/${projectId}/stages`,
-  /** 阶段状态流转（按阶段 ID 直达，不嵌套 project） */
-  stageTransition: (stageId: string) => `/api/v1/stages/${stageId}/transition`,
+  /** 列出项目下所有阶段实例（按 stageOrder 升序） */
+  stages: (projectId: string) =>
+    `/api/v1/workflow/stages?projectId=${projectId}`,
+  /** 阶段状态流转（按阶段 ID 直达） */
+  stageTransition: (stageId: string) =>
+    `/api/v1/workflow/stages/${stageId}:transition`,
   /** 列出阶段关联的门禁决策 */
-  stageGates: (stageId: string) => `/api/v1/stages/${stageId}/gates`,
+  stageGates: (stageId: string) => `/api/v1/workflow/gates?stageId=${stageId}`,
   // 门禁决策
   /** 提交门禁决策 */
-  gateDecision: (gateId: string) => `/api/v1/gates/${gateId}/decision`,
+  gateDecision: (gateId: string) => `/api/v1/workflow/gates/${gateId}:decide`,
   // 项目基线
-  /** 列出项目下所有基线 */
-  baselines: (projectId: string) => `/api/v1/projects/${projectId}/baselines`,
+  /** 列出项目下所有基线（按版本号降序） */
+  baselines: (projectId: string) =>
+    `/api/v1/workflow/baselines?projectId=${projectId}`,
   /** 冻结基线（按基线 ID 直达，先创建草稿后冻结两步式） */
   baselineFreeze: (baselineId: string) =>
-    `/api/v1/baselines/${baselineId}/freeze`,
+    `/api/v1/workflow/baselines/${baselineId}:freeze`,
   /** 查询基线详情 */
-  baseline: (baselineId: string) => `/api/v1/baselines/${baselineId}`,
+  baseline: (baselineId: string) => `/api/v1/workflow/baselines/${baselineId}`,
 } as const;

@@ -25,14 +25,14 @@ apps/bff/openapi/
 
 ## 6 个 API 域快速导航
 
-| 域 | 文档 | 主要端点前缀 | 业务错误码段 | Owner |
-|------|------|------------|------------|------|
-| **IAM** | `iam.yaml` | `/api/v1/auth/*` `/api/v1/principals/*` | 1xxx | Identity Service |
-| **Project** | `portfolio.yaml` | `/api/v1/projects/*` | 2xxx | Portfolio Service |
-| **CDE** | `cde.yaml` | `/api/v1/documents/*` | 3xxx | CDE Service |
-| **Design** | `design.yaml` | `/api/v1/design-options/*` | 4xxx | Design/Discipline Service |
-| **Coordination** | `coordination.yaml` | `/api/v1/findings/*` `/api/v1/bcf/issues` | 5xxx | Coordination Service |
-| **Workflow** | `workflow.yaml` | `/api/v1/baselines/*` `/api/v1/gates/*` `/api/v1/stages/*` | 6xxx | Workflow Service |
+| 域               | 文档                | 主要端点前缀                                                                          | 业务错误码段 | Owner                     |
+| ---------------- | ------------------- | ------------------------------------------------------------------------------------- | ------------ | ------------------------- |
+| **IAM**          | `iam.yaml`          | `/api/v1/auth/*` `/api/v1/principals/*`                                               | 1xxx         | Identity Service          |
+| **Project**      | `portfolio.yaml`    | `/api/v1/projects/*`                                                                  | 2xxx         | Portfolio Service         |
+| **CDE**          | `cde.yaml`          | `/api/v1/documents/*`                                                                 | 3xxx         | CDE Service               |
+| **Design**       | `design.yaml`       | `/api/v1/design-options/*`                                                            | 4xxx         | Design/Discipline Service |
+| **Coordination** | `coordination.yaml` | `/api/v1/findings/*` `/api/v1/bcf/issues`                                             | 5xxx         | Coordination Service      |
+| **Workflow**     | `workflow.yaml`     | `/api/v1/workflow/baselines/*` `/api/v1/workflow/gates/*` `/api/v1/workflow/stages/*` | 6xxx         | Workflow Service          |
 
 ## 通用约定（Cross-cutting）
 
@@ -45,17 +45,17 @@ apps/bff/openapi/
 
 ### 2. 双层状态码
 
-| 场景 | HTTP | 业务 code | 含义 |
-|------|------|----------|------|
-| 成功 | 200 / 201 / 204 | 0 | 业务处理成功 |
-| 请求格式错误 | 400 | 4001（REQUEST_INVALID）| 语法错误、Header 缺失 |
-| 未认证 | 401 | 4011 | Token 无效或过期 |
-| 无权限 | 403 | 4031 / 4032 | 作用域拒绝 / 数据驻留拒绝 |
-| 资源不存在 | 404 | 4041 | 资源不存在或按防枚举隐藏 |
-| 状态冲突 | 409 | 4091+ | 状态机非法、并发冲突 |
-| 业务规则失败 | 422 | 4221+ | 字段校验失败、IDEMPOTENCY_KEY_REUSED |
-| 限流 | 429 | 4291 / 4292 | RATE_LIMITED / BUDGET_EXHAUSTED |
-| 服务端错误 | 500-599 | 9500+ | INTERNAL_ERROR / DEPENDENCY_FAILED |
+| 场景         | HTTP            | 业务 code               | 含义                                 |
+| ------------ | --------------- | ----------------------- | ------------------------------------ |
+| 成功         | 200 / 201 / 204 | 0                       | 业务处理成功                         |
+| 请求格式错误 | 400             | 4001（REQUEST_INVALID） | 语法错误、Header 缺失                |
+| 未认证       | 401             | 4011                    | Token 无效或过期                     |
+| 无权限       | 403             | 4031 / 4032             | 作用域拒绝 / 数据驻留拒绝            |
+| 资源不存在   | 404             | 4041                    | 资源不存在或按防枚举隐藏             |
+| 状态冲突     | 409             | 4091+                   | 状态机非法、并发冲突                 |
+| 业务规则失败 | 422             | 4221+                   | 字段校验失败、IDEMPOTENCY_KEY_REUSED |
+| 限流         | 429             | 4291 / 4292             | RATE_LIMITED / BUDGET_EXHAUSTED      |
+| 服务端错误   | 500-599         | 9500+                   | INTERNAL_ERROR / DEPENDENCY_FAILED   |
 
 权威源：`@design/D35-API-事件契约.md §D35.9` + `api-conventions.md §3`
 
@@ -85,16 +85,16 @@ apps/bff/openapi/
 
 ### 5. 业务错误码段常量
 
-| 段 | 含义 | 示例 |
-|----|------|------|
-| 1xxx | IAM 域 | 1001 INVALID_CREDENTIALS、1012 DUPLICATE_EMAIL |
-| 2xxx | Project 域 | 2001 PROJECT_NOT_FOUND、2002 PROJECT_DUPLICATE_CODE |
-| 3xxx | CDE 域 | 3001 DOCUMENT_NOT_FOUND、3002 DOCUMENT_CHECKED_OUT_BY_OTHER |
-| 4xxx | Design 域 | 4001 DESIGN_OPTION_NOT_FOUND |
-| 5xxx | Coordination 域 | 5001 FINDING_NOT_FOUND |
-| 6xxx | Workflow 域 | 6001 TASK_NOT_FOUND、6010 WORKFLOW_DEADLINE_EXCEEDED |
-| 7xxx | Compliance 域 | 7001 RULE_NOT_FOUND（V0 未覆盖） |
-| 9xxx | System | 9001 RATE_LIMITED、9500 INTERNAL_ERROR |
+| 段   | 含义            | 示例                                                        |
+| ---- | --------------- | ----------------------------------------------------------- |
+| 1xxx | IAM 域          | 1001 INVALID_CREDENTIALS、1012 DUPLICATE_EMAIL              |
+| 2xxx | Project 域      | 2001 PROJECT_NOT_FOUND、2002 PROJECT_DUPLICATE_CODE         |
+| 3xxx | CDE 域          | 3001 DOCUMENT_NOT_FOUND、3002 DOCUMENT_CHECKED_OUT_BY_OTHER |
+| 4xxx | Design 域       | 4001 DESIGN_OPTION_NOT_FOUND                                |
+| 5xxx | Coordination 域 | 5001 FINDING_NOT_FOUND                                      |
+| 6xxx | Workflow 域     | 6001 TASK_NOT_FOUND、6010 WORKFLOW_DEADLINE_EXCEEDED        |
+| 7xxx | Compliance 域   | 7001 RULE_NOT_FOUND（V0 未覆盖）                            |
+| 9xxx | System          | 9001 RATE_LIMITED、9500 INTERNAL_ERROR                      |
 
 完整枚举见 `common.yaml#/components/schemas/BusinessErrorCode`
 
@@ -118,12 +118,12 @@ Link: </api/v2/projects>; rel="successor-version"
 
 ### 兼容变更分类
 
-| 类型 | 处理 |
-|------|------|
-| 新增 optional 字段 | 不需升版本 |
-| 新增 endpoint / enum 值 | 不需升版本（客户端容忍 unknown） |
+| 类型                            | 处理                                      |
+| ------------------------------- | ----------------------------------------- |
+| 新增 optional 字段              | 不需升版本                                |
+| 新增 endpoint / enum 值         | 不需升版本（客户端容忍 unknown）          |
 | 删除字段 / 改义 / 收紧 required | 必须升 major（`/v2` 或新 `OpenAPI` 文档） |
-| 修改错误码语义 | 必须升 major |
+| 修改错误码语义                  | 必须升 major                              |
 
 详见 `@design/D35-API-事件契约.md §D35.18`
 
@@ -131,19 +131,20 @@ Link: </api/v2/projects>; rel="successor-version"
 
 本目录的 OpenAPI 文档与 `design/r2-contract-catalog/` 中分配的 **30 个 Operation 稳定 ID** 一一对应：
 
-| Operation ID 段 | 域 | 文档 | 说明 |
-|----------------|------|------|------|
-| `iam.auth.*` | IAM | `iam.yaml` | 认证 6 端点 |
-| `iam.principal.*` | IAM | `iam.yaml` | 主体 4 端点（list/get/create/update/delete） |
-| `iam.organization.*` | IAM | （V0 未覆盖） | 后续补齐 |
-| `project.*` | Project | `portfolio.yaml` | 项目 5 端点 + member 2 端点 |
-| `cde.document.*` | CDE | `cde.yaml` | 文档 4 端点 + checkout/checkin |
-| `cde.version.*` | CDE | `cde.yaml` | 版本 2 端点 |
-| `design.option.*` | Design | `design.yaml` | 选项 2 端点 + feedback |
-| `coordination.finding.*` | Coordination | `coordination.yaml` | 3 端点 |
-| `coordination.bcf.*` | Coordination | `coordination.yaml` | 1 端点 |
-| `workflow.baseline.*` | Workflow | `workflow.yaml` | 2 端点 + freeze |
-| `workflow.gate.*` | Workflow | `workflow.yaml` | 3 端点 |
+| Operation ID 段          | 域           | 文档                | 说明                                         |
+| ------------------------ | ------------ | ------------------- | -------------------------------------------- |
+| `iam.auth.*`             | IAM          | `iam.yaml`          | 认证 6 端点                                  |
+| `iam.principal.*`        | IAM          | `iam.yaml`          | 主体 4 端点（list/get/create/update/delete） |
+| `iam.organization.*`     | IAM          | （V0 未覆盖）       | 后续补齐                                     |
+| `project.*`              | Project      | `portfolio.yaml`    | 项目 5 端点 + member 2 端点                  |
+| `cde.document.*`         | CDE          | `cde.yaml`          | 文档 4 端点 + checkout/checkin               |
+| `cde.version.*`          | CDE          | `cde.yaml`          | 版本 2 端点                                  |
+| `design.option.*`        | Design       | `design.yaml`       | 选项 2 端点 + feedback                       |
+| `coordination.finding.*` | Coordination | `coordination.yaml` | 3 端点                                       |
+| `coordination.bcf.*`     | Coordination | `coordination.yaml` | 1 端点                                       |
+| `workflow.baseline.*`    | Workflow     | `workflow.yaml`     | list + get + create + freeze                 |
+| `workflow.gate.*`        | Workflow     | `workflow.yaml`     | list + create + decide                       |
+| `workflow.stage.*`       | Workflow     | `workflow.yaml`     | list + transition                            |
 
 修改 API 路径前必须查阅 `design/r2-contract-catalog/`，确认是否影响已注册的稳定 ID。
 
@@ -188,6 +189,6 @@ redocly preview-docs apps/bff/openapi/bff-api.yaml
 
 ## 变更日志
 
-| 日期 | 版本 | 变更 |
-|------|------|------|
+| 日期       | 版本  | 变更                                         |
+| ---------- | ----- | -------------------------------------------- |
 | 2026-07-23 | 1.0.0 | V0 首切片：6 域 + BFF 聚合 8 个 OpenAPI 文档 |
