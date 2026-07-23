@@ -56,6 +56,7 @@ const SIDER_MENU_ITEMS: SiderMenuItem[] = [
     label: "Golden Datasets",
   },
   { key: "/compliance-rules", icon: <SafetyCertificateOutlined />, label: "Compliance Rules" },
+  { key: "/compliance-checks", icon: <SafetyCertificateOutlined />, label: "Compliance Checks" },
   { key: "/members", icon: <TeamOutlined />, label: "Members" },
   { key: "/monitoring", icon: <MonitorOutlined />, label: "Monitoring" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
