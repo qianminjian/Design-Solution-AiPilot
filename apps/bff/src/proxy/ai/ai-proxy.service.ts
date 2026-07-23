@@ -25,13 +25,15 @@ export class AiProxyService {
     private readonly httpService: HttpService,
   ) {}
 
-  async forwardCapabilities(
-    options: AiForwardOptions,
-  ): Promise<ProxyResult> {
+  async forwardCapabilities(options: AiForwardOptions): Promise<ProxyResult> {
     return this.forward(options);
   }
 
   async forwardPrompts(options: AiForwardOptions): Promise<ProxyResult> {
+    return this.forward(options);
+  }
+
+  async forwardSolutions(options: AiForwardOptions): Promise<ProxyResult> {
     return this.forward(options);
   }
 

@@ -63,3 +63,6 @@ export * from "./contracts/tevv.contract";
 
 // ── Design 契约（设计选项 + 反馈） ──
 export * from "./contracts/design.contract";
+
+// ── Solutions 契约（方案生成） ──
+export * from "./contracts/solutions.contract";
