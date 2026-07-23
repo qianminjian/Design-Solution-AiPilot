@@ -23,6 +23,7 @@ from src.logging_config import setup_logging
 from src.middleware.trace import TraceIdMiddleware
 from src.prompts.router import router as prompts_router
 from src.rag.router import router as rag_router
+from src.solutions.router import router as solutions_router
 
 # 启动时初始化结构化日志（observability.md §1）
 setup_logging()
@@ -69,6 +70,7 @@ app.add_middleware(TraceIdMiddleware)
 app.include_router(capabilities_router)
 app.include_router(prompts_router)
 app.include_router(rag_router)
+app.include_router(solutions_router)
 
 
 @app.get("/health")
