@@ -1,54 +1,59 @@
-// @design-platform/shared — 全平台共享类型与常量
-// D35 接口契约中稳定 ID 的 TypeScript 侧定义
+/**
+ * @design-platform/shared — 全平台共享类型与常量
+ *
+ * 权威源：
+ * - @design/D35-API-事件契约.md（API/事件契约）
+ * - @design/D34-数据-数据库.md（数据模型）
+ * - @design/D39-身份多租户-授权.md（IAM 域）
+ * - @design/D05-全流程阶段-阶段门.md（Portfolio 域）
+ *
+ * 前端/BFF/后端通过此包共享 DTO 与错误码，确保类型一致
+ */
 
-// ── API 域枚举 ──
-export const ApiDomains = [
-  "iam",
-  "project",
-  "cde",
-  "design",
-  "coordination",
-  "workflow",
-] as const;
-export type ApiDomain = (typeof ApiDomains)[number];
+// ── 统一响应格式 ──
+export type {
+  ApiResponse,
+  ApiErrorResponse,
+  FieldError,
+  OffsetPageRequest,
+  OffsetPageResponse,
+  CursorPageRequest,
+  CursorPageResponse,
+} from "./api-response";
+export { BIZ_CODE, isSuccess } from "./api-response";
+
+// ── 错误码 ──
+export {
+  ErrorCode,
+  ERROR_HTTP_STATUS,
+  isRetryable,
+  HttpHeader,
+} from "./error-codes";
+export type {
+  ErrorCode as ErrorCodeType,
+  HttpHeader as HttpHeaderType,
+} from "./error-codes";
 
 // ── CDE 信息容器状态（对齐 ISO 19650） ──
-export type CdeStatus = "WIP" | "Shared" | "Published" | "Archived";
+export type { CdeStatus } from "./enums";
+export { ApiDomains } from "./enums";
+export type { ApiDomain } from "./enums";
 
-// ── 项目阶段 ──
-export type ProjectPhase =
-  | "planning"
-  | "concept"
-  | "schematic"
-  | "detailed"
-  | "construction"
-  | "review"
-  | "delivery"
-  | "change"
-  | "archive";
+// ── IAM 契约 ──
+export * from "./contracts/iam.contract";
 
-// ── AI 置信度等级 ──
-export type ConfidenceLevel = "high" | "medium" | "low" | "unknown";
+// ── 认证契约 ──
+export * from "./contracts/auth.contract";
 
-// ── 分页参数 ──
-export interface PageRequest {
-  page: number;
-  pageSize: number;
-  sort?: string;
-  order?: "asc" | "desc";
-}
+// ── Portfolio 契约 ──
+export * from "./contracts/portfolio.contract";
 
-export interface PageResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-}
+// ── Workflow 契约 ──
+// 实体 DTO 与枚举从 portfolio 契约复用，workflow 契约补充特有 API 路径与查询请求
+export * from "./contracts/workflow.contract";
 
-// ── API 错误响应 ──
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
-  traceId?: string;
-}
+// ── CDE 契约（V1 简化文档模型） ──
+export * from "./contracts/cde.contract";
+
+// ── AI 能力契约（V0 OpenAI 兼容 Provider） ──
+export * from "./contracts/ai.contract";
