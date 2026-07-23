@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
   Req,
   Res,
@@ -42,8 +43,8 @@ import { CookieService } from "./cookie.service";
 @UseInterceptors(ProxyInterceptor)
 export class AuthProxyController {
   constructor(
-    private readonly proxyService: ProxyService,
-    private readonly cookieService: CookieService,
+    @Inject(ProxyService) private readonly proxyService: ProxyService,
+    @Inject(CookieService) private readonly cookieService: CookieService,
   ) {}
 
   /**

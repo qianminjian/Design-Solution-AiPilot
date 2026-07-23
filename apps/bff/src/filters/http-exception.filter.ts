@@ -51,8 +51,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       );
     }
 
-    const { httpAdapter } = this.httpAdapterHost;
-    httpAdapter.reply(response, payload, status);
+    const httpAdapter = this.httpAdapterHost?.httpAdapter;
+    if (httpAdapter) {
+      httpAdapter.reply(response, payload, status);
+    } else {
+      response.status(status).json(payload);
+    }
   }
 
   /**

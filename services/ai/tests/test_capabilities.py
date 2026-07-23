@@ -194,32 +194,35 @@ async def test_vision_missing_image_url_rejected(async_client):
 
 @pytest.mark.asyncio
 async def test_embeddings_success(async_client):
-    """embeddings 端点应返回向量"""
-    mock = MockLlmClient(embed_result=make_embed_result(embedding=[0.5, 0.6]))
-    _override_llm_client(mock)
-
-    try:
-        response = await async_client.post(
-            "/api/v1/capabilities/embeddings",
-            json={"input": "test text"},
-        )
-    finally:
-        _clear_overrides()
+    """embeddings 端点应返回向量（使用本地 EmbeddingService）"""
+    response = await async_client.post(
+        "/api/v1/capabilities/embeddings",
+        json={"input": "test text"},
+    )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["embedding"] == [0.5, 0.6]
-    assert data["dimensions"] == 2
-    assert data["model"] == "text-embedding-3-small"
+    assert len(data["embedding"]) > 0
+    assert data["dimensions"] == len(data["embedding"])
+    assert data["model"] == "all-MiniLM-L6-v2"
 
 
 @pytest.mark.asyncio
-async def test_embeddings_fallback_to_stub_on_llm_error(async_client):
-    """LLM 调用失败时应降级返回 stub 向量"""
-    from src.llm.client import LlmError
+async def test_embeddings_fallback_to_stub_on_embedding_error(async_client):
+    """EmbeddingService 调用失败时应降级返回 stub 向量"""
+    from src.capabilities.router import get_embedding_service
 
-    mock = MockLlmClient(embed_exception=LlmError("not configured", status_code=404))
-    _override_llm_client(mock)
+    original_get_embedding = get_embedding_service
+
+    class FailingEmbeddingService:
+        @property
+        def model_name(self):
+            return "stub"
+
+        def embed_single(self, text: str) -> list[float]:
+            raise RuntimeError("embedding service unavailable")
+
+    app.dependency_overrides[get_embedding_service] = lambda: FailingEmbeddingService()
 
     try:
         response = await async_client.post(
@@ -227,7 +230,7 @@ async def test_embeddings_fallback_to_stub_on_llm_error(async_client):
             json={"input": "test text"},
         )
     finally:
-        _clear_overrides()
+        app.dependency_overrides[get_embedding_service] = original_get_embedding
 
     assert response.status_code == 200
     data = response.json()

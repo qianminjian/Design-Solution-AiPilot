@@ -1,6 +1,6 @@
 """Capability 业务逻辑
 
-调用 LlmClient 实现 3 个能力端点的业务逻辑。
+调用 LlmClient 和 EmbeddingService 实现 3 个能力端点的业务逻辑。
 所有 AI 输出标记为 is_ai_assisted=true，按风险等级进入人工复核（security.md §12）。
 """
 
@@ -16,15 +16,11 @@ from src.capabilities.schemas import (
     VisionResponse,
 )
 from src.llm.client import ChatMessage, LlmClient, LlmError
+from src.rag.embedding import EmbeddingService
 
 logger = logging.getLogger(__name__)
 
-# V0 默认所有 AI 输出进入人工复核（security.md §12 红线）
-# 后续按 CapabilityRiskProfile 细化分级
 DEFAULT_REQUIRES_HUMAN_REVIEW = True
-
-# Embedding V0 stub 维度（待 embedding 模型配置后切换真实调用）
-EMBEDDING_STUB_DIMENSIONS = 8
 
 
 class CapabilityService:
@@ -33,8 +29,9 @@ class CapabilityService:
     封装 LLM 调用与响应组装，所有 AI 输出强制标记 is_ai_assisted。
     """
 
-    def __init__(self, llm_client: LlmClient):
+    def __init__(self, llm_client: LlmClient, embedding_service: EmbeddingService):
         self._llm = llm_client
+        self._embedding = embedding_service
 
     async def text_generation(self, request: TextGenerationRequest) -> TextGenerationResponse:
         """文本生成能力
@@ -116,8 +113,8 @@ class CapabilityService:
     async def embeddings(self, request: EmbeddingRequest) -> EmbeddingResponse:
         """文本向量化能力
 
-        V0 阶段：尝试调用 LLM embed；若失败（如未配置 embedding 模型）返回 stub。
-        TODO: 待 embedding 模型配置后移除 stub 分支。
+        使用本地 EmbeddingService 生成向量，与 LLM Client 解耦。
+        当 EmbeddingService 不可用时降级返回 stub 向量，避免阻塞下游。
 
         Args:
             request: 向量化请求
@@ -126,33 +123,33 @@ class CapabilityService:
             EmbeddingResponse
         """
         try:
-            result = await self._llm.embed(request.input, model=request.model)
+            embedding = self._embedding.embed_single(request.input)
+            model_name = self._embedding.model_name
+
+            logger.info("[Capability] embedding 生成成功", {"model": model_name})
+
             return EmbeddingResponse(
-                embedding=result.embedding,
-                dimensions=len(result.embedding),
-                model=result.model,
+                embedding=embedding,
+                dimensions=len(embedding),
+                model=model_name,
                 usage=TokenUsageSchema(
-                    prompt_tokens=result.usage.prompt_tokens,
+                    prompt_tokens=0,
                     completion_tokens=0,
-                    total_tokens=result.usage.total_tokens,
+                    total_tokens=0,
                 ),
                 latency_ms=0,
             )
-        except LlmError as exc:
-            # V0 降级：返回 stub 向量，标注 TODO
-            logger.warning(
-                "[Capability] embedding 降级为 stub",
-                extra={
-                    "error": str(exc),
-                    "provider": exc.provider,
-                    "status_code": exc.status_code,
-                },
+        except Exception as exc:
+            logger.error(
+                "[Capability] embedding 生成失败，降级返回 stub",
+                extra={"error": str(exc)},
             )
-            stub_embedding = [0.0] * EMBEDDING_STUB_DIMENSIONS
+            stub_dimensions = 384
+            stub_embedding = [0.0] * stub_dimensions
             return EmbeddingResponse(
                 embedding=stub_embedding,
-                dimensions=EMBEDDING_STUB_DIMENSIONS,
-                model=request.model or "stub",
+                dimensions=stub_dimensions,
+                model="stub",
                 usage=TokenUsageSchema(
                     prompt_tokens=0,
                     completion_tokens=0,

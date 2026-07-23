@@ -2,12 +2,18 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Layout, Menu, Avatar, Dropdown, Typography, theme, App } from "antd";
+import { Layout, Menu, Avatar, Dropdown, Typography, theme, App, Input, Drawer } from "antd";
 import {
   DashboardOutlined,
   ProjectOutlined,
+  GatewayOutlined,
+  CheckSquareOutlined,
+  FileTextOutlined,
   TeamOutlined,
   SettingOutlined,
+  MenuOutlined,
+  SearchOutlined,
+  BellOutlined,
   UserOutlined,
   LogoutOutlined,
 } from "@ant-design/icons";
@@ -19,7 +25,6 @@ import { ApiError } from "@/lib/api-client";
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
-/** 侧边栏菜单项定义（key 为路由路径，用于导航跳转与高亮匹配） */
 interface SiderMenuItem {
   key: string;
   icon: ReactNode;
@@ -29,20 +34,13 @@ interface SiderMenuItem {
 const SIDER_MENU_ITEMS: SiderMenuItem[] = [
   { key: "/dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
   { key: "/projects", icon: <ProjectOutlined />, label: "Projects" },
+  { key: "/stage-gate", icon: <GatewayOutlined />, label: "Stage Gate" },
+  { key: "/review", icon: <CheckSquareOutlined />, label: "Review" },
+  { key: "/documents", icon: <FileTextOutlined />, label: "Documents" },
   { key: "/members", icon: <TeamOutlined />, label: "Members" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
 
-/**
- * 应用主布局
- * - Sider：Logo + 主导航菜单
- * - Header：用户头像 + 下拉菜单（Profile / Logout）
- * - Content：子路由渲染区
- *
- * 使用 Ant Design Layout 组件，遵循 WCAG 2.2 AA：
- * - Menu 默认 WAI-ARIA 完整
- * - Dropdown 提供键盘可达的菜单
- */
 export function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -51,8 +49,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { data: auth } = useAuth();
   const logoutMutation = useLogout();
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
-  // 当前选中的菜单项（取路径首段以支持子路由高亮）
   const selectedKey = useMemo(() => {
     const match = SIDER_MENU_ITEMS.find(
       (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
@@ -60,7 +60,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return match?.key ?? "/dashboard";
   }, [pathname]);
 
-  // 头像下拉菜单
   const userMenuItems: MenuProps["items"] = [
     { key: "profile", icon: <UserOutlined />, label: "Profile" },
     { type: "divider" },
@@ -70,6 +69,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const handleMenuClick: MenuProps["onClick"] = async ({ key }) => {
     if (key === "profile") {
       router.push("/settings");
+      setMobileMenuOpen(false);
     } else if (key === "logout") {
       setLogoutLoading(true);
       try {
@@ -92,19 +92,45 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const handleSiderSelect: MenuProps["onClick"] = ({ key }) => {
     router.push(key);
+    setMobileMenuOpen(false);
   };
 
-  // 优先展示真实用户名，缺失时降级为 Guest
   const displayName = auth?.principal?.displayName ?? "Guest";
+
+  const handleSearch = () => {
+    if (searchValue.trim()) {
+      router.push(`/projects?keyword=${encodeURIComponent(searchValue)}`);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider
         theme="dark"
-        width={220}
-        style={{ position: "sticky", top: 0, height: "100vh" }}
+        width={collapsed ? 64 : 220}
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
+        style={{ position: "sticky", top: 0, height: "100vh", zIndex: 100 }}
+        breakpoint="lg"
+        collapsedWidth={64}
       >
-        <Logo />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: 56,
+            padding: "0 16px",
+          }}
+        >
+          <Logo />
+        </div>
         <Menu
           theme="dark"
           mode="inline"
@@ -112,53 +138,143 @@ export function AppLayout({ children }: { children: ReactNode }) {
           items={SIDER_MENU_ITEMS as MenuProps["items"]}
           onClick={handleSiderSelect}
           aria-label="Main navigation"
+          inlineCollapsed={collapsed}
         />
       </Sider>
       <Layout>
         <Header
           style={{
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             alignItems: "center",
-            padding: "0 24px",
+            padding: "0 16px",
             background: token.colorBgContainer,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
+            position: "sticky",
+            top: 0,
+            zIndex: 99,
           }}
         >
-          <Dropdown
-            menu={{ items: userMenuItems, onClick: handleMenuClick }}
-            placement="bottomRight"
-            trigger={["click"]}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              style={{
+                display: "none",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: 8,
+                color: token.colorText,
+              }}
+              aria-label="Toggle mobile menu"
+              className="lg:hidden"
+            >
+              <MenuOutlined />
+            </button>
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="搜索项目、文档..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onPressEnter={handleKeyPress}
+              style={{ width: 280 }}
+              aria-label="全局搜索"
+            />
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
           >
             <button
               type="button"
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
-                padding: "0 8px",
-                height: "100%",
+                padding: 8,
+                color: token.colorText,
+                position: "relative",
               }}
-              aria-label="User menu"
-              disabled={logoutLoading}
+              aria-label="Notifications"
             >
-              <Avatar size="small" icon={<UserOutlined />} />
-              <Text>{displayName}</Text>
+              <BellOutlined />
+              <span
+                style={{
+                  position: "absolute",
+                  top: 4,
+                  right: 4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: "#dc2626",
+                }}
+              />
             </button>
-          </Dropdown>
+            <Dropdown
+              menu={{ items: userMenuItems, onClick: handleMenuClick }}
+              placement="bottomRight"
+              trigger={["click"]}
+            >
+              <button
+                type="button"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0 8px",
+                  height: "100%",
+                }}
+                aria-label="User menu"
+                disabled={logoutLoading}
+              >
+                <Avatar size="small" icon={<UserOutlined />} />
+                <Text className="hidden sm:inline">{displayName}</Text>
+              </button>
+            </Dropdown>
+          </div>
         </Header>
         <Content
           style={{
             padding: 24,
             background: token.colorBgLayout,
+            minHeight: "calc(100vh - 56px)",
           }}
         >
           {children}
         </Content>
       </Layout>
+      <Drawer
+        title="Menu"
+        placement="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        width={240}
+        style={{ zIndex: 1000 }}
+        className="lg:hidden"
+      >
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          items={SIDER_MENU_ITEMS as MenuProps["items"]}
+          onClick={handleSiderSelect}
+          style={{ height: "100%", borderRight: 0 }}
+        />
+      </Drawer>
     </Layout>
   );
 }

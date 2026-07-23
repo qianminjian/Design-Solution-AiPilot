@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import type { GateDecisionDto } from "@design-platform/shared";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { GateDecisionDto, DecideGateRequest } from "@design-platform/shared";
 import { WorkflowApiPaths } from "@design-platform/shared";
-import { apiGet } from "@/lib/api-client";
+import { apiGet, apiPost } from "@/lib/api-client";
 
 /** 门禁决策列表查询键前缀 */
 const GATES_QUERY_KEY = ["gates"] as const;
@@ -18,5 +18,26 @@ export function useGates(stageId: string | null | undefined) {
     enabled: typeof stageId === "string" && stageId.length > 0,
     queryFn: () =>
       apiGet<GateDecisionDto[]>(WorkflowApiPaths.stageGates(stageId as string)),
+  });
+}
+
+/**
+ * 提交门禁决策
+ * 对应契约：workflow.gate.decide（POST /api/v1/gates/{gateId}/decision）
+ */
+export function useDecideGate() {
+  const queryClient = useQueryClient();
+
+  return useMutation<void, Error, { gateId: string; payload: DecideGateRequest }>({
+    mutationFn: ({ gateId, payload }) =>
+      apiPost<void>(
+        WorkflowApiPaths.gateDecision(gateId),
+        payload,
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [...GATES_QUERY_KEY],
+      });
+    },
   });
 }

@@ -77,6 +77,8 @@ interface DocumentListProps {
   loading?: boolean;
   /** 分页配置 */
   pagination?: TablePaginationConfig;
+  /** 行点击回调（用于打开版本历史） */
+  onRowClick?: (document: DocumentDto) => void;
 }
 
 /**
@@ -90,6 +92,7 @@ export function DocumentList({
   documents,
   loading,
   pagination,
+  onRowClick,
 }: DocumentListProps) {
   const columns: ColumnsType<DocumentDto> = [
     {
@@ -158,6 +161,10 @@ export function DocumentList({
       locale={{
         emptyText: <Empty description="暂无文档，可点击右上角新建" />,
       }}
+      onRow={(record) => ({
+        onClick: () => onRowClick?.(record),
+        style: { cursor: onRowClick ? "pointer" : "default" },
+      })}
     />
   );
 }

@@ -12,25 +12,32 @@ import {
   Result,
   Typography,
   App,
+  Drawer,
+  Badge,
+  Collapse,
 } from "antd";
 import type { TablePaginationConfig } from "antd/es/table";
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   SearchOutlined,
+  HistoryOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
-import type { DocumentStatus } from "@design-platform/shared";
-import { useDocuments } from "@/hooks/use-documents";
+import type { DocumentDto, DocumentStatus } from "@design-platform/shared";
+import { useDocuments, useDocumentVersions } from "@/hooks/use-documents";
 import { DocumentList } from "@/components/cde/document-list";
+import { DocumentUpload } from "@/components/cde/document-upload";
+import { DocumentVersionHistory } from "@/components/cde/document-version-history";
 import { ApiError } from "@/lib/api-client";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
-/** 默认分页大小（与 projects 列表页一致） */
+/** 默认分页大小 */
 const DEFAULT_PAGE_SIZE = 10;
 const DEBOUNCE_MS = 300;
 
-/** 文档状态筛选选项 */
+/** 文档状态筛选选项（含 Badge 颜色） */
 const STATUS_OPTIONS: { label: string; value: DocumentStatus }[] = [
   { label: "Draft", value: "DRAFT" },
   { label: "Checked Out", value: "CHECKED_OUT" },
@@ -39,13 +46,21 @@ const STATUS_OPTIONS: { label: string; value: DocumentStatus }[] = [
   { label: "Archived", value: "ARCHIVED" },
 ];
 
+/** 文档状态 Badge 状态映射 */
+const STATUS_BADGE_STATUS: Record<DocumentStatus, "default" | "processing" | "success" | "warning" | "error"> = {
+  DRAFT: "default",
+  CHECKED_OUT: "processing",
+  PUBLISHED: "success",
+  SUPERSEDED: "warning",
+  ARCHIVED: "error",
+};
+
 /**
  * CDE 文档库页
- * - 文档列表表格（Name / Type / Status / Version / Size / Updated By / Updated At）
- * - 顶部工具栏：搜索框（debounce 300ms）+ 状态筛选 + 新建文档按钮（占位 onClick）
- * - 分页控件（page + pageSize）
- *
- * 参考 apps/web/src/app/(dashboard)/projects/page.tsx 的列表页模式
+ * - 文档列表表格
+ * - 拖拽上传区域（Collapse 折叠）
+ * - 文档版本历史抽屉
+ * - 状态筛选（带 Badge 标识）
  */
 export default function ProjectDocumentsPage({
   params,
@@ -56,17 +71,18 @@ export default function ProjectDocumentsPage({
   const router = useRouter();
   const { message } = App.useApp();
 
-  // 输入态：用户输入的关键字
+  // 输入态
   const [keywordInput, setKeywordInput] = useState("");
-  // 查询态：debounce 后的关键字
+  // 查询态：debounce 后
   const [keywordQuery, setKeywordQuery] = useState("");
   // 状态筛选
-  const [statusFilter, setStatusFilter] = useState<DocumentStatus | undefined>(
-    undefined,
-  );
+  const [statusFilter, setStatusFilter] = useState<DocumentStatus | undefined>(undefined);
   // 分页
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // 版本历史抽屉
+  const [versionDrawerOpen, setVersionDrawerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentDto | null>(null);
 
   // debounce 关键字
   useEffect(() => {
@@ -77,7 +93,7 @@ export default function ProjectDocumentsPage({
     return () => clearTimeout(timer);
   }, [keywordInput]);
 
-  const { data, isLoading, isError, error, isFetching } = useDocuments(
+  const { data, isLoading, isError, error, isFetching, refetch } = useDocuments(
     projectId,
     {
       page,
@@ -86,6 +102,12 @@ export default function ProjectDocumentsPage({
       keyword: keywordQuery,
     },
   );
+
+  // 版本历史查询
+  const {
+    data: versions,
+    isLoading: versionsLoading,
+  } = useDocumentVersions(selectedDocument?.id ?? null);
 
   // 错误提示
   useEffect(() => {
@@ -100,7 +122,13 @@ export default function ProjectDocumentsPage({
     }
   }, [isError, error, message]);
 
-  // 错误态：404 显示专用 Result
+  // 打开版本历史抽屉
+  const handleOpenVersions = (doc: DocumentDto) => {
+    setSelectedDocument(doc);
+    setVersionDrawerOpen(true);
+  };
+
+  // 错误态
   if (isError && !data) {
     const isNotFound = error instanceof ApiError && error.status === 404;
     return (
@@ -123,7 +151,7 @@ export default function ProjectDocumentsPage({
     );
   }
 
-  // 加载态（首次加载，无缓存数据）
+  // 加载态
   if (isLoading && !data) {
     return (
       <div
@@ -139,7 +167,7 @@ export default function ProjectDocumentsPage({
     );
   }
 
-  // 分页配置：服务端分页，total 由后端返回
+  // 分页配置
   const pagination: TablePaginationConfig = {
     current: data?.page ?? page,
     pageSize: data?.pageSize ?? pageSize,
@@ -154,6 +182,12 @@ export default function ProjectDocumentsPage({
       }
     },
   };
+
+  // 各状态文档数量
+  const statusCounts: Partial<Record<DocumentStatus, number>> = {};
+  for (const item of data?.items ?? []) {
+    statusCounts[item.status] = (statusCounts[item.status] ?? 0) + 1;
+  }
 
   return (
     <Card>
@@ -181,14 +215,65 @@ export default function ProjectDocumentsPage({
               Documents
             </Title>
           </Space>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => message.info("新建文档功能建设中")}
-          >
-            新建文档
-          </Button>
+          <Space>
+            <Button
+              icon={<HistoryOutlined />}
+              onClick={() => {
+                if (selectedDocument) {
+                  setVersionDrawerOpen(true);
+                } else {
+                  message.info("请先选择文档查看版本历史");
+                }
+              }}
+            >
+              版本历史
+            </Button>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => message.info("新建文档功能建设中")}
+            >
+              新建文档
+            </Button>
+          </Space>
         </div>
+
+        {/* 文档状态概览条 */}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+          {STATUS_OPTIONS.map((opt) => {
+            const count = statusCounts[opt.value] ?? 0;
+            return (
+              <Badge
+                key={opt.value}
+                status={STATUS_BADGE_STATUS[opt.value]}
+                text={`${opt.label}: ${count}`}
+                style={{ fontSize: 13 }}
+              />
+            );
+          })}
+        </div>
+
+        {/* 拖拽上传区域（折叠） */}
+        <Collapse
+          ghost
+          items={[
+            {
+              key: "upload",
+              label: (
+                <Space>
+                  <UploadOutlined />
+                  <Text>上传文档</Text>
+                </Space>
+              ),
+              children: (
+                <DocumentUpload
+                  projectId={projectId}
+                  onUploadComplete={() => void refetch()}
+                />
+              ),
+            },
+          ]}
+        />
 
         {/* 工具栏：搜索 + 状态筛选 */}
         <Space size="middle" wrap>
@@ -220,8 +305,36 @@ export default function ProjectDocumentsPage({
           documents={data?.items ?? []}
           loading={isLoading || isFetching}
           pagination={pagination}
+          onRowClick={handleOpenVersions}
         />
       </Space>
+
+      {/* 版本历史抽屉 */}
+      <Drawer
+        title={
+          <Space>
+            <HistoryOutlined />
+            <span>版本历史</span>
+            {selectedDocument && (
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                {selectedDocument.name}
+              </Text>
+            )}
+          </Space>
+        }
+        placement="right"
+        width={480}
+        open={versionDrawerOpen}
+        onClose={() => {
+          setVersionDrawerOpen(false);
+          setSelectedDocument(null);
+        }}
+      >
+        <DocumentVersionHistory
+          versions={versions ?? []}
+          loading={versionsLoading}
+        />
+      </Drawer>
     </Card>
   );
 }

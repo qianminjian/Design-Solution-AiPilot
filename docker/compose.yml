@@ -1,5 +1,5 @@
-# V0 Docker Compose — 施工图全流程 AI 平台
-# 对标 D34.24.1 V0 模块化单体部署架构
+# V1 Docker Compose — 施工图全流程 AI 平台
+# 对标 D34.24.1 V0 模块化单体部署架构，新增 AI 服务依赖：ChromaDB + MinIO
 # 升级至 K8s 的条件见 D34.24.1 演进路径
 
 services:
@@ -15,6 +15,8 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend_network
     command: >
       postgres
       -c shared_preload_libraries=pg_stat_statements
@@ -32,7 +34,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2024-09-16T01-54-46Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
@@ -43,6 +45,8 @@ services:
       - "9001:9001"
     volumes:
       - miniodata:/data
+    networks:
+      - backend_network
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -51,20 +55,40 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # MinIO 初始化 - 创建默认 bucket
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2024-09-16T01-50-36Z
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
         mc alias set local http://minio:9000 ${S3_ACCESS_KEY:-minioadmin} ${S3_SECRET_KEY:-minioadmin} &&
-        mc mb --ignore-existing local/${S3_BUCKET_NAME:-design-platform} &&
-        mc version enable local/${S3_BUCKET_NAME:-design-platform} &&
-        echo 'MinIO bucket initialized: ${S3_BUCKET_NAME:-design-platform}'
+        mc mb --ignore-existing local/${S3_BUCKET_NAME:-platform-data} &&
+        mc version enable local/${S3_BUCKET_NAME:-platform-data} &&
+        echo 'MinIO bucket initialized: ${S3_BUCKET_NAME:-platform-data}'
       "
+    networks:
+      - backend_network
     restart: "no"
+
+  chromadb:
+    image: chromadb/chroma:0.4.25
+    environment:
+      CHROMA_SERVER_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:-chroma:chromasecret}
+      CHROMA_SERVER_AUTH_PROVIDER: chromadb.auth.providers.token.TokenAuthServerProvider
+    ports:
+      - "8000:8000"
+    volumes:
+      - chromadata:/chroma/chroma
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
 
   # ── 核心业务服务（Java 21 + Spring Boot 3.4） ──
   core-service:
@@ -83,7 +107,7 @@ services:
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-design-platform}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data}
       S3_REGION: ${S3_REGION:-us-east-1}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_ACCESS_TOKEN_EXPIRES_IN: ${JWT_ACCESS_TOKEN_EXPIRES_IN:-15m}
@@ -96,6 +120,8 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+    networks:
+      - backend_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
       interval: 10s
@@ -119,20 +145,31 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-platform_dev}
       DB_POOL_SIZE: "10"
       DB_MAX_OVERFLOW: "20"
+      CHROMADB_URL: http://chromadb:8000
+      CHROMADB_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:-chroma:chromasecret}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data}
+      S3_REGION: ${S3_REGION:-us-east-1}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_API_BASE: ${LLM_API_BASE:-https://api.openai.com/v1}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o}
       LLM_TIMEOUT: "30"
       CORS_ORIGINS: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
-      - "8000:8000"
+      - "8001:8001"
     depends_on:
       postgres:
         condition: service_healthy
-      core-service:
+      chromadb:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - backend_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -148,7 +185,7 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: "3001"
       CORE_SERVICE_URL: http://core-service:8080
-      AI_SERVICE_URL: http://ai-service:8000
+      AI_SERVICE_URL: http://ai-service:8001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_ACCESS_TOKEN_EXPIRES_IN: ${JWT_ACCESS_TOKEN_EXPIRES_IN:-15m}
@@ -161,6 +198,8 @@ services:
         condition: service_healthy
       ai-service:
         condition: service_healthy
+    networks:
+      - backend_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health/live"]
       interval: 10s
@@ -183,6 +222,8 @@ services:
     depends_on:
       bff:
         condition: service_healthy
+    networks:
+      - backend_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 10s
@@ -191,6 +232,12 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+networks:
+  backend_network:
+    driver: bridge
+    internal: false
+
 volumes:
   pgdata:
   miniodata:
+  chromadata:

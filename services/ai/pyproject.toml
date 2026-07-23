@@ -16,6 +16,9 @@ dependencies = [
     "psycopg[binary]>=3.2,<4",
     "python-json-logger>=2.0,<3",
     "tenacity>=8.2,<10",
+    "chromadb>=0.4,<1",
+    "sentence-transformers>=2.7,<3",
+    "python-dotenv>=1.0,<2",
 ]
 
 [project.optional-dependencies]

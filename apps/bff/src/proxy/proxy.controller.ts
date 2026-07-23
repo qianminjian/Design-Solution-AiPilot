@@ -1,4 +1,4 @@
-import { All, Controller, Req, UseInterceptors } from "@nestjs/common";
+import { All, Controller, Inject, Req, UseInterceptors } from "@nestjs/common";
 import { Request } from "express";
 import { Method } from "axios";
 import { HttpHeader } from "@design-platform/shared";
@@ -20,7 +20,7 @@ import { ProxyService } from "./proxy.service";
 @Controller("v1")
 @UseInterceptors(ProxyInterceptor)
 export class ProxyController {
-  constructor(private readonly proxyService: ProxyService) {}
+  constructor(@Inject(ProxyService) private readonly proxyService: ProxyService) {}
 
   /**
    * 通配符匹配 /api/v1 下所有非 auth 路径

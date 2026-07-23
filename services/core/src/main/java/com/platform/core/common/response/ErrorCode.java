@@ -82,6 +82,26 @@ public final class ErrorCode {
     /** 文档状态非法（不可执行当前操作） */
     public static final int INVALID_DOCUMENT_STATUS = 4240;
 
+    // ── 合规规则域错误码段（4241-4250）──
+    /** 规则不存在 */
+    public static final int RULE_NOT_FOUND = 4241;
+    /** 规则编码已存在 */
+    public static final int RULE_CODE_ALREADY_EXISTS = 4242;
+    /** 规则版本不存在 */
+    public static final int REVISION_NOT_FOUND = 4243;
+    /** 规则集不存在 */
+    public static final int RULE_SET_NOT_FOUND = 4244;
+    /** 规则集名称已存在 */
+    public static final int RULE_SET_NAME_ALREADY_EXISTS = 4245;
+    /** 检查运行不存在 */
+    public static final int CHECK_RUN_NOT_FOUND = 4246;
+    /** 合规发现不存在 */
+    public static final int FINDING_NOT_FOUND = 4247;
+    /** 规则未批准，无法激活 */
+    public static final int RULE_NOT_APPROVED = 4248;
+    /** 检查运行状态不允许此操作 */
+    public static final int INVALID_RUN_STATUS = 4249;
+
     // ── 服务端错误段（500-599）──
     /** 内部异常 */
     public static final int INTERNAL_ERROR = 500;

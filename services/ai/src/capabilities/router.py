@@ -22,6 +22,7 @@ from src.capabilities.schemas import (
 from src.capabilities.service import CapabilityService
 from src.llm.client import LlmAuthError, LlmClient, LlmError, LlmTimeoutError
 from src.llm.factory import create_llm_client
+from src.rag.embedding import EmbeddingService
 
 router = APIRouter(prefix="/api/v1", tags=["capabilities"])
 
@@ -39,11 +40,21 @@ def get_llm_client(request: Request) -> LlmClient:
     return client
 
 
+def get_embedding_service(request: Request) -> EmbeddingService:
+    """依赖注入：获取 EmbeddingService 实例"""
+    embedding = getattr(request.app.state, "embedding_service", None)
+    if embedding is None:
+        embedding = EmbeddingService()
+        request.app.state.embedding_service = embedding
+    return embedding
+
+
 def get_capability_service(
     llm_client: Annotated[LlmClient, Depends(get_llm_client)],
+    embedding_service: Annotated[EmbeddingService, Depends(get_embedding_service)],
 ) -> CapabilityService:
     """依赖注入：获取 CapabilityService"""
-    return CapabilityService(llm_client)
+    return CapabilityService(llm_client, embedding_service)
 
 
 def _map_llm_error(exc: LlmError) -> HTTPException:

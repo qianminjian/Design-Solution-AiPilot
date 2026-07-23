@@ -35,6 +35,22 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o"
     llm_timeout: int = 30
 
+    # RAG 配置
+    embedding_model: str = "all-MiniLM-L6-v2"
+    chromadb_url: str = "http://localhost:8000"
+    chromadb_auth_credentials: str = ""
+    chromadb_persist_directory: str = "./data/chroma"
+    chunk_size: int = 512
+    chunk_overlap: int = 64
+    top_k: int = 5
+
+    # MinIO / S3 配置
+    s3_endpoint: str = "http://localhost:9000"
+    s3_access_key: str = "minioadmin"
+    s3_secret_key: str = "minioadmin"
+    s3_bucket_name: str = "platform-data"
+    s3_region: str = "us-east-1"
+
     # CORS
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
