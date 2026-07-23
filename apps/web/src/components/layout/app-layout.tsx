@@ -2,7 +2,17 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Layout, Menu, Avatar, Dropdown, Typography, theme, App, Input, Drawer } from "antd";
+import {
+  Layout,
+  Menu,
+  Avatar,
+  Dropdown,
+  Typography,
+  theme,
+  App,
+  Input,
+  Drawer,
+} from "antd";
 import {
   DashboardOutlined,
   ProjectOutlined,
@@ -17,6 +27,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   MonitorOutlined,
+  DatabaseOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./logo";
@@ -38,6 +49,11 @@ const SIDER_MENU_ITEMS: SiderMenuItem[] = [
   { key: "/stage-gate", icon: <GatewayOutlined />, label: "Stage Gate" },
   { key: "/review", icon: <CheckSquareOutlined />, label: "Review" },
   { key: "/documents", icon: <FileTextOutlined />, label: "Documents" },
+  {
+    key: "/golden-datasets",
+    icon: <DatabaseOutlined />,
+    label: "Golden Datasets",
+  },
   { key: "/members", icon: <TeamOutlined />, label: "Members" },
   { key: "/monitoring", icon: <MonitorOutlined />, label: "Monitoring" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
