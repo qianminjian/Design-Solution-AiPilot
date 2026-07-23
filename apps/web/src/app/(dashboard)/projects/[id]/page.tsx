@@ -7,6 +7,7 @@ import {
   ArrowLeftOutlined,
   FolderOutlined,
   ApartmentOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 import { useProjectDetail } from "@/hooks/use-project-detail";
 import { useGates } from "@/hooks/use-gates";
@@ -120,6 +121,12 @@ export default function ProjectDetailPage({
           返回项目列表
         </Button>
         <Space>
+          <Button
+            icon={<ExperimentOutlined />}
+            onClick={() => router.push(`/projects/${projectId}/design-options`)}
+          >
+            设计选项
+          </Button>
           <Button
             icon={<FolderOutlined />}
             onClick={() => router.push(`/projects/${projectId}/documents`)}
