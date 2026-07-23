@@ -1,0 +1,32 @@
+# Java 资源文件（含 Maven 占位符 @project.version@，非标准 YAML）
+services/core/src/main/resources/application.yml
+services/core/src/main/resources/application-*.yml
+services/core/src/test/resources/application*.yml
+
+# 数据库迁移
+services/core/src/main/resources/db/migration/*.sql
+
+# 设计文档与 HTML 原型
+design/**/*.html
+design-ui-system/**/*.html
+design-ui-system/**/*.css
+doc/**/*.html
+
+# Node 构建产物
+node_modules
+dist
+.next
+.turbo
+
+# 测试输出
+coverage
+test-results
+playwright-report
+
+# Python
+.venv
+__pycache__
+*.egg-info
+
+# Java 构建
+target
