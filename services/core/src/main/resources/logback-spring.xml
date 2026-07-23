@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logback 配置（结构化 JSON 日志）
+  - 默认 profile（dev/local）：人类可读格式，含 traceId，便于开发调试
+  - docker / test / prod profile：JSON 格式输出，含 @timestamp/level/logger_name/message/service/traceId/thread
+  - traceId 从 SLF4J MDC 读取（由 TraceIdFilter 写入，MDC key = "traceId"）
+  - service 字段标识来源服务，便于全链路检索
+
+  权威源：.trae/rules/observability.md §一、@design/D34-可观测性基线.md
+-->
+<configuration>
+
+    <!-- 服务名（与 application.yml 的 spring.application.name 一致） -->
+    <property name="SERVICE_NAME" value="${SERVICE_NAME:-core-service}"/>
+
+    <!--
+      通用 JSON 编码器配置
+      - customFields：补充 service 字段，统一字段命名
+      - 注意：logback-spring.xml 默认不开启 Maven 资源过滤，
+        故不使用 @project.version@ 占位符，version 由构建链路在镜像标签中体现
+    -->
+    <property name="LOGSTASH_ENCODER_CONFIG">
+        {
+        "service": "${SERVICE_NAME}"
+        }
+    </property>
+
+    <!--
+      开发/默认 profile：人类可读控制台输出
+      - 含 traceId（来自 MDC），便于本地调试链路追踪
+    -->
+    <springProfile name="default | dev | local">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - [%X{traceId:-}] %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!--
+      Docker / Test / Prod profile：JSON 结构化日志
+      - 输出字段：@timestamp / level / logger_name / thread / message / service / version / traceId
+      - 便于日志聚合系统（ELK / Loki / CloudWatch）检索与过滤
+    -->
+    <springProfile name="docker | test | prod | staging">
+        <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- 内置字段名映射，对齐 observability.md 规范（snake_case） -->
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <level>level</level>
+                    <logger>logger_name</logger>
+                    <thread>thread</thread>
+                    <message>message</message>
+                </fieldNames>
+                <!-- MDC 中 traceId 字段提升为顶层字段（key 与 TraceIdFilter.MDC_TRACE_ID 一致） -->
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <!-- 静态业务字段 -->
+                <customFields>${LOGSTASH_ENCODER_CONFIG}</customFields>
+                <!-- 关闭 caller 数据（性能开销大，生产不建议开） -->
+                <includeCallerData>false</includeCallerData>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+        </root>
+    </springProfile>
+
+</configuration>
