@@ -57,3 +57,6 @@ export * from "./contracts/cde.contract";
 
 // ── AI 能力契约（V0 OpenAI 兼容 Provider） ──
 export * from "./contracts/ai.contract";
+
+// ── TEVV 契约（金样数据集 + Gate 准入验证） ──
+export * from "./contracts/tevv.contract";

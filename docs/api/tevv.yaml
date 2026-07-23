@@ -1,0 +1,256 @@
+openapi: 3.0.3
+info:
+  title: AiPilot TEVV API
+  version: 1.0.0
+  description: |
+    TEVV（测试-评估-验证-验证）模块 API 契约。
+    管理 GoldenDataset（金样数据集）和 VerificationItem（Gate 准入验证项）。
+
+    权威源：@design/D33-TEVV-测试评估.md
+  contact:
+    name: AiPilot Platform Team
+    email: platform@aipilot.example
+
+servers:
+  - url: /api/v1
+    description: BFF 代理路径
+
+paths:
+  /golden-datasets:
+    get:
+      tags: [GoldenDataset]
+      operationId: listGoldenDatasets
+      summary: 查询金样数据集列表
+      parameters:
+        - name: category
+          in: query
+          schema: { $ref: "#/components/schemas/DatasetCategory" }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/DatasetStatus" }
+        - name: buildingType
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: 数据集列表
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+              example:
+                code: 0
+                data:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    name: "办公楼金样 v1"
+                    category: "ARCHITECTURE"
+                    buildingType: "OFFICE_MEDIUM"
+                    version: 1
+                    fileCount: 0
+                    status: "DRAFT"
+                    createdAt: "2026-07-23T09:00:00Z"
+                message: "success"
+                traceId: "tevv-trace-001"
+
+    post:
+      tags: [GoldenDataset]
+      operationId: createGoldenDataset
+      summary: 创建金样数据集
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGoldenDatasetRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+
+  /golden-datasets/{datasetId}:
+    get:
+      tags: [GoldenDataset]
+      operationId: getGoldenDataset
+      summary: 查询单个金样数据集
+      parameters:
+        - $ref: "#/components/parameters/DatasetId"
+      responses:
+        "200":
+          description: 数据集详情
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+
+  /golden-datasets/{datasetId}/freeze:
+    post:
+      tags: [GoldenDataset]
+      operationId: freezeGoldenDataset
+      summary: 冻结金样数据集（不可逆操作）
+      parameters:
+        - $ref: "#/components/parameters/DatasetId"
+      responses:
+        "200":
+          description: 冻结成功
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+        "409":
+          description: 数据集非 DRAFT 状态，无法冻结
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiErrorResponse"
+
+  /verification-items:
+    get:
+      tags: [VerificationItem]
+      operationId: listVerificationItems
+      summary: 查询验证项列表
+      parameters:
+        - name: datasetId
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+        - name: gateCode
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/VerificationStatus" }
+      responses:
+        "200":
+          description: 验证项列表
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+
+    post:
+      tags: [VerificationItem]
+      operationId: createVerificationItem
+      summary: 创建验证项
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVerificationItemRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+
+  /verification-items/{itemId}/status:
+    patch:
+      tags: [VerificationItem]
+      operationId: updateVerificationStatus
+      summary: 更新验证项状态
+      parameters:
+        - $ref: "#/components/parameters/ItemId"
+        - name: status
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/VerificationStatus" }
+        - name: waiverReason
+          in: query
+          description: 豁免原因（status=WAIVED 时必填）
+          schema: { type: string }
+      responses:
+        "200":
+          description: 状态更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiResponse"
+        "400":
+          description: 参数校验失败（如 WAIVED 缺少豁免原因）
+          content:
+            application/json:
+              schema:
+                $ref: "common.yaml#/components/schemas/ApiErrorResponse"
+
+components:
+  parameters:
+    DatasetId:
+      name: datasetId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    DatasetCategory:
+      type: string
+      enum: [ARCHITECTURE, STRUCTURE, MEP, INTERIOR, LANDSCAPE]
+      description: 数据集专业分类
+
+    DatasetStatus:
+      type: string
+      enum: [DRAFT, FROZEN, DEPRECATED]
+      description: 数据集状态
+
+    VerificationType:
+      type: string
+      enum: [MANUAL, AUTOMATED]
+      description: 验证类型
+
+    VerificationStatus:
+      type: string
+      enum: [PENDING, PASSED, FAILED, WAIVED]
+      description: 验证状态
+
+    RiskLevel:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      description: 风险等级
+
+    CreateGoldenDatasetRequest:
+      type: object
+      required: [name, category, buildingType, storageKey]
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        category:
+          $ref: "#/components/schemas/DatasetCategory"
+        buildingType:
+          type: string
+          maxLength: 100
+        storageKey:
+          type: string
+          maxLength: 500
+          description: 对象存储路径前缀
+
+    CreateVerificationItemRequest:
+      type: object
+      required: [datasetId, gateCode, verificationType, riskLevel, description]
+      properties:
+        datasetId:
+          type: string
+          format: uuid
+        gateCode:
+          type: string
+          maxLength: 50
+          description: 阶段门代码（如 GATE-P1）
+        verificationType:
+          $ref: "#/components/schemas/VerificationType"
+        riskLevel:
+          $ref: "#/components/schemas/RiskLevel"
+        description:
+          type: string
+          maxLength: 2000
