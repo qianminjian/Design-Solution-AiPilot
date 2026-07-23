@@ -1,11 +1,12 @@
 """Prompt 模板管理测试
 
 覆盖：
-- list_templates 返回所有内置模板
+- list_templates 返回所有内置模板（6 个：3 个原有 + 3 个方案生成）
 - get_template 按名获取
 - 未知模板名抛 KeyError
 - 模板 render 替换占位符
 - /api/v1/prompts 端点
+- 新增方案生成模板的结构与字段验证
 """
 
 import pytest
@@ -13,19 +14,29 @@ import pytest
 from src.prompts.manager import PromptManager
 from src.prompts.templates import (
     BUILTIN_TEMPLATES,
+    CONCEPT_GENERATION_PROMPT,
+    DESIGN_OPTION_COMPARISON_PROMPT,
+    DESIGN_SUMMARY_PROMPT,
     DRAWING_REVIEW_PROMPT,
     RULE_CHECK_PROMPT,
-    DESIGN_SUMMARY_PROMPT,
+    SCHEME_DEEPENING_PROMPT,
 )
 
 
 def test_list_templates_returns_all_builtin():
-    """list_templates 应返回全部 3 个内置模板"""
+    """list_templates 应返回全部 6 个内置模板"""
     manager = PromptManager()
     templates = manager.list_templates()
-    assert len(templates) == 3
+    assert len(templates) == 6
     names = {t.name for t in templates}
-    assert names == {"rule-check", "drawing-review", "design-summary"}
+    assert names == {
+        "rule-check",
+        "drawing-review",
+        "design-summary",
+        "concept-generation",
+        "scheme-deepening",
+        "design-option-comparison",
+    }
 
 
 def test_get_template_by_name():
@@ -88,14 +99,155 @@ def test_builtin_templates_have_required_structure():
         assert "# Output Format" in template.template, f"{template.name} 缺少 Output Format 段"
 
 
+# ── 概念方案生成模板测试 ──
+
+
+def test_concept_generation_template_fields():
+    """concept-generation 模板字段应符合设计（OD-03 V1 业务 + D09 概念阶段）"""
+    assert CONCEPT_GENERATION_PROMPT.name == "concept-generation"
+    assert CONCEPT_GENERATION_PROMPT.version == "v1"
+    assert CONCEPT_GENERATION_PROMPT.risk_level == "medium"
+    assert CONCEPT_GENERATION_PROMPT.requires_human_review is True
+    # 4 个变量：siteDescription / brief / referenceImages / constraints
+    assert set(CONCEPT_GENERATION_PROMPT.variables) == {
+        "siteDescription",
+        "brief",
+        "referenceImages",
+        "constraints",
+    }
+
+
+def test_concept_generation_render_replaces_all_variables():
+    """concept-generation render 应替换全部 4 个变量"""
+    rendered = CONCEPT_GENERATION_PROMPT.render(
+        siteDescription="上海浦东某商业地块",
+        brief="5-15 层中小型办公建筑",
+        referenceImages="https://example.com/ref1.png",
+        constraints="退界 5m，限高 60m",
+    )
+    assert "上海浦东某商业地块" in rendered
+    assert "5-15 层中小型办公建筑" in rendered
+    assert "https://example.com/ref1.png" in rendered
+    assert "退界 5m，限高 60m" in rendered
+    # 不应有未替换的占位符
+    for var in CONCEPT_GENERATION_PROMPT.variables:
+        assert f"{{{{{var}}}}}" not in rendered
+
+
+def test_concept_generation_render_missing_variable_raises():
+    """concept-generation render 缺少变量应抛 KeyError"""
+    with pytest.raises(KeyError, match="缺少变量"):
+        CONCEPT_GENERATION_PROMPT.render(
+            siteDescription="地块 A",
+            brief="办公",
+            referenceImages="",
+            # 缺少 constraints
+        )
+
+
+def test_concept_generation_template_includes_human_review_constraint():
+    """concept-generation 应明确包含'人工复核'约束（AI 安全红线）"""
+    assert "人工复核" in CONCEPT_GENERATION_PROMPT.template
+    assert "AI 辅助" in CONCEPT_GENERATION_PROMPT.template
+
+
+# ── 方案深化建议模板测试 ──
+
+
+def test_scheme_deepening_template_fields():
+    """scheme-deepening 模板字段应符合 D10 §D10.5 方案深化流程"""
+    assert SCHEME_DEEPENING_PROMPT.name == "scheme-deepening"
+    assert SCHEME_DEEPENING_PROMPT.version == "v1"
+    assert SCHEME_DEEPENING_PROMPT.risk_level == "medium"
+    assert SCHEME_DEEPENING_PROMPT.requires_human_review is True
+    assert set(SCHEME_DEEPENING_PROMPT.variables) == {
+        "conceptBaseline",
+        "deepeningScope",
+        "focusAspects",
+    }
+
+
+def test_scheme_deepening_render_replaces_all_variables():
+    """scheme-deepening render 应替换全部 3 个变量"""
+    rendered = SCHEME_DEEPENING_PROMPT.render(
+        conceptBaseline="G1 基线摘要：体量 5 层框架",
+        deepeningScope="space,envelope,structure",
+        focusAspects="平立剖一致性、结构预协同",
+    )
+    assert "G1 基线摘要：体量 5 层框架" in rendered
+    assert "space,envelope,structure" in rendered
+    assert "平立剖一致性、结构预协同" in rendered
+    for var in SCHEME_DEEPENING_PROMPT.variables:
+        assert f"{{{{{var}}}}}" not in rendered
+
+
+def test_scheme_deepening_template_references_d10_sections():
+    """scheme-deepening 应引用 D10.7（平立剖一致性）和 D10.9/D10.10（结构/MEP 边界）"""
+    template_text = SCHEME_DEEPENING_PROMPT.template
+    assert "D10.7" in template_text
+    assert "D10.9" in template_text
+    assert "D10.10" in template_text
+
+
+def test_scheme_deepening_template_includes_human_review_constraint():
+    """scheme-deepening 应明确包含'专业会签'约束（V1 AI 安全红线）"""
+    assert "专业会签" in SCHEME_DEEPENING_PROMPT.template
+    assert "AI 辅助" in SCHEME_DEEPENING_PROMPT.template
+
+
+# ── 方案比选分析模板测试 ──
+
+
+def test_design_option_comparison_template_fields():
+    """design-option-comparison 模板字段应符合 D26 §D26.3 第 5 条"""
+    assert DESIGN_OPTION_COMPARISON_PROMPT.name == "design-option-comparison"
+    assert DESIGN_OPTION_COMPARISON_PROMPT.version == "v1"
+    assert DESIGN_OPTION_COMPARISON_PROMPT.risk_level == "low"
+    assert DESIGN_OPTION_COMPARISON_PROMPT.requires_human_review is True
+    assert set(DESIGN_OPTION_COMPARISON_PROMPT.variables) == {
+        "options",
+        "criteria",
+        "constraints",
+    }
+
+
+def test_design_option_comparison_render_replaces_all_variables():
+    """design-option-comparison render 应替换全部 3 个变量"""
+    rendered = DESIGN_OPTION_COMPARISON_PROMPT.render(
+        options='[{"name":"A","description":"体量 1","metrics":{"cost":100}}]',
+        criteria='[{"name":"成本","direction":"min"}]',
+        constraints='[{"name":"限高","value":"60m"}]',
+    )
+    assert '"name":"A"' in rendered
+    assert '"name":"成本"' in rendered
+    assert '"name":"限高"' in rendered
+    for var in DESIGN_OPTION_COMPARISON_PROMPT.variables:
+        assert f"{{{{{var}}}}}" not in rendered
+
+
+def test_design_option_comparison_template_includes_feasibility_first():
+    """design-option-comparison 应包含 Feasibility-first 原则（D26 §D26.3 第 2 条）"""
+    assert "Feasibility-first" in DESIGN_OPTION_COMPARISON_PROMPT.template
+    assert "Pareto" in DESIGN_OPTION_COMPARISON_PROMPT.template
+
+
+def test_design_option_comparison_template_not_optimal():
+    """design-option-comparison 应明确不预设'最优'（D26 §D26.3 第 5 条）"""
+    assert "不预设" in DESIGN_OPTION_COMPARISON_PROMPT.template
+    assert "不使用隐藏权重" in DESIGN_OPTION_COMPARISON_PROMPT.template
+
+
+# ── 端到端测试 ──
+
+
 @pytest.mark.asyncio
 async def test_prompts_list_endpoint(async_client):
-    """GET /api/v1/prompts 应返回模板列表"""
+    """GET /api/v1/prompts 应返回 6 个模板"""
     response = await async_client.get("/api/v1/prompts")
     assert response.status_code == 200
     data = response.json()
     assert "templates" in data
-    assert len(data["templates"]) == 3
+    assert len(data["templates"]) == 6
     assert "traceId" in data
 
 
@@ -107,6 +259,40 @@ async def test_prompts_get_by_name_endpoint(async_client):
     data = response.json()
     assert data["template"]["name"] == "rule-check"
     assert data["template"]["riskLevel"] == "high"
+
+
+@pytest.mark.asyncio
+async def test_prompts_get_concept_generation_endpoint(async_client):
+    """GET /api/v1/prompts/concept-generation 应返回新模板"""
+    response = await async_client.get("/api/v1/prompts/concept-generation")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["template"]["name"] == "concept-generation"
+    assert data["template"]["riskLevel"] == "medium"
+    assert data["template"]["requiresHumanReview"] is True
+    assert "siteDescription" in data["template"]["variables"]
+
+
+@pytest.mark.asyncio
+async def test_prompts_get_scheme_deepening_endpoint(async_client):
+    """GET /api/v1/prompts/scheme-deepening 应返回新模板"""
+    response = await async_client.get("/api/v1/prompts/scheme-deepening")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["template"]["name"] == "scheme-deepening"
+    assert data["template"]["riskLevel"] == "medium"
+    assert data["template"]["requiresHumanReview"] is True
+
+
+@pytest.mark.asyncio
+async def test_prompts_get_design_option_comparison_endpoint(async_client):
+    """GET /api/v1/prompts/design-option-comparison 应返回新模板"""
+    response = await async_client.get("/api/v1/prompts/design-option-comparison")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["template"]["name"] == "design-option-comparison"
+    assert data["template"]["riskLevel"] == "low"
+    assert data["template"]["requiresHumanReview"] is True
 
 
 @pytest.mark.asyncio
