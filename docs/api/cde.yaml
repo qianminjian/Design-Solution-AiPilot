@@ -1,0 +1,545 @@
+openapi: 3.0.3
+info:
+  title: AiPilot CDE (Common Data Environment) API
+  version: 1.0.0
+  description: |
+    公共数据环境（CDE）域 OpenAPI 契约。
+
+    ## 范围（V1 简化文档模型）
+    - 文档（Document）CRUD + 元数据
+    - 文档版本（DocumentVersion）管理
+    - 检出（Checkout）/ 检入（Checkin）状态流转
+    - 上传由 D35.10 三步式：upload-sessions → 分片直传 → complete（V0 简化为先直传后建档）
+
+    ## 状态机
+    DRAFT → CHECKED_OUT → PUBLISHED → SUPERSEDED → ARCHIVED
+    - 旧版本上传后自动 SUPERSEDED
+    - 检入后状态 PUBLISHED 并生成新版本
+    - 仅 DRAFT 状态可删除
+
+    ## 核心不变量
+    - 文档路径在租户+项目内可重复，按 ID 唯一标识
+    - 版本号 versionNumber 在文档内单调递增（从 1 开始）
+    - PII: 文档 path 字段为 L5（业务核心设计文件），日志须脱敏
+
+    ## 业务错误码段
+    - 3xxx：CDE 域
+      - 3001 DOCUMENT_NOT_FOUND
+      - 3002 DOCUMENT_CHECKED_OUT_BY_OTHER
+      - 3010 VERSION_CONFLICT
+      - 3020 UPLOAD_SESSION_EXPIRED
+      - 3021 UPLOAD_CHECKSUM_MISMATCH
+
+    权威源：@design/D07-CDE领域-版本.md + @design/D35-API-事件契约.md §D35.10
+  contact:
+    name: CDE Service Team
+    email: cde@aipilot.example
+
+servers:
+  - url: https://api.aipilot.example
+    description: 生产
+  - url: http://localhost:8080
+    description: 本地
+
+tags:
+  - name: Document
+    description: 文档 CRUD
+  - name: Version
+    description: 文档版本管理
+  - name: Checkout
+    description: 检出 / 检入
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ─────────────────────────────────────────────
+  # Document
+  # ─────────────────────────────────────────────
+  /api/v1/documents:
+    get:
+      tags: [Document]
+      operationId: cde.document.list
+      summary: 列出文档
+      description: |
+        - 必须携带 projectId 查询参数
+        - 偏移分页；项目下文档多时建议改 cursor
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - in: query
+          name: status
+          schema: { $ref: '#/components/schemas/DocumentStatus' }
+        - in: query
+          name: keyword
+          schema: { type: string, maxLength: 128 }
+        - in: query
+          name: sort
+          schema: { type: string, example: '-updatedAt,id' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items: { $ref: '#/components/schemas/DocumentDto' }
+                          total: { type: integer }
+                          page: { type: integer }
+                          pageSize: { type: integer }
+                          hasMore: { type: boolean }
+        '400':
+          description: 缺少 projectId
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+    post:
+      tags: [Document]
+      operationId: cde.document.create
+      summary: 创建文档
+      description: |
+        **D35.15.1 示例 2 简化版**：先直传对象存储获得 storageKey，再创建文档元数据。
+        完整 D35.10 三步式 upload-sessions 后续补齐。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateDocumentRequest' }
+            examples:
+              standard:
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  name: 概念方案-主创草图-v1.pdf
+                  path: /projects/PRJ-2026-001/concept/sketch-v1.pdf
+                  mimeType: application/pdf
+                  sizeBytes: 5242880
+                  storageKey: tenants/0190f8e9.../projects/PRJ-2026-001/documents/abc123/v1.pdf
+                  checksum: sha256:9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72570673c71
+                  comment: 境外主创首版草图
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DocumentDto' }
+        '413':
+          $ref: 'common.yaml#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: 'common.yaml#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: 'common.yaml#/components/responses/ValidationError'
+
+  /api/v1/documents/{documentId}:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Document]
+      operationId: cde.document.get
+      summary: 查询文档详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DocumentDto' }
+        '404':
+          description: 文档不存在
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                notFound:
+                  value:
+                    errorCode: RESOURCE_NOT_FOUND
+                    code: 3001
+                    status: 404
+                    title: 文档不存在
+                    detail: 文档不存在或已被归档
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+    patch:
+      tags: [Document]
+      operationId: cde.document.update
+      summary: 更新文档元数据
+      description: |
+        仅可更新 name/path/mimeType；status 通过 checkout/checkin 流转。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/UpdateDocumentRequest' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DocumentDto' }
+        '412':
+          $ref: 'common.yaml#/components/responses/PreconditionFailed'
+        '428':
+          $ref: 'common.yaml#/components/responses/PreconditionRequired'
+    delete:
+      tags: [Document]
+      operationId: cde.document.delete
+      summary: 删除文档
+      description: |
+        仅 DRAFT 状态可删；PUBLISHED/SUPERSEDED 须先归档。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      responses:
+        '204':
+          description: 删除成功
+        '409':
+          description: 状态不允许删除
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+
+  # ─────────────────────────────────────────────
+  # Version
+  # ─────────────────────────────────────────────
+  /api/v1/documents/{documentId}/versions:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Version]
+      operationId: cde.version.list
+      summary: 列出文档的所有版本
+      description: |
+        - 按 versionNumber DESC 排序
+        - 含 SUPERSEDED 旧版本（只读）
+      parameters:
+        - in: query
+          name: status
+          schema: { $ref: '#/components/schemas/DocumentVersionStatus' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/DocumentVersionDto' }
+    post:
+      tags: [Version]
+      operationId: cde.version.upload
+      summary: 上传新版本
+      description: |
+        - 服务端自动递增 versionNumber
+        - 旧版本状态自动转为 SUPERSEDED
+        - 不可变修订：storageKey/checksum 创建后不可修改
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadVersionRequest' }
+            examples:
+              standard:
+                value:
+                  storageKey: tenants/0190f8e9.../projects/PRJ-2026-001/documents/abc123/v2.pdf
+                  checksum: sha256:8c71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72570673d72
+                  comment: 反馈后修订 v2
+                  sizeBytes: 6291456
+                  mimeType: application/pdf
+      responses:
+        '201':
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DocumentVersionDto' }
+        '409':
+          description: 文档状态不允许上传（必须 DRAFT 或 PUBLISHED）
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                versionConflict:
+                  value:
+                    errorCode: STATE_CONFLICT
+                    code: 3010
+                    status: 409
+                    title: 版本冲突
+                    detail: 文档状态不允许上传新版本
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+        '422':
+          $ref: 'common.yaml#/components/responses/ValidationError'
+
+  /api/v1/documents/{documentId}/versions/{versionId}:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+      - in: path
+        name: versionId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Version]
+      operationId: cde.version.get
+      summary: 查询版本详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DocumentVersionDto' }
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+
+  # ─────────────────────────────────────────────
+  # Checkout / Checkin
+  # ─────────────────────────────────────────────
+  /api/v1/documents/{documentId}/checkout:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Checkout]
+      operationId: cde.document.checkout
+      summary: 检出文档
+      description: |
+        状态从 DRAFT 流转为 CHECKED_OUT，独占编辑权限。
+        同一文档同时仅允许一人检出。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 检出成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/CheckoutDto' }
+        '409':
+          description: 文档已被他人检出
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                checkedOutByOther:
+                  value:
+                    errorCode: STATE_CONFLICT
+                    code: 3002
+                    status: 409
+                    title: 文档已被他人检出
+                    detail: 当前文档已被用户 X 检出，预计 N 小时内归还
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+
+  /api/v1/documents/{documentId}/checkin:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Checkout]
+      operationId: cde.document.checkin
+      summary: 检入文档
+      description: |
+        检入后状态从 CHECKED_OUT 流转为 PUBLISHED，并自动生成新版本。
+        必须由检出人本人执行。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CheckinRequest' }
+      responses:
+        '200':
+          description: 检入成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DocumentVersionDto' }
+        '409':
+          description: 文档未检出或检出者不是当前用户
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+        '422':
+          $ref: 'common.yaml#/components/responses/ValidationError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── 枚举 ──
+    DocumentStatus:
+      type: string
+      description: 文档状态（V1 简化状态机）
+      enum: [DRAFT, CHECKED_OUT, PUBLISHED, SUPERSEDED, ARCHIVED]
+    DocumentVersionStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, SUPERSEDED]
+
+    # ── Document DTO ──
+    DocumentDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        name: { type: string }
+        path:
+          type: string
+          description: |
+            文档路径。
+            PII 分级：L5（业务核心设计文件），日志须脱敏（security.md §3）
+        mimeType: { type: string, example: application/pdf }
+        sizeBytes: { type: integer, format: int64 }
+        currentVersionId: { type: string, format: uuid, nullable: true }
+        status: { $ref: '#/components/schemas/DocumentStatus' }
+        checksum:
+          type: string
+          nullable: true
+          description: 当前版本内容 SHA-256
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer, description: 乐观锁版本号 }
+
+    DocumentVersionDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        versionNumber: { type: integer, minimum: 1 }
+        uploadedBy: { type: string, format: uuid, nullable: true }
+        uploadedAt: { type: string, format: date-time }
+        comment: { type: string, nullable: true }
+        storageKey:
+          type: string
+          description: 对象存储 Key（S3/MinIO 引用）
+        checksum: { type: string, description: SHA-256 }
+        status: { $ref: '#/components/schemas/DocumentVersionStatus' }
+
+    CheckoutDto:
+      type: object
+      properties:
+        documentId: { type: string, format: uuid }
+        status: { $ref: '#/components/schemas/DocumentStatus' }
+        checkedOutBy: { type: string, format: uuid, nullable: true }
+        checkedOutAt: { type: string, format: date-time }
+
+    CreateDocumentRequest:
+      type: object
+      required: [projectId, name, path, mimeType, storageKey, checksum]
+      properties:
+        projectId: { type: string, format: uuid }
+        name: { type: string, maxLength: 256 }
+        path:
+          type: string
+          maxLength: 1024
+          description: PII: L5
+        mimeType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        storageKey: { type: string }
+        checksum: { type: string, description: SHA-256 }
+        comment: { type: string, maxLength: 1024 }
+
+    UpdateDocumentRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 256 }
+        path: { type: string, maxLength: 1024 }
+        mimeType: { type: string }
+
+    UploadVersionRequest:
+      type: object
+      required: [storageKey, checksum]
+      properties:
+        storageKey: { type: string }
+        checksum: { type: string, description: SHA-256 }
+        comment: { type: string, maxLength: 1024 }
+        sizeBytes: { type: integer, format: int64 }
+        mimeType: { type: string }
+
+    CheckinRequest:
+      type: object
+      required: [comment, storageKey, checksum]
+      properties:
+        comment:
+          type: string
+          maxLength: 1024
+          description: 检入说明（必填）
+        storageKey:
+          type: string
+          description: 新版本对象存储 Key（必填）
+        checksum: { type: string, description: SHA-256 }
+        sizeBytes: { type: integer, format: int64 }
+        mimeType: { type: string }

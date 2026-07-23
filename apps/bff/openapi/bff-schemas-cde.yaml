@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Schemas - CDE
+  version: 1.0.0
+  description: |
+    BFF 端 CDE（Common Data Environment）域 DTO 集合。
+    在 bff-api.yaml 中通过 `$ref: 'bff-schemas-cde.yaml#/components/schemas/...'` 引用。
+
+components:
+  schemas:
+    DocumentDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        name: { type: string }
+        path:
+          type: string
+          description: PII: L5，日志须脱敏
+        mimeType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        currentVersionId: { type: string, format: uuid, nullable: true }
+        status: { $ref: 'bff-common.yaml#/components/schemas/DocumentStatus' }
+        checksum: { type: string, nullable: true, description: SHA-256 }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+
+    DocumentVersionDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        documentId: { type: string, format: uuid }
+        versionNumber: { type: integer, minimum: 1 }
+        uploadedBy: { type: string, format: uuid, nullable: true }
+        uploadedAt: { type: string, format: date-time }
+        comment: { type: string, nullable: true }
+        storageKey: { type: string, description: 对象存储 Key }
+        checksum: { type: string, description: SHA-256 }
+        status: { $ref: 'bff-common.yaml#/components/schemas/DocumentVersionStatus' }
+
+    CheckoutDto:
+      type: object
+      properties:
+        documentId: { type: string, format: uuid }
+        status: { $ref: 'bff-common.yaml#/components/schemas/DocumentStatus' }
+        checkedOutBy: { type: string, format: uuid, nullable: true }
+        checkedOutAt: { type: string, format: date-time }
+
+    CheckinRequest:
+      type: object
+      required: [comment, storageKey, checksum]
+      properties:
+        comment: { type: string, maxLength: 1024 }
+        storageKey: { type: string }
+        checksum: { type: string, description: SHA-256 }
+        sizeBytes: { type: integer, format: int64 }
+        mimeType: { type: string }
+
+    CreateDocumentRequest:
+      type: object
+      required: [projectId, name, path, mimeType, storageKey, checksum]
+      properties:
+        projectId: { type: string, format: uuid }
+        name: { type: string, maxLength: 256 }
+        path:
+          type: string
+          maxLength: 1024
+          description: PII: L5
+        mimeType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        storageKey: { type: string }
+        checksum: { type: string, description: SHA-256 }
+        comment: { type: string, maxLength: 1024 }
+
+    UpdateDocumentRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 256 }
+        path: { type: string, maxLength: 1024 }
+        mimeType: { type: string }
+
+    UploadVersionRequest:
+      type: object
+      required: [storageKey, checksum]
+      properties:
+        storageKey: { type: string }
+        checksum: { type: string, description: SHA-256 }
+        comment: { type: string, maxLength: 1024 }
+        sizeBytes: { type: integer, format: int64 }
+        mimeType: { type: string }
+
+    OffsetPage_DocumentDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DocumentDto' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        hasMore: { type: boolean }

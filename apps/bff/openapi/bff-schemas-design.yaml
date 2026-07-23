@@ -1,0 +1,71 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Schemas - Design
+  version: 1.0.0
+  description: |
+    BFF 端 Design 域 DTO 集合。
+    在 bff-api.yaml 中通过 `$ref: 'bff-schemas-design.yaml#/components/schemas/...'` 引用。
+
+components:
+  schemas:
+    DesignOptionDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [draft, candidate, submitted, accepted, returned, archived]
+        discipline: { type: string, example: architecture }
+        version: { type: integer }
+        thumbnailUrl: { type: string, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateDesignOptionRequest:
+      type: object
+      required: [projectId, title]
+      properties:
+        projectId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        discipline: { type: string, default: architecture }
+        metadata:
+          type: object
+          additionalProperties: true
+
+    DesignFeedbackDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        optionId: { type: string, format: uuid }
+        authorId: { type: string, format: uuid }
+        comment: { type: string }
+        rating: { type: integer, minimum: 1, maximum: 5, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    DesignFeedbackRequest:
+      type: object
+      required: [comment]
+      properties:
+        comment: { type: string, maxLength: 4096 }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+
+    OffsetPage_DesignOptionDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/DesignOptionDto' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        hasMore: { type: boolean }

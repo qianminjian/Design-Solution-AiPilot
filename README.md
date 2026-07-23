@@ -1,9 +1,17 @@
 # 施工图全流程 AI 平台
 
-> V1 技术试点 — 建筑专业纵向闭环
+> V1 技术试点 — 建筑专业纵向闭环 · 条件性设计基线（Conditional Design Baseline）
 
-覆盖前期策划、概念设计、方案设计、扩初设计、施工图设计、多专业综合校审、
-发布交付与反馈变更的全流程 AI 辅助平台。首个业务场景为境外主创草图到方案深化。
+建设覆盖前期策划、概念设计、方案设计、扩初设计、施工图设计、多专业综合校审、
+发布交付与反馈变更的全流程 AI 辅助平台。首个业务场景为 **境外主创草图到方案深化**。
+
+## 核心特性
+
+- **境外英文优先**：V1 锁定通用英文境外、ISO/EN 优先、公制 SI（见 OD-01）。
+- **中小型办公建筑**：5–15 层框架/框剪结构，聚焦建筑专业纵向闭环（见 OD-02/OD-03）。
+- **多工具版本冻结**：Revit/AutoCAD 2022/2024、Rhino 7/8、SketchUp 2023/2024 Pro、ArchiCAD 26/27（见 OD-04）。
+- **A+B 双轨 AI**：通用 LLM API 先行 + 建筑专业 AI 维持 ManualHandoff（见 OD-05）。
+- **Hybrid-Site 部署**：云控制面 + 客户站点 Windows Worker，RPO≤4h / RTO≤8h（见 OD-06）。
 
 ## 技术栈
 
@@ -27,7 +35,8 @@ packages/shared/   TypeScript 共享类型契约
 services/core/     Java 核心业务服务（Spring Boot 3.4）
 services/ai/       Python AI 服务（FastAPI）
 docker/            Docker Compose 与 Dockerfile
-design/            设计文档（BEACON.md + decisions/ + D00–D46 各章节）
+design/            设计文档（BEACON.md + D00–D46 + 派生材料）
+docs/              项目级文档（reports / api 等）
 .trae/rules/       Trae 项目规则（16 个规则文件）
 .github/workflows/ CI 流水线（GitHub Actions）
 ```
@@ -56,7 +65,6 @@ cd Design-Solution-AiPilot
 
 ```bash
 cp .env.example .env
-
 # 生成 JWT 密钥（至少 32 字符），替换 .env 中的 JWT_SECRET
 openssl rand -base64 48
 ```
@@ -67,18 +75,13 @@ openssl rand -base64 48
 docker compose -f docker/compose.yml up -d
 ```
 
-启动后访问：
-
-- MinIO Console: http://localhost:9001（账号见 `.env`，默认 `minioadmin/minioadmin`）
-- PostgreSQL: `localhost:5432`（默认库名 `design_platform`，用户 `platform`）
-
 ### 4. 安装依赖
 
 ```bash
 pnpm install
 ```
 
-### 5. 全栈启动（推荐）
+### 5. 全栈启动
 
 ```bash
 docker compose -f docker/compose.yml up -d
@@ -86,37 +89,24 @@ docker compose -f docker/compose.yml up -d
 
 将启动所有服务（postgres / minio / core / ai / bff / web），首次启动约 3–5 分钟。
 
-### 6. 分服务开发启动
-
-仅启动基础设施后，按需启动各应用服务（便于热重载调试）：
+### 6. 分服务开发
 
 ```bash
 # Web + BFF（前端两层，pnpm workspace 联动）
 pnpm dev
 
-# Java 核心服务（新终端）
-cd services/core && mvn spring-boot:run
+# Java 核心服务
+cd services/core && ./mvnw spring-boot:run
 
-# Python AI 服务（新终端）
+# Python AI 服务
 cd services/ai && uvicorn src.main:app --reload
 ```
 
-## 访问地址
-
-| 服务             | 地址                  | 健康检查                              |
-| ---------------- | --------------------- | ------------------------------------- |
-| Web（前端）      | http://localhost:3000 | http://localhost:3000                 |
-| BFF（API 聚合）  | http://localhost:3001 | http://localhost:3001/api/health/live |
-| Core（核心业务） | http://localhost:8080 | http://localhost:8080/health/ready    |
-| AI（AI 服务）    | http://localhost:8000 | http://localhost:8000/health/live     |
-| PostgreSQL       | localhost:5432        | `pg_isready -h localhost -p 5432`     |
-| MinIO Console    | http://localhost:9001 | —                                     |
-
-## 开发命令
+## 核心命令
 
 ```bash
-# ── TypeScript workspace（apps/web + apps/bff + packages/shared） ──
-pnpm dev                  # 启动 web + bff（dev 模式）
+# ── TypeScript workspace ──
+pnpm dev                  # 启动 web + bff
 pnpm build                # 全量构建
 pnpm test                 # 运行 vitest 单元测试
 pnpm -r lint              # 全量 lint
@@ -125,58 +115,107 @@ pnpm format               # Prettier 格式化
 
 # ── Java 核心服务 ──
 cd services/core
-mvn spring-boot:run               # 启动 dev 服务
-mvn test                          # 单元测试
-mvn verify                        # 构建并测试（含集成测试，TestContainers）
-mvn -B -ntp verify                # 非交互模式（CI 用）
+./mvnw spring-boot:run    # 启动 dev 服务
+./mvnw test               # 单元测试
+./mvnw verify             # 构建并测试（含集成测试，TestContainers）
 
 # ── Python AI 服务 ──
 cd services/ai
-uvicorn src.main:app --reload     # 启动 dev 服务
-pytest                           # 运行测试
-pytest -q                        # 安静模式
+uvicorn src.main:app --reload   # 启动 dev 服务
+pytest                            # 运行测试
 
 # ── 全栈（Docker Compose V0） ──
-docker compose -f docker/compose.yml up -d        # 后台启动
-docker compose -f docker/compose.yml logs -f      # 查看日志
-docker compose -f docker/compose.yml down          # 停止并清理
+docker compose -f docker/compose.yml up -d
 ```
 
-## CI 流水线
+详细命令见 [`.trae/rules/project-overview.md`](.trae/rules/project-overview.md)。
 
-GitHub Actions 流水线定义在 `.github/workflows/ci.yml`，包含 5 个并行 Job：
+## R1 业务决策冻结（2026-07-22）
 
-| Job                  | 触发      | 内容                                       |
-| -------------------- | --------- | ------------------------------------------ |
-| Java 核心服务        | push / PR | Maven verify（含 TestContainers 集成测试） |
-| Python AI 服务       | push / PR | pytest 单元测试                            |
-| TypeScript workspace | push / PR | typecheck + lint + vitest 单测             |
-| Docker 镜像构建校验  | 仅 push   | 校验各 Dockerfile 构建不破                 |
-| 前端 E2E             | 仅 push   | Playwright（chromium）                     |
+| 决策号 | 主题       | 冻结值                                                                         | 引用            |
+| ------ | ---------- | ------------------------------------------------------------------------------ | --------------- |
+| OD-01  | 地区包     | 通用英文境外，ISO/EN 优先，公制 SI，境外云 Region                              | 决策 10         |
+| OD-02  | 建筑类型   | 中小型办公（5–15 层，框架/框剪），排除超高层和医疗/实验室                      | 决策 11         |
+| OD-03  | 专业深度   | 建筑纵向闭环，结构/给排水/暖通/电气交换与协调，专项不纳入 V1                   | 决策 12         |
+| OD-04  | 工具版本   | Revit/AutoCAD 2022/2024、Rhino 7/8、SketchUp 2023/2024 Pro、ArchiCAD 26/27    | 决策 13         |
+| OD-05  | 外部 AI    | A+B 并行：通用 LLM API 先行，建筑专业 AI（EVAI/小库/建筑学长）维持 ManualHandoff | 决策 14         |
+| OD-06  | 部署画像   | Hybrid-Site（云控制面 + 客户站点 Windows Worker），RPO≤4h / RTO≤8h              | 决策 15         |
 
-PR 失败即阻断合并；E2E 与镜像构建仅在 push 到 main 时执行，避免阻塞 PR。
+> 详细背景与下游影响见 [`@design/BEACON.md`](design/BEACON.md#设计决策)。
 
-## AI 开发环境
+## R2 技术基线实例化进度
 
-本项目支持 Trae、Claude Code 等 AI 开发工具：
+| 任务块       | 状态     | 关键交付物                                                                  | 下一步     |
+| ------------ | -------- | --------------------------------------------------------------------------- | ---------- |
+| Support Matrix    | 🟢 已冻结 | 5 类工具 10 版本资格矩阵、Hybrid-Site Worker 部署参数、ExchangeRoundTripSample | W4–W7 资格验证 |
+| Contract Catalog  | 🟡 部分冻结 | 48 个稳定 ID（30 API + 18 Event + 8 File Schema）已分配 | W4–W8 Consumer Test 验证 |
+| Deployment Profile | 🟡 部分冻结 | OD-06 实例化为 Region/Cell/Cluster 参数、9 信任区流量矩阵、WorkerImageProfile、DR 分层 RPO/RTO | W4 厂商冻结、W5 金样、W8 DR 演练 |
+| Trae 规则库   | 🟢 已冻结 | 16 个规则文件（5 始终 + 10 glob + 1 场景）                                  | 持续维护   |
+| 实施代码骨架 | 🟢 已交付 | 4 服务全部可运行 + 单元测试通过                                              | R3 GoldenDataset |
 
-| 文件           | 作用                                                | 工具        |
-| -------------- | --------------------------------------------------- | ----------- |
-| `.trae/rules/` | Trae 项目规则（16 个规则文件，含 YAML frontmatter） | Trae        |
-| `AGENTS.md`    | 智能体行为指引（项目规则速查 + 设计文档索引）       | Trae / 通用 |
+> 状态图例：🟢 满足 / 🟡 部分满足 / 🔴 阻塞。详细 R2 完成度见 [`docs/reports/r2-completion-report.md`](docs/reports/r2-completion-report.md)。
 
-Trae 规则包含 5 个始终生效规则（项目概述、编码规范、设计约束、安全、测试）和 11 个按文件/场景触发的规则（前端、BFF、Java 后端、Python 后端、数据库、API 约定、可观测性、部署、Code Review、DevEx、Git 提交信息）。
+## 测试覆盖度（截至 2026-07-23）
 
-## 文档
+| 服务             | 测试类型            | 用例数 | 状态      |
+| ---------------- | ------------------- | ------ | --------- |
+| services/core    | 单元测试（Mock）    | 89     | 🟢 全通过 |
+| services/core    | 集成测试（TestContainers） | 14 | 🟡 待 Docker 环境 |
+| apps/bff         | 单元 + 集成测试     | 100    | 🟢 全通过 |
+| services/ai      | 单元 + 集成测试     | 53     | 🟢 全通过 |
+| apps/web         | TypeScript 类型检查 | —      | 🟢 通过   |
+| apps/web         | E2E（Playwright）   | 2      | 🟡 CI 中  |
 
-完整设计见：
+## AI 安全红线
 
-- `design/INDEX.md` — 文档索引（D00–D46 章节索引表）
-- `design/D00–D46*.md` — 47 个设计正文章节
-- `design/BEACON.md` — 设计明灯（状态/阻塞/决策日志）
-- `design/decisions/` — ADR 决策记录
-- `.trae/rules/` — 项目规则（编码/测试/安全/部署等）
+- **设计文档权威**：唯一设计正文为 `design/D00–D46`，冲突时以设计正文为准，详见 [`.trae/rules/design-constraints.md`](.trae/rules/design-constraints.md)。
+- **AI 人工复核**：所有 AI 输出按风险等级（低/中/高/极高）进入人工复核流程，AI 不替代注册建筑师/工程师的专业审签和监管审批。
+- **外部 AI 隔离**：建筑专业 AI（EVAI/小库/建筑学长）在 V1 维持 ManualHandoff，V1 不自动接入。
+- **数据处理合规**：LLM API 提交数据须不进入模型训练，跨境传输须满足法律评估、安全评估、用户同意和加密传输（见 [`.trae/rules/security.md`](.trae/rules/security.md)）。
+
+## 文档导航
+
+| 入口                                 | 用途                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| [`design/INDEX.md`](design/INDEX.md) | 文档索引（D00–D46 章节表、命名规范、引用约定）                                |
+| [`design/BEACON.md`](design/BEACON.md) | 设计明灯（状态/阻塞/决策日志）                                              |
+| [`design/D00–D46`](design/)          | 唯一设计正文，按章节拆分为 47 个独立文件                                     |
+| [`design/decisions/`](design/decisions/) | ADR 决策记录                                                                |
+| [`design/r2-*/`](design/)            | R2 派生材料：Support Matrix / Contract Catalog / Deployment Profile           |
+| [`docs/reports/`](docs/reports/)     | 阶段报告（如 R2 完成报告）                                                    |
+| [`docs/api/`](docs/api/)             | API 文档总览                                                                  |
+| [`.trae/rules/`](.trae/rules/)       | Trae 项目规则（16 个规则文件：编码/安全/测试/部署等）                         |
+| [`AGENTS.md`](AGENTS.md)              | AI 智能体行为指引（项目规则速查）                                             |
+
+## 贡献指南
+
+### 提交规范
+
+- 遵循 [Conventional Commits](https://www.conventionalcommits.org/) 格式（见 [`.trae/rules/git-commit-message.md`](.trae/rules/git-commit-message.md)）。
+- 提交前由 Husky + lint-staged 自动执行 Prettier 格式化。
+- 提交信息须包含 `type(scope): subject` 三段式结构，scope 限定在 `web / bff / core / ai / design / docs / rules` 等。
+
+### 分支策略
+
+- `main`：受保护分支，仅接受 PR 合入。
+- `feature/<scope>-<desc>`：功能开发分支。
+- `fix/<scope>-<desc>`：Bug 修复分支。
+- `hotfix/<desc>`：生产紧急修复分支（须双签 Review）。
+
+### PR 流程
+
+1. 从 `main` 拉取最新代码后创建功能分支。
+2. 提交前运行 `pnpm test` / `cd services/core && ./mvnw test` / `cd services/ai && pytest` 确保测试通过。
+3. PR 大小建议 ≤ 500 行（含测试），强制 ≤ 1500 行。
+4. Reviewer 必查项见 [`.trae/rules/code-review.md`](.trae/rules/code-review.md)，含 AI 人工复核路径、Hybrid-Site 特殊约束、契约变更须 2 人 Review 等。
+5. CI 全部 5 个 Job 通过后（typecheck / lint / 单测 / Docker 构建 / E2E）方可合并。
+
+### Trae 规则
+
+- 始终生效：`project-overview` / `coding-standards` / `design-constraints` / `security` / `testing`。
+- 按文件路径匹配：`frontend` / `bff` / `backend-java` / `backend-python` / `database` / `api-conventions` / `observability` / `deployment` / `code-review` / `devex`。
+- 按场景匹配：`git-commit-message`（仅在生成提交信息时生效）。
 
 ## License
 
-MIT
+Private / 私有项目，保留所有权利。未经具责主体书面授权，禁止复制、修改、分发或商用。

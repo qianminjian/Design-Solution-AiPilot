@@ -1,0 +1,279 @@
+openapi: 3.0.3
+info:
+  title: AiPilot Design API
+  version: 1.0.0
+  description: |
+    设计（Design）域 OpenAPI 契约。
+
+    ## 范围
+    - 设计选项（DesignOption）：方案候选轮
+    - 设计反馈（DesignFeedback）：评审意见与评分
+
+    ## 业务错误码段
+    - 4xxx：Design 域
+      - 4001 DESIGN_OPTION_NOT_FOUND
+      - 4010 SUBMISSION_REQUIRES_REVIEWER
+
+    ## V0 阶段裁剪
+    - 完整 Design/Professional 模型（briefs / options / packages / sheets / submissions / conditions）
+      见 D35.15 表 D 行，V0 仅暴露 option + feedback 两个端点
+    - AI 能力（capability）由 ai service 单独暴露，不在 design 域内
+
+    权威源：@design/D10-方案.md + @design/D35-API-事件契约.md
+  contact:
+    name: Design Service Team
+    email: design@aipilot.example
+
+servers:
+  - url: https://api.aipilot.example
+    description: 生产
+  - url: http://localhost:8080
+    description: 本地
+
+tags:
+  - name: DesignOption
+    description: 设计选项
+  - name: Feedback
+    description: 设计反馈
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/design-options:
+    get:
+      tags: [DesignOption]
+      operationId: design.option.list
+      summary: 列出设计选项
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: status
+          schema: { $ref: '#/components/schemas/DesignOptionStatus' }
+        - in: query
+          name: discipline
+          schema:
+            type: string
+            enum: [architecture, structure, mep, landscape, interior]
+        - in: query
+          name: sort
+          schema: { type: string, example: '-updatedAt,id' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items: { $ref: '#/components/schemas/DesignOptionDto' }
+                          total: { type: integer }
+                          page: { type: integer }
+                          pageSize: { type: integer }
+                          hasMore: { type: boolean }
+        '400':
+          description: 缺少 projectId
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+    post:
+      tags: [DesignOption]
+      operationId: design.option.create
+      summary: 创建设计选项
+      description: |
+        - 需 Idempotency-Key
+        - 默认 status=draft
+        - 关联 thumbnail 须在 CDE 域上传后通过 metadata.thumbnailDocumentId 引用
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateDesignOptionRequest' }
+            examples:
+              standard:
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  title: 方案 A-围合式中庭
+                  description: 围绕中央采光中庭布置核心筒，标准层 3.0m 层高
+                  discipline: architecture
+                  metadata:
+                    thumbnailDocumentId: 0190f8e9-aabb-7c01-2345-6789abcdef20
+                    aiGenerated: true
+                    riskLevel: medium
+      responses:
+        '201':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DesignOptionDto' }
+        '422':
+          $ref: 'common.yaml#/components/responses/ValidationError'
+
+  /api/v1/design-options/{optionId}/feedback:
+    parameters:
+      - in: path
+        name: optionId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Feedback]
+      operationId: design.option.feedback
+      summary: 提交设计选项反馈
+      description: |
+        - 需 Idempotency-Key
+        - 反馈按时间倒序追加，不修改历史
+        - AI 生成选项的反馈会自动进入人工复核流
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DesignFeedbackRequest' }
+            examples:
+              standard:
+                value:
+                  comment: 中庭采光效果佳，建议将一层大堂挑高至 6m
+                  rating: 4
+              withIssues:
+                value:
+                  comment: 疏散宽度不满足 EN 13501-2
+                  rating: 2
+      responses:
+        '201':
+          description: 反馈提交成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/DesignFeedbackDto' }
+        '404':
+          description: 设计选项不存在
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                notFound:
+                  value:
+                    errorCode: RESOURCE_NOT_FOUND
+                    code: 4001
+                    status: 404
+                    title: 设计选项不存在
+                    detail: 设计选项不存在或已被归档
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── 枚举 ──
+    DesignOptionStatus:
+      type: string
+      description: |
+        设计选项状态机：
+        draft → candidate → submitted → (accepted | returned) → archived
+      enum: [draft, candidate, submitted, accepted, returned, archived]
+    DesignDiscipline:
+      type: string
+      enum: [architecture, structure, mep, landscape, interior]
+
+    # ── DesignOption DTO ──
+    DesignOptionDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        status: { $ref: '#/components/schemas/DesignOptionStatus' }
+        discipline: { $ref: '#/components/schemas/DesignDiscipline' }
+        version: { type: integer, description: 乐观锁版本号 }
+        thumbnailUrl:
+          type: string
+          nullable: true
+          description: 缩略图 URL（预签名对象存储）
+        metadata:
+          type: object
+          additionalProperties: true
+          description: |
+            扩展元数据：thumbnailDocumentId、aiGenerated、riskLevel 等
+        createdBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateDesignOptionRequest:
+      type: object
+      required: [projectId, title]
+      properties:
+        projectId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        discipline:
+          $ref: '#/components/schemas/DesignDiscipline'
+        metadata:
+          type: object
+          additionalProperties: true
+          properties:
+            thumbnailDocumentId: { type: string, format: uuid }
+            aiGenerated: { type: boolean }
+            riskLevel:
+              type: string
+              enum: [low, medium, high, critical]
+
+    DesignFeedbackDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        optionId: { type: string, format: uuid }
+        authorId: { type: string, format: uuid }
+        comment: { type: string }
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        createdAt: { type: string, format: date-time }
+
+    DesignFeedbackRequest:
+      type: object
+      required: [comment]
+      properties:
+        comment: { type: string, maxLength: 4096 }
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: 1-5 星评分（可选）

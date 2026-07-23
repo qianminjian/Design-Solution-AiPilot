@@ -1,0 +1,217 @@
+# E2E 测试工作流 — 施工图全流程 AI 平台
+#
+# 设计目标：
+#   1. main 分支推送时跑核心用户流程 E2E（PR 不跑，避免阻塞合并）。
+#   2. 启动 docker compose 全栈（postgres / minio / chromadb / core / ai / bff / web）。
+#   3. 等待 web 服务健康检查通过后运行 Playwright。
+#   4. 失败时上传 Playwright 报告 + test-results/ 产物。
+#
+# E2E 覆盖（见 .trae/rules/testing.md §2）：
+#   - 核心用户流程：登录 → 上传 → AI 生成 → 复核 → 发布
+#   - 覆盖率 = 100%（核心流程 E2E 必须全过）
+#
+# 权威源：
+# - .trae/rules/testing.md（E2E 规范、CI 门禁）
+# - .trae/rules/deployment.md（Hybrid-Site 部署约束）
+# - docker/compose.yml（V0 全栈部署配置）
+
+name: E2E
+
+on:
+  push:
+    branches: [main]
+    # 仅在 web/bff 或 E2E 测试相关路径变更时触发
+    paths:
+      - "apps/web/**"
+      - "apps/bff/**"
+      - "packages/shared/**"
+      - "docker/**"
+      - ".github/workflows/e2e.yml"
+  workflow_dispatch:
+
+# 同一分支后续 push 取消旧 run，节省资源
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 最小权限原则
+permissions:
+  contents: read
+
+# E2E 测试公共环境变量
+env:
+  # docker compose 启动后 web 服务暴露端口（见 docker/compose.yml）
+  WEB_PORT: "3000"
+  # E2E 基础 URL（指向 docker compose 启动的 web 服务）
+  E2E_BASE_URL: http://localhost:3000
+  # JWT 测试密钥（仅用于 E2E 环境，生产密钥由 KMS 管理）
+  JWT_SECRET: e2e-test-secret-not-for-production-use-only
+  # 数据库测试密码
+  DB_PASSWORD: e2e_test_db_password
+  # S3 测试密钥
+  S3_ACCESS_KEY: e2e_minio_access_key
+  S3_SECRET_KEY: e2e_minio_secret_key
+  # ChromaDB 测试凭据
+  CHROMADB_AUTH_CREDENTIALS: e2e:chromasecret
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # 单 Job 设计：E2E 测试需要完整的全栈环境，单 runner 内串行执行
+  # 1. 启动 docker compose
+  # 2. 等待 web 健康检查
+  # 3. 运行 Playwright
+  # 4. 上传报告
+  # 5. 收尾 docker compose down
+  # ──────────────────────────────────────────────────────────────
+  playwright-e2e:
+    name: Playwright E2E（核心用户流程）
+    runs-on: ubuntu-latest
+    # 默认 30 分钟超时，覆盖 docker compose 启动 + Playwright 执行
+    timeout-minutes: 30
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 pnpm 9
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: 配置 Node 20（启用 pnpm 缓存）
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: 安装项目依赖（frozen-lockfile）
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装 Playwright 浏览器（chromium）
+        # apps/web/playwright.config.ts 仅启用 chromium（V1 技术试点最小集）
+        # --with-deps 自动安装系统依赖（libnss3、libxss1 等）
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: 写入 E2E 环境变量到 .env
+        # docker compose 读取 docker/.env.example 默认值，
+        # 在 GitHub Actions 中覆盖关键变量为 E2E 测试值
+        working-directory: docker
+        run: |
+          cat > .env <<EOF
+          # E2E 测试环境（仅用于 GitHub Actions workflow）
+          NODE_ENV=production
+          SPRING_PROFILES_ACTIVE=docker
+          DB_USER=platform
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_NAME=design_platform_e2e
+          DB_PORT=5432
+          S3_ACCESS_KEY=${S3_ACCESS_KEY}
+          S3_SECRET_KEY=${S3_SECRET_KEY}
+          S3_BUCKET_NAME=platform-e2e-data
+          S3_REGION=us-east-1
+          S3_ENDPOINT=http://minio:9000
+          JWT_SECRET=${JWT_SECRET}
+          JWT_ACCESS_TOKEN_EXPIRES_IN=15m
+          JWT_REFRESH_TOKEN_EXPIRES_IN=7d
+          CHROMADB_AUTH_CREDENTIALS=${CHROMADB_AUTH_CREDENTIALS}
+          CHROMADB_URL=http://chromadb:8000
+          LLM_API_KEY=e2e-mock-key
+          LLM_API_BASE=http://localhost:9999/v1
+          LLM_MODEL=e2e-mock-model
+          LLM_TIMEOUT=10
+          LOG_LEVEL=info
+          CORS_ORIGIN=http://localhost:3000
+          ENVIRONMENT=test
+          EOF
+
+      - name: 启动 docker compose 全栈（后台）
+        # -d: 后台运行；--wait: 等待服务 healthy 状态（Docker Compose v2.20+）
+        # --build: 强制重建镜像，确保使用最新代码
+        working-directory: docker
+        run: docker compose up -d --build --wait --wait-timeout 300
+
+      - name: 等待 web 服务健康检查（端口 3000）
+        # 双重保险：即使 --wait 已生效，仍显式轮询确保 Next.js 首屏编译完成
+        run: |
+          echo "等待 web 服务健康检查..."
+          for i in {1..60}; do
+            if curl -fsS -o /dev/null http://localhost:${WEB_PORT}/; then
+              echo "web 服务已就绪（第 $i 次尝试）"
+              exit 0
+            fi
+            echo "第 $i 次重试，等待 5s..."
+            sleep 5
+          done
+          echo "ERROR: web 服务未在 300s 内就绪"
+          docker compose -f docker/compose.yml ps
+          docker compose -f docker/compose.yml logs web
+          exit 1
+
+      - name: 验证后端服务健康（core-service + bff + ai-service）
+        # 确认后端 API 可达，避免前端 E2E 跑通但后端故障的情况
+        run: |
+          echo "检查 core-service..."
+          curl -fsS http://localhost:8080/health/ready || (echo "core-service 未就绪" && exit 1)
+          echo "检查 bff..."
+          curl -fsS http://localhost:3001/api/health/live || (echo "bff 未就绪" && exit 1)
+          echo "检查 ai-service..."
+          curl -fsS http://localhost:8001/health/live || (echo "ai-service 未就绪" && exit 1)
+          echo "所有后端服务健康检查通过"
+
+      - name: 运行 Playwright E2E
+        working-directory: apps/web
+        # 关键环境变量：
+        # - CI=1: 触发 playwright.config.ts 中的 CI 模式（forbidOnly, retries=2, workers=1）
+        # - NEXT_PUBLIC_BFF_URL: Playwright 测试通过 page.route 拦截 BFF 请求（不依赖真实 BFF）
+        # - 直接通过 pnpm exec 调 playwright test，传入 reporter 与 output 参数
+        # 注：playwright.config.ts 中 baseURL=localhost:3001 + webServer 自动启动 next dev --port 3001，
+        #    Playwright 会通过 webServer 复用机制检测端口，CI 模式（reuseExistingServer=false）会自启。
+        #    docker compose 的 web 服务在 3000 端口运行，仅用于健康检查与后端服务依赖，
+        #    不影响 Playwright 在 3001 端口的 E2E 流程。
+        env:
+          CI: "1"
+        run: |
+          pnpm exec playwright test \
+            --reporter=list,html,junit \
+            --output=test-results \
+            --workers=1
+
+      - name: 上传 E2E 报告（失败时 + 始终上传关键产物）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          # 包含 HTML 报告 + test-results/（截图/视频/trace）+ JUnit XML
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: 上传 JUnit 测试结果（用于 GitHub Checks 集成）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-junit
+          path: apps/web/test-results/junit.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: 收集 docker compose 诊断日志（失败时）
+        if: failure()
+        working-directory: docker
+        run: |
+          echo "===== docker compose ps ====="
+          docker compose ps
+          echo "===== docker compose logs (last 500 lines) ====="
+          docker compose logs --tail=500
+        # 失败时不上传整个日志（可能很大），仅输出到 console 便于排查
+
+      - name: 关闭 docker compose（始终执行，无论成功失败）
+        if: always()
+        working-directory: docker
+        # -v: 移除挂载卷（确保下次 E2E 干净启动）
+        # --remove-orphans: 移除孤立容器
+        run: docker compose down -v --remove-orphans

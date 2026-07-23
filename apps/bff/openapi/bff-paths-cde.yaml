@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Paths - CDE
+  version: 1.0.0
+  description: |
+    BFF 端 CDE 域 path 路由。
+    通用组件：bff-common.yaml
+    业务 DTO：bff-schemas-cde.yaml
+    权威源：@design/D07-CDE领域-版本.md
+
+paths:
+  /api/v1/documents:
+    get:
+      tags: [CDE]
+      operationId: cde.document.list
+      summary: 列出文档
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - in: query
+          name: status
+          schema: { $ref: 'bff-common.yaml#/components/schemas/DocumentStatus' }
+        - in: query
+          name: keyword
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/OffsetPage_DocumentDto' }
+    post:
+      tags: [CDE]
+      operationId: cde.document.create
+      summary: 创建文档
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-cde.yaml#/components/schemas/CreateDocumentRequest' }
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/DocumentDto' }
+        '413':
+          $ref: 'bff-common.yaml#/components/responses/PayloadTooLarge'
+
+  /api/v1/documents/{documentId}:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [CDE]
+      operationId: cde.document.get
+      summary: 查询文档详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/DocumentDto' }
+        '404':
+          $ref: 'bff-common.yaml#/components/responses/NotFound'
+    patch:
+      tags: [CDE]
+      operationId: cde.document.update
+      summary: 更新文档元数据
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: 'bff-schemas-cde.yaml#/components/schemas/UpdateDocumentRequest' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/DocumentDto' }
+        '412':
+          $ref: 'bff-common.yaml#/components/responses/PreconditionFailed'
+        '428':
+          $ref: 'bff-common.yaml#/components/responses/PreconditionRequired'
+    delete:
+      tags: [CDE]
+      operationId: cde.document.delete
+      summary: 删除文档（仅 DRAFT 状态可删）
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IfMatch'
+      responses:
+        '204': { description: 删除成功 }
+        '409':
+          $ref: 'bff-common.yaml#/components/responses/Conflict'
+
+  /api/v1/documents/{documentId}/versions:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [CDE]
+      operationId: cde.version.list
+      summary: 列出文档的所有版本
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: 'bff-schemas-cde.yaml#/components/schemas/DocumentVersionDto' }
+    post:
+      tags: [CDE]
+      operationId: cde.version.upload
+      summary: 上传新版本
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-cde.yaml#/components/schemas/UploadVersionRequest' }
+      responses:
+        '201':
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/DocumentVersionDto' }
+
+  /api/v1/documents/{documentId}/checkout:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [CDE]
+      operationId: cde.document.checkout
+      summary: 检出文档
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 检出成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/CheckoutDto' }
+        '409':
+          $ref: 'bff-common.yaml#/components/responses/Conflict'
+
+  /api/v1/documents/{documentId}/checkin:
+    parameters:
+      - in: path
+        name: documentId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [CDE]
+      operationId: cde.document.checkin
+      summary: 检入文档
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-cde.yaml#/components/schemas/CheckinRequest' }
+      responses:
+        '200':
+          description: 检入成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-cde.yaml#/components/schemas/DocumentVersionDto' }
+        '409':
+          $ref: 'bff-common.yaml#/components/responses/Conflict'

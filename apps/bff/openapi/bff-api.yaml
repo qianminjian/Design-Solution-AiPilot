@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF API
+  version: 1.0.0
+  description: |
+    施工图全流程 AI 平台 BFF（Backend for Frontend）OpenAPI 契约。
+
+    ## 责任边界
+    - BFF 是 API 聚合层，不承载业务逻辑——业务逻辑在 services/core（Java）。
+    - BFF 负责：请求转发、响应裁剪、认证鉴权、限流、Cookie 管理。
+    - BFF 透传 Authorization、Idempotency-Key、If-Match、x-trace-id 等头给下游服务。
+
+    ## 认证策略
+    - 浏览器通过 httpOnly + Secure + SameSite=Strict Cookie 持有 refresh token。
+    - BFF 与 Core Service 之间使用 Bearer access token（≤15min 短期）。
+    - 服务间 mTLS / workload identity，token 不落 URL/日志。
+
+    ## 双层状态码
+    - HTTP 200 + 业务 code === 0 = 成功。
+    - 业务错误使用 4xx + 业务 code，禁止 HTTP 200 隐藏业务失败。
+
+    ## 文件拆分（≤500 行约束）
+    - bff-api.yaml：本文件，path 路由聚合
+    - bff-common.yaml：共享 header / parameter / response / 安全方案 / ApiResponse
+    - bff-schemas-auth.yaml：Auth + IAM DTO
+    - bff-schemas-project.yaml：Project 域 DTO
+    - bff-schemas-cde.yaml：CDE 域 DTO
+    - bff-schemas-design.yaml：Design 域 DTO
+    - bff-schemas-coordination.yaml：Coordination 域 DTO
+    - bff-schemas-workflow.yaml：Workflow 域 DTO
+
+    权威源：@design/D35-API-事件契约.md + @design/D39-身份多租户-授权.md
+  contact:
+    name: AiPilot Platform Team
+    email: platform@aipilot.example
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.aipilot.example
+    description: 生产环境（OD-06 Hybrid-Site，云控制面）
+  - url: https://api-staging.aipilot.example
+    description: 预发环境
+  - url: http://localhost:3001
+    description: 本地开发（BFF 默认 3001 端口）
+
+tags:
+  - name: Auth
+    description: 认证与 Token 管理
+  - name: IAM
+    description: 身份与多租户
+  - name: Project
+    description: 项目 Portfolio
+  - name: CDE
+    description: 公共数据环境
+  - name: Design
+    description: 设计选项
+  - name: Coordination
+    description: 校审问题（Findings/BCF）
+  - name: Workflow
+    description: 阶段、门禁与基线
+  - name: System
+    description: 健康检查与运维
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ─────────────────────────────────────────────
+  # 认证域（Auth Domain）
+  # ─────────────────────────────────────────────
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: auth.login
+      summary: 用户登录
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: 'bff-schemas-auth.yaml#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          headers:
+            Set-Cookie: { schema: { type: string } }
+            x-trace-id: { $ref: 'bff-common.yaml#/components/headers/TraceId' }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/LoginResponse' }
+        '401':
+          $ref: 'bff-common.yaml#/components/responses/Unauthorized'
+        '422':
+          $ref: 'bff-common.yaml#/components/responses/ValidationError'
+        '429':
+          $ref: 'bff-common.yaml#/components/responses/RateLimited'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: auth.refresh
+      summary: 刷新 access token
+      security: []
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/CookieRefreshToken'
+      responses:
+        '200':
+          description: 刷新成功
+          headers:
+            Set-Cookie: { schema: { type: string } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/RefreshTokenResponse' }
+        '401':
+          $ref: 'bff-common.yaml#/components/responses/Unauthorized'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: auth.logout
+      summary: 登出
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-auth.yaml#/components/schemas/LogoutRequest' }
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/LogoutResponse' }
+
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      operationId: auth.me
+      summary: 获取当前登录上下文
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/AuthContext' }
+        '401':
+          $ref: 'bff-common.yaml#/components/responses/Unauthorized'
+
+  /api/v1/auth/change-password:
+    post:
+      tags: [Auth]
+      operationId: auth.changePassword
+      summary: 修改当前用户密码
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-auth.yaml#/components/schemas/ChangePasswordRequest' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema: { $ref: 'bff-common.yaml#/components/schemas/ApiResponse' }
+        '422':
+          $ref: 'bff-common.yaml#/components/responses/ValidationError'
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: auth.register
+      summary: 注册新主体
+      security: []
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-auth.yaml#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/PrincipalDto' }
+        '409':
+          $ref: 'bff-common.yaml#/components/responses/Conflict'
+
+  /healthz:
+    get:
+      tags: [System]
+      operationId: system.healthz
+      summary: BFF 健康检查
+      security: []
+      responses:
+        '200':
+          description: 存活
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+                  service: { type: string, example: bff }
+                  uptime: { type: number }

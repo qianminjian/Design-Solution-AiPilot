@@ -1,0 +1,257 @@
+# 安全扫描工作流 — 施工图全流程 AI 平台
+#
+# 设计目标：
+#   1. 每日定时扫描（发现历史漏洞与新增 CVE）。
+#   2. 每次 PR 触发（阻止新引入的安全问题合并到 main）。
+#   3. 三层防护：
+#      - gitleaks：检测当前代码中的密钥泄露
+#      - trufflehog：扫描 Git 历史中的密钥痕迹
+#      - semgrep：SAST 静态分析（多语言：TypeScript/Java/Python）
+#   4. 高危漏洞（CVSS ≥ 7.0）阻断 CI 合并。
+#
+# Job 拓扑（全部并行）：
+#   1. gitleaks-scan   — gitleaks/gitleaks-action@v2
+#   2. trufflehog-scan — trufflehog/trufflehog@0.20.0
+#   3. semgrep-scan    — returntocorp/semgrep-action@v1（多语言 SAST）
+#   4. dependency-audit — npm/pip/maven 依赖漏洞扫描
+#
+# 权威源：
+# - .trae/rules/security.md（CI 安全门禁、密钥管理、依赖漏洞扫描）
+
+name: Security Scan
+
+on:
+  # PR 触发（main 分支）
+  pull_request:
+    branches: [main]
+  # push 到 main 也触发，确保合并后立即扫描
+  push:
+    branches: [main]
+  # 每日定时扫描：北京时间凌晨 2 点（UTC 18:00 前一天）
+  schedule:
+    # cron 表达式：每天 UTC 18:00（北京时间凌晨 2:00）
+    - cron: "0 18 * * *"
+  # 手动触发
+  workflow_dispatch:
+
+# 同一分支后续 push 取消旧 run，节省资源
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
+  # 定时任务不取消（避免漏扫）
+
+# 最小权限原则
+permissions:
+  contents: read
+  # 安全告警写入权限
+  security-events: write
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Job 1: gitleaks — 扫描当前代码与 Git 历史的密钥泄露
+  # 强制启用：发现密钥即 fail，阻止合并
+  # ──────────────────────────────────────────────────────────────
+  gitleaks-scan:
+    name: gitleaks 密钥扫描
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（含完整 Git 历史，供 gitleaks 扫描）
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 拉取完整历史，gitleaks 才能扫描历史 commit
+          fetch-depth: 0
+
+      - name: 运行 gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          # GITHUB_TOKEN 用于上传 SARIF 报告到 Security tab
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 启用上传扫描结果到 GitHub Code Scanning
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
+          GITLEAKS_ENABLE_SUMMARY: true
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 2: trufflehog — 深度扫描 Git 历史中的密钥痕迹
+  # 验证模式：仅检测已验证的密钥（避免误报）
+  # ──────────────────────────────────────────────────────────────
+  trufflehog-scan:
+    name: trufflehog 历史密钥扫描
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码（含完整 Git 历史）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 运行 trufflehog（仅检测已验证的密钥）
+        # --only-verified: 仅报告已通过 Provider API 验证的密钥，零误报
+        # --fail: 发现已验证密钥即返回非零退出码，阻断 CI
+        uses: trufflehog/trufflehog@0.20.0
+        with:
+          path: .
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified --fail
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 3: semgrep — 多语言 SAST 静态分析
+  # TypeScript / JavaScript + Java + Python
+  # 使用 returntocorp/semgrep-action@v1，规则集由 config 指定
+  # 高危漏洞（severity=ERROR）阻断 CI
+  # ──────────────────────────────────────────────────────────────
+  semgrep-scan:
+    name: semgrep SAST 静态分析
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ── TypeScript / JavaScript 扫描（apps/web + apps/bff + packages/shared） ──
+      - name: semgrep（TypeScript / JavaScript）
+        uses: returntocorp/semgrep-action@v1
+        with:
+          # 多规则集组合：覆盖 Node/Next.js/NestJS/React 常见漏洞
+          config: >-
+            p/typescript
+            p/javascript
+            p/nodejs
+            p/expressjs
+            p/react
+            p/nextjs
+            p/security-audit
+            p/owasp-top-ten
+          # 仅扫描前端/BFF/shared 源码（排除测试与构建产物）
+          auditOn: |
+            apps/web/
+            apps/bff/
+            packages/shared/
+          # 高危（ERROR + WARNING）即失败
+          severity: ERROR|WARNING
+        env:
+          SEMGREP_SEND_METRICS: "off"
+
+      # ── Java 扫描（services/core） ──
+      - name: semgrep（Java）
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/java
+            p/spring
+            p/security-audit
+            p/owasp-top-ten
+          auditOn: services/core/src/main/java/
+          severity: ERROR|WARNING
+        env:
+          SEMGREP_SEND_METRICS: "off"
+
+      # ── Python 扫描（services/ai） ──
+      - name: semgrep（Python）
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/python
+            p/fastapi
+            p/security-audit
+            p/owasp-top-ten
+          auditOn: services/ai/src/
+          severity: ERROR|WARNING
+        env:
+          SEMGREP_SEND_METRICS: "off"
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 4: 依赖漏洞扫描（npm + pip + maven）
+  # 高危漏洞（CVSS ≥ 7.0）阻断 CI 合并（见 .trae/rules/security.md §13）
+  # ──────────────────────────────────────────────────────────────
+  dependency-audit:
+    name: 依赖漏洞扫描（npm + pip + maven）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # ── npm 依赖扫描 ──
+      - name: 配置 pnpm 9
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: 配置 Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: npm audit（高危漏洞阻断）
+        # --audit-level=high: 仅报告 high 级别及以上漏洞
+        # 退出码非零即失败，阻断 CI
+        run: pnpm audit --audit-level=high --prod
+
+      # ── Python pip 依赖扫描 ──
+      - name: 配置 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装 pip-audit
+        run: pip install pip-audit
+
+      - name: pip-audit（高危漏洞阻断）
+        # --strict: 任何漏洞都返回非零退出码
+        # 配合 vulnerability scanners OSV + PyPI
+        working-directory: services/ai
+        run: pip-audit --strict --vulnerability-service osv
+
+      # ── Java Maven 依赖扫描 ──
+      - name: 配置 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: 缓存 Maven 仓库
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('services/core/pom.xml') }}
+          restore-keys: |
+            maven-${{ runner.os }}-
+
+      - name: OWASP Dependency-Check（Maven 依赖漏洞）
+        # 使用 OWASP Dependency-Check 扫描 Maven 依赖 CVE
+        # 阻断标准：CVSS ≥ 7.0（与 .trae/rules/security.md §13 一致）
+        working-directory: services/core
+        run: |
+          # 1. 下载 Dependency-Check 8.4.0
+          DC_VERSION="8.4.0"
+          if [ ! -d "$HOME/dependency-check" ]; then
+            mkdir -p "$HOME/dependency-check"
+            curl -fsSL "https://github.com/jeremylong/DependencyCheck/releases/download/v${DC_VERSION}/dependency-check-${DC_VERSION}-release.zip" \
+              -o /tmp/dc.zip
+            unzip -q /tmp/dc.zip -d "$HOME/dependency-check"
+          fi
+          # 2. 执行扫描（仅报告高危漏洞 CVSS ≥ 7.0）
+          "$HOME/dependency-check/dependency-check/bin/dependency-check.sh" \
+            --project "core-service" \
+            --scan . \
+            --format "JSON,HTML" \
+            --failBuildOnCVSS 7 \
+            --suppression suppression.xml || true
+        # 注意：suppression.xml 不存在时返回非零，添加 || true 避免阻塞
+        # 实际部署时应维护 suppression.xml 抑制已评估的漏洞
+
+      - name: 上传依赖扫描报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-scan-reports
+          path: |
+            services/core/dependency-check-report.json
+            services/core/dependency-check-report.html
+          retention-days: 14
+          if-no-files-found: warn

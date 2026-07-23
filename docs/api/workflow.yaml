@@ -1,0 +1,553 @@
+openapi: 3.0.3
+info:
+  title: AiPilot Workflow API
+  version: 1.0.0
+  description: |
+    工作流（Workflow）域 OpenAPI 契约。
+
+    ## 范围
+    - 阶段流转（StageTransition）：阶段状态机驱动
+    - 门禁（Gate）：评审决策、Stage Gate
+    - 基线（Baseline）：项目级不可变快照
+
+    ## 核心不变量
+    - **门禁只能引用冻结（frozen）状态的基线**（D34.7 + workflow 域）
+    - 基线冻结后内容不可修改；新基线必须用新 revisionNo
+    - V0 阶段集：D05.18 裁剪为 G0/G1/轻量 G2/G5/G6/G7
+
+    ## 业务错误码段
+    - 6xxx：Workflow 域
+      - 6001 TASK_NOT_FOUND
+      - 6010 WORKFLOW_DEADLINE_EXCEEDED
+      - 2010 STAGE_INVALID_TRANSITION（与 Project 域共享）
+      - 2020 GATE_ALREADY_DECIDED
+      - 2021 BASELINE_NOT_FROZEN
+
+    权威源：@design/D05-全流程阶段-阶段门.md + @design/D34-数据-数据库.md §D34.7
+  contact:
+    name: Workflow Service Team
+    email: workflow@aipilot.example
+
+servers:
+  - url: https://api.aipilot.example
+    description: 生产
+  - url: http://localhost:8080
+    description: 本地
+
+tags:
+  - name: Baseline
+    description: 项目基线
+  - name: Gate
+    description: 门禁与决策
+  - name: Stage
+    description: 阶段流转（直达 stageId）
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ─────────────────────────────────────────────
+  # Baseline
+  # ─────────────────────────────────────────────
+  /api/v1/baselines:
+    post:
+      tags: [Baseline]
+      operationId: workflow.baseline.create
+      summary: 创建项目基线（草稿状态）
+      description: |
+        草稿基线创建后不可直接决策门禁；须先调用 freeze。
+        完整两步式：create（draft）→ freeze。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateBaselineRequest' }
+            examples:
+              standard:
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  name: 概念方案基线 v1
+                  description: P1 阶段交付冻结
+                  metadata:
+                    snapshotRefs:
+                      - assetId: 0190f8e9-aabb-7c01-2345-6789abcdef20
+                        versionId: 0190f8e9-aabb-7c01-2345-6789abcdef21
+      responses:
+        '201':
+          description: 草稿基线创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ProjectBaselineDto' }
+        '409':
+          description: 已有同 revisionNo 草稿
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+
+  /api/v1/baselines/{baselineId}:
+    parameters:
+      - in: path
+        name: baselineId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Baseline]
+      operationId: workflow.baseline.get
+      summary: 查询基线详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ProjectBaselineDto' }
+              examples:
+                frozen:
+                  value:
+                    code: 0
+                    data:
+                      id: 0190f8e9-aabb-7c01-2345-6789abcdef40
+                      tenantId: 0190f8e9-aabb-7c01-2345-6789abcdef02
+                      projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                      revisionNo: 1
+                      name: 概念方案基线 v1
+                      status: frozen
+                      frozenAt: '2026-07-22T08:00:00Z'
+                      frozenBy: 0190f8e9-aabb-7c01-2345-6789abcdef01
+                      description: P1 阶段交付冻结
+                      createdAt: '2026-07-22T07:55:00Z'
+                      updatedAt: '2026-07-22T08:00:00Z'
+                      rowVersion: 2
+                    traceId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFound'
+
+  /api/v1/baselines/{baselineId}/freeze:
+    parameters:
+      - in: path
+        name: baselineId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Baseline]
+      operationId: workflow.baseline.freeze
+      summary: 冻结基线
+      description: |
+        - 草稿基线 → 冻结基线
+        - 冻结后 revision 不可修改；新基线必须用新 revisionNo
+        - 冻结后门禁决策可引用
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: 冻结成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/ProjectBaselineDto' }
+        '409':
+          description: 基线不在 draft 状态
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+
+  # ─────────────────────────────────────────────
+  # Gate
+  # ─────────────────────────────────────────────
+  /api/v1/gates:
+    get:
+      tags: [Gate]
+      operationId: workflow.gate.list
+      summary: 列出门禁
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: stageId
+          schema: { type: string, format: uuid }
+        - in: query
+          name: status
+          schema: { $ref: '#/components/schemas/GateStatus' }
+        - in: query
+          name: gateCode
+          schema: { $ref: '#/components/schemas/GateCode' }
+        - in: query
+          name: decision
+          schema: { $ref: '#/components/schemas/GateDecision' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/GateDecisionDto' }
+    post:
+      tags: [Gate]
+      operationId: workflow.gate.create
+      summary: 创建门禁实例
+      description: |
+        - 门禁必须挂在项目（必填）与可选 stageId
+        - 需 Idempotency-Key
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateGateRequest' }
+            examples:
+              standard:
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  stageId: 0190f8e9-aabb-7c01-2345-6789abcdef50
+                  gateCode: G1
+                  gateName: 概念方案门禁
+                  metadata:
+                    requiredReviewers: [REVIEWER, PRINCIPAL_ARCHITECT]
+      responses:
+        '201':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GateDecisionDto' }
+        '409':
+          description: 同 stage 已有同 gateCode 门禁
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+
+  /api/v1/gates/{gateId}/decisions:
+    parameters:
+      - in: path
+        name: gateId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Gate]
+      operationId: workflow.gate.decide
+      summary: 提交门禁决策
+      description: |
+        **核心不变量**：门禁决策必须引用已冻结（frozen）状态的基线。
+        否则返回 409 BASELINE_NOT_FROZEN（错误码 2021）。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DecideGateRequest' }
+            examples:
+              approved:
+                value:
+                  decision: approved
+                  comment: 概念方案通过审签
+                  baselineId: 0190f8e9-aabb-7c01-2345-6789abcdef40
+                  evidence:
+                    - type: review
+                      reviewerId: 0190f8e9-aabb-7c01-2345-6789abcdef99
+                      signatureRef: doc-sig-2026-07-22-001
+              conditionallyApproved:
+                value:
+                  decision: conditionally_approved
+                  comment: 概念方案通过，附 3 条 conditions
+                  baselineId: 0190f8e9-aabb-7c01-2345-6789abcdef40
+                  conditions:
+                    - 中庭顶棚须提供遮阳计算
+                    - 疏散宽度复核
+                    - 设备夹层净高 ≥ 800mm
+      responses:
+        '200':
+          description: 决策提交成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/GateDecisionDto' }
+        '409':
+          description: 基线未冻结或门禁已决策
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                baselineNotFrozen:
+                  value:
+                    errorCode: BASELINE_NOT_FROZEN
+                    code: 2021
+                    status: 409
+                    title: 基线未冻结
+                    detail: 门禁决策只能引用已冻结（frozen）状态的基线
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+                gateAlreadyDecided:
+                  value:
+                    errorCode: STATE_CONFLICT
+                    code: 2020
+                    status: 409
+                    title: 门禁已决策
+                    detail: 门禁当前状态为 decided，不可再次决策
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+        '412':
+          $ref: 'common.yaml#/components/responses/PreconditionFailed'
+        '428':
+          $ref: 'common.yaml#/components/responses/PreconditionRequired'
+
+  # ─────────────────────────────────────────────
+  # Stage Transition（直达 stageId）
+  # ─────────────────────────────────────────────
+  /api/v1/stages/{stageId}/transition:
+    parameters:
+      - in: path
+        name: stageId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Stage]
+      operationId: workflow.stage.transition
+      summary: 阶段状态流转
+      description: |
+        阶段状态机（D05.4.1）：
+        planned → active → review_preparing → under_review →
+        (conditionally_approved | approved | suspended | cancelled) → closed
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TransitionStageRequest' }
+            examples:
+              activate:
+                value:
+                  targetStatus: active
+                  comment: 启动 P1 阶段工作
+              underReview:
+                value:
+                  targetStatus: under_review
+                  comment: 提交概念方案审签
+      responses:
+        '200':
+          description: 流转成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/StageInstanceDto' }
+        '409':
+          description: 状态机非法流转
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                invalidTransition:
+                  value:
+                    errorCode: STATE_CONFLICT
+                    code: 2010
+                    status: 409
+                    title: 阶段状态流转非法
+                    detail: 当前状态 closed 不允许流转到 active
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── 枚举 ──
+    GateCode:
+      type: string
+      enum: [G0, G1, G2, G3, G4, G5, G6, G7, G8]
+    GateStatus:
+      type: string
+      enum: [pending, decided, cancelled]
+    GateDecision:
+      type: string
+      description: |
+        门禁决策结论（D05.4.2）：
+        approved / conditionally_approved / rework_required / suspended / cancelled
+      enum: [approved, conditionally_approved, rework_required, suspended, cancelled]
+    RevisionStatus:
+      type: string
+      enum: [draft, frozen, superseded]
+    StageStatus:
+      type: string
+      enum: [planned, active, review_preparing, under_review, conditionally_approved, approved, suspended, cancelled, closed]
+
+    # ── Baseline DTO ──
+    ProjectBaselineDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        revisionNo:
+          type: integer
+          minimum: 1
+          description: 项目内单调递增
+        name: { type: string }
+        status: { $ref: '#/components/schemas/RevisionStatus' }
+        frozenAt: { type: string, format: date-time, nullable: true }
+        frozenBy: { type: string, format: uuid, nullable: true }
+        description: { type: string, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateBaselineRequest:
+      type: object
+      required: [projectId, name]
+      properties:
+        projectId: { type: string, format: uuid }
+        name: { type: string, maxLength: 128 }
+        description: { type: string, maxLength: 1024 }
+        metadata:
+          type: object
+          additionalProperties: true
+          description: |
+            扩展元数据，可挂 snapshotRefs 列表引用资源版本：
+            { snapshotRefs: [{ assetId, versionId }] }
+
+    # ── Gate DTO ──
+    GateDecisionDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        stageId: { type: string, format: uuid, nullable: true }
+        gateCode: { $ref: '#/components/schemas/GateCode' }
+        gateName: { type: string }
+        status: { $ref: '#/components/schemas/GateStatus' }
+        decision: { $ref: '#/components/schemas/GateDecision' }
+        decidedAt: { type: string, format: date-time, nullable: true }
+        decidedBy: { type: string, format: uuid, nullable: true }
+        baselineId:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            关联冻结基线（核心不变量：只能引用 frozen 基线）
+        comment: { type: string, nullable: true }
+        evidence:
+          type: array
+          items: { type: object, additionalProperties: true }
+        conditions:
+          type: array
+          items: { type: string }
+          description: conditionally_approved 时的前置条件清单
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateGateRequest:
+      type: object
+      required: [projectId, gateCode, gateName]
+      properties:
+        projectId: { type: string, format: uuid }
+        stageId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 关联阶段 ID（可空）
+        gateCode: { $ref: '#/components/schemas/GateCode' }
+        gateName: { type: string, maxLength: 128 }
+        metadata:
+          type: object
+          additionalProperties: true
+          properties:
+            requiredReviewers:
+              type: array
+              items:
+                type: string
+                enum: [REVIEWER, PRINCIPAL_ARCHITECT, ADMIN]
+
+    DecideGateRequest:
+      type: object
+      required: [decision, comment]
+      properties:
+        decision: { $ref: '#/components/schemas/GateDecision' }
+        comment: { type: string, maxLength: 4096 }
+        baselineId:
+          type: string
+          format: uuid
+          description: |
+            关联基线 ID。
+            核心不变量：仅接受 status=frozen 的基线，否则 409 BASELINE_NOT_FROZEN
+        conditions:
+          type: array
+          items: { type: string }
+          description: conditionally_approved 时的前置条件
+        evidence:
+          type: array
+          items: { type: object, additionalProperties: true }
+
+    # ── Stage Transition ──
+    StageInstanceDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        stageCode: { type: string }
+        stageName: { type: string }
+        stageOrder: { type: integer }
+        status: { $ref: '#/components/schemas/StageStatus' }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    TransitionStageRequest:
+      type: object
+      required: [targetStatus]
+      properties:
+        targetStatus: { $ref: '#/components/schemas/StageStatus' }
+        comment: { type: string, maxLength: 4096 }

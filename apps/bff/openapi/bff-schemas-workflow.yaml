@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Schemas - Workflow
+  version: 1.0.0
+  description: |
+    BFF 端 Workflow 域 DTO 集合。
+    在 bff-api.yaml 中通过 `$ref: 'bff-schemas-workflow.yaml#/components/schemas/...'` 引用。
+
+    核心不变量：门禁只能引用冻结（frozen）状态的基线。
+
+components:
+  schemas:
+    ProjectBaselineDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        revisionNo: { type: integer }
+        name: { type: string }
+        status: { $ref: 'bff-common.yaml#/components/schemas/RevisionStatus' }
+        frozenAt: { type: string, format: date-time, nullable: true }
+        frozenBy: { type: string, format: uuid, nullable: true }
+        description: { type: string, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    GateDecisionDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        stageId: { type: string, format: uuid, nullable: true }
+        gateCode: { $ref: 'bff-common.yaml#/components/schemas/GateCode' }
+        gateName: { type: string }
+        status: { $ref: 'bff-common.yaml#/components/schemas/GateStatus' }
+        decision: { $ref: 'bff-common.yaml#/components/schemas/GateDecision' }
+        decidedAt: { type: string, format: date-time, nullable: true }
+        decidedBy: { type: string, format: uuid, nullable: true }
+        baselineId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 关联冻结基线
+        comment: { type: string, nullable: true }
+        evidence:
+          type: array
+          items: { type: object, additionalProperties: true }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    DecideGateRequest:
+      type: object
+      required: [decision, comment]
+      properties:
+        decision: { $ref: 'bff-common.yaml#/components/schemas/GateDecision' }
+        comment: { type: string, maxLength: 4096 }
+        baselineId:
+          type: string
+          format: uuid
+          description: 关联冻结基线（核心不变量）
+        evidence:
+          type: array
+          items: { type: object, additionalProperties: true }

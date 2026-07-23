@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Paths - Design
+  version: 1.0.0
+  description: |
+    BFF 端 Design 域 path 路由。
+    通用组件：bff-common.yaml
+    业务 DTO：bff-schemas-design.yaml
+    权威源：@design/D10-方案.md
+
+paths:
+  /api/v1/design-options:
+    get:
+      tags: [Design]
+      operationId: design.option.list
+      summary: 列出设计选项
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, candidate, submitted, accepted, returned, archived]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-design.yaml#/components/schemas/OffsetPage_DesignOptionDto' }
+    post:
+      tags: [Design]
+      operationId: design.option.create
+      summary: 创建设计选项
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-design.yaml#/components/schemas/CreateDesignOptionRequest' }
+      responses:
+        '201':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-design.yaml#/components/schemas/DesignOptionDto' }
+
+  /api/v1/design-options/{optionId}/feedback:
+    parameters:
+      - in: path
+        name: optionId
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      tags: [Design]
+      operationId: design.option.feedback
+      summary: 提交设计选项反馈
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-design.yaml#/components/schemas/DesignFeedbackRequest' }
+      responses:
+        '201':
+          description: 反馈提交成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-design.yaml#/components/schemas/DesignFeedbackDto' }

@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Paths - Auth & IAM
+  version: 1.0.0
+  description: |
+    BFF 端 Auth + IAM 域 path 路由。
+    通过 Redocly/Spectral 与 bff-api.yaml 合并发布。
+
+    通用组件：bff-common.yaml
+    业务 DTO：bff-schemas-auth.yaml
+    权威源：@design/D39-身份多租户-授权.md
+
+paths:
+  # ─────────────────────────────────────────────
+  # IAM 域
+  # ─────────────────────────────────────────────
+  /api/v1/principals:
+    get:
+      tags: [IAM]
+      operationId: principal.list
+      summary: 列出主体
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - in: query
+          name: status
+          schema: { $ref: 'bff-common.yaml#/components/schemas/PrincipalStatus' }
+        - in: query
+          name: keyword
+          schema: { type: string, maxLength: 128 }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/OffsetPage_PrincipalDto' }
+    post:
+      tags: [IAM]
+      operationId: principal.create
+      summary: 创建主体
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: 'bff-schemas-auth.yaml#/components/schemas/CreatePrincipalRequest' }
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/PrincipalDto' }
+        '409':
+          $ref: 'bff-common.yaml#/components/responses/Conflict'
+        '422':
+          $ref: 'bff-common.yaml#/components/responses/ValidationError'
+
+  /api/v1/principals/{principalId}:
+    parameters:
+      - in: path
+        name: principalId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [IAM]
+      operationId: principal.get
+      summary: 查询主体详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/PrincipalDto' }
+        '404':
+          $ref: 'bff-common.yaml#/components/responses/NotFound'
+    patch:
+      tags: [IAM]
+      operationId: principal.update
+      summary: 更新主体
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: 'bff-schemas-auth.yaml#/components/schemas/UpdatePrincipalRequest' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'bff-common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: 'bff-schemas-auth.yaml#/components/schemas/PrincipalDto' }
+        '412':
+          $ref: 'bff-common.yaml#/components/responses/PreconditionFailed'
+        '428':
+          $ref: 'bff-common.yaml#/components/responses/PreconditionRequired'
+    delete:
+      tags: [IAM]
+      operationId: principal.delete
+      summary: 软删除主体
+      parameters:
+        - $ref: 'bff-common.yaml#/components/parameters/IfMatch'
+      responses:
+        '204': { description: 删除成功 }
+        '409':
+          $ref: 'bff-common.yaml#/components/responses/Conflict'

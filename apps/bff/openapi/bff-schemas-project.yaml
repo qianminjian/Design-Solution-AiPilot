@@ -1,0 +1,119 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Schemas - Project
+  version: 1.0.0
+  description: |
+    BFF 端 Project 域 DTO 集合。
+    在 bff-api.yaml 中通过 `$ref: 'bff-schemas-project.yaml#/components/schemas/...'` 引用。
+    通用组件见 bff-common.yaml。
+
+components:
+  schemas:
+    ProjectDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid, nullable: true }
+        code: { type: string }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        status: { $ref: 'bff-common.yaml#/components/schemas/ProjectStatus' }
+        buildingType: { $ref: 'bff-common.yaml#/components/schemas/BuildingType' }
+        floorsMin: { type: integer, minimum: 0 }
+        floorsMax: { type: integer, minimum: 0 }
+        gfa: { type: string, nullable: true, description: 总建筑面积 m² }
+        siteArea: { type: string, nullable: true, description: 占地面积 m² }
+        region: { type: string }
+        language: { type: string }
+        classification: { type: string }
+        settings:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+        startedAt: { type: string, format: date-time, nullable: true }
+        targetCompletionAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        createdBy: { type: string, format: uuid }
+        updatedBy: { type: string, format: uuid }
+        rowVersion: { type: integer }
+
+    CreateProjectRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name: { type: string, maxLength: 256 }
+        code: { type: string, maxLength: 64, pattern: '^[A-Z0-9_-]+$' }
+        organizationId: { type: string, format: uuid, nullable: true }
+        description: { type: string, maxLength: 1024 }
+        buildingType: { $ref: 'bff-common.yaml#/components/schemas/BuildingType' }
+        floorsMin: { type: integer, minimum: 1, maximum: 15 }
+        floorsMax: { type: integer, minimum: 1, maximum: 15 }
+        gfa: { type: string, description: NUMERIC(20,4) 字符串 }
+        siteArea: { type: string }
+        region: { type: string }
+        language: { type: string, default: en-US }
+        stages:
+          type: array
+          items: { $ref: 'bff-common.yaml#/components/schemas/StageCode' }
+        settings:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+        startedAt: { type: string, format: date-time }
+        targetCompletionAt: { type: string, format: date-time }
+
+    UpdateProjectRequest:
+      type: object
+      properties:
+        name: { type: string, maxLength: 256 }
+        description: { type: string, nullable: true }
+        status: { $ref: 'bff-common.yaml#/components/schemas/ProjectStatus' }
+        buildingType: { $ref: 'bff-common.yaml#/components/schemas/BuildingType' }
+        floorsMin: { type: integer, minimum: 1, maximum: 15 }
+        floorsMax: { type: integer, minimum: 1, maximum: 15 }
+        gfa: { type: string, nullable: true }
+        siteArea: { type: string, nullable: true }
+        settings:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+        startedAt: { type: string, format: date-time, nullable: true }
+        targetCompletionAt: { type: string, format: date-time, nullable: true }
+
+    StageInstanceDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        stageCode: { $ref: 'bff-common.yaml#/components/schemas/StageCode' }
+        stageName: { type: string }
+        stageOrder: { type: integer }
+        status: { $ref: 'bff-common.yaml#/components/schemas/StageStatus' }
+        startedAt: { type: string, format: date-time, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    OffsetPage_ProjectDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ProjectDto' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        hasMore: { type: boolean }

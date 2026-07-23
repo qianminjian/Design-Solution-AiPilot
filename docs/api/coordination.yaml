@@ -1,0 +1,413 @@
+openapi: 3.0.3
+info:
+  title: AiPilot Coordination API
+  version: 1.0.0
+  description: |
+    校审协调（Coordination）域 OpenAPI 契约。
+
+    ## 范围
+    - 校审问题（Finding）：规则检查、碰撞检测、人工标注的问题清单
+    - BCF Issue：BIM Collaboration Format 2.1/3.0 兼容的 Issue 投递
+    - V0 阶段裁剪：waiver / viewpoints 后续补齐
+
+    ## 业务错误码段
+    - 5xxx：Coordination 域
+      - 5001 FINDING_NOT_FOUND
+      - 5010 BCF_INVALID_TOPIC
+
+    ## AI 安全红线
+    - AI 生成的 Finding 默认 isAiAssisted=true
+    - 高风险（critical）Finding 需双人或注册师签章
+    - 见 security.md §12
+
+    权威源：@design/D19-碰撞检测-问题闭环.md + @design/D35-API-事件契约.md
+  contact:
+    name: Coordination Service Team
+    email: coordination@aipilot.example
+
+servers:
+  - url: https://api.aipilot.example
+    description: 生产
+  - url: http://localhost:8080
+    description: 本地
+
+tags:
+  - name: Finding
+    description: 校审问题
+  - name: BcfIssue
+    description: BCF Issue 投递
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/findings:
+    get:
+      tags: [Finding]
+      operationId: coordination.finding.list
+      summary: 列出校审问题
+      description: |
+        - 必须携带 projectId
+        - 严重等级/状态过滤
+        - 偏移分页
+      parameters:
+        - in: query
+          name: projectId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: pageSize
+          schema: { type: integer, minimum: 1, maximum: 200, default: 20 }
+        - in: query
+          name: severity
+          schema: { $ref: '#/components/schemas/Severity' }
+        - in: query
+          name: status
+          schema: { $ref: '#/components/schemas/FindingStatus' }
+        - in: query
+          name: ruleId
+          schema: { type: string, description: 规则 ID 过滤 }
+        - in: query
+          name: assignedTo
+          schema: { type: string, format: uuid }
+        - in: query
+          name: sort
+          schema: { type: string, example: '-severity,-updatedAt,id' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          items:
+                            type: array
+                            items: { $ref: '#/components/schemas/FindingDto' }
+                          total: { type: integer }
+                          page: { type: integer }
+                          pageSize: { type: integer }
+                          hasMore: { type: boolean }
+        '400':
+          description: 缺少 projectId
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+    post:
+      tags: [Finding]
+      operationId: coordination.finding.create
+      summary: 创建校审问题
+      description: |
+        - 需 Idempotency-Key
+        - 人工或 AI 服务均可创建
+        - AI 创建时须在 metadata.isAiAssisted=true 标注
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateFindingRequest' }
+            examples:
+              manual:
+                summary: 人工创建
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  title: 疏散楼梯净宽不足
+                  description: 首层疏散楼梯净宽仅 1.0m，不满足 EN 13501-2 1.2m 要求
+                  severity: high
+                  ruleId: RULE-FIRE-EVAC-001
+                  location:
+                    view: 01-AR-PLN-L01
+                    elementId: 8c2a...e9
+                  assignedTo: 0190f8e9-aabb-7c01-2345-6789abcdef01
+                  dueAt: '2026-07-30T00:00:00Z'
+              aiGenerated:
+                summary: AI 创建
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  title: 规则 RULE-DAYLIGHT-002 触发：北向教室日照不足
+                  severity: medium
+                  ruleId: RULE-DAYLIGHT-002
+                  metadata:
+                    isAiAssisted: true
+                    ruleRunId: run-2026-07-22-001
+                    confidence: 0.92
+      responses:
+        '201':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/FindingDto' }
+        '422':
+          $ref: 'common.yaml#/components/responses/ValidationError'
+
+  /api/v1/findings/{findingId}:
+    parameters:
+      - in: path
+        name: findingId
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Finding]
+      operationId: coordination.finding.get
+      summary: 查询校审问题详情
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/FindingDto' }
+        '404':
+          description: 问题不存在
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                notFound:
+                  value:
+                    errorCode: RESOURCE_NOT_FOUND
+                    code: 5001
+                    status: 404
+                    title: 校审问题不存在
+                    detail: Finding 不存在或已被归档
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+    patch:
+      tags: [Finding]
+      operationId: coordination.finding.update
+      summary: 更新校审问题
+      description: |
+        典型场景：assignee 处理（status → resolving → resolved）。
+        高危问题状态变更需要 ETag 强制乐观锁。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/UpdateFindingRequest' }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/FindingDto' }
+        '412':
+          $ref: 'common.yaml#/components/responses/PreconditionFailed'
+        '428':
+          $ref: 'common.yaml#/components/responses/PreconditionRequired'
+
+  /api/v1/bcf/issues:
+    post:
+      tags: [BcfIssue]
+      operationId: coordination.bcf.create
+      summary: 创建 BCF Issue
+      description: |
+        投递符合 BCF 2.1 / 3.0 最小子集的 Issue。
+        必填字段：projectId、title。
+        可选关联已有 Finding 形成审计闭环。
+      parameters:
+        - $ref: 'common.yaml#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateBcfIssueRequest' }
+            examples:
+              standard:
+                value:
+                  projectId: 0190f8e9-aabb-7c01-2345-6789abcdef10
+                  findingId: 0190f8e9-aabb-7c01-2345-6789abcdef30
+                  title: 楼梯净宽不符合规范
+                  description: 详见 Finding #abc123
+                  topicType: Issue
+                  priority: high
+                  assignedTo: 0190f8e9-aabb-7c01-2345-6789abcdef01
+                  dueDate: '2026-07-30T00:00:00Z'
+      responses:
+        '201':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: 'common.yaml#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/BcfIssueDto' }
+        '422':
+          description: BCF Topic 字段非法
+          content:
+            application/problem+json:
+              schema: { $ref: 'common.yaml#/components/schemas/ApiErrorResponse' }
+              examples:
+                invalidBcfTopic:
+                  value:
+                    errorCode: VALIDATION_FAILED
+                    code: 5010
+                    status: 422
+                    title: BCF Topic 非法
+                    detail: topicType 取值不在 BCF 2.1 允许范围
+                    correlationId: 0190f8e9-aabb-7c01-2345-6789abcdef03
+                    retryable: false
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ── 枚举 ──
+    Severity:
+      type: string
+      description: 严重等级
+      enum: [low, medium, high, critical]
+    FindingStatus:
+      type: string
+      description: |
+        校审问题状态机：
+        open → acknowledged → resolving → (resolved | waived | closed)
+      enum: [open, acknowledged, resolving, resolved, waived, closed]
+    BcfPriority:
+      type: string
+      enum: [low, normal, high, critical]
+    BcfTopicType:
+      type: string
+      description: BCF 2.1 允许的 Topic Type
+      enum: [Issue, Request, Information, Warning, Error]
+
+    # ── Finding DTO ──
+    FindingDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        severity: { $ref: '#/components/schemas/Severity' }
+        status: { $ref: '#/components/schemas/FindingStatus' }
+        ruleId:
+          type: string
+          nullable: true
+          description: 触发的规则 ID（来自 Compliance 域）
+        location:
+          type: object
+          description: 问题位置（视图/构件/坐标）
+          properties:
+            view: { type: string, nullable: true, description: 视图名（如 01-AR-PLN-L01） }
+            elementId: { type: string, nullable: true, description: 构件 ID }
+            x: { type: number, nullable: true }
+            y: { type: number, nullable: true }
+            z: { type: number, nullable: true }
+        assignedTo: { type: string, format: uuid, nullable: true }
+        dueAt: { type: string, format: date-time, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+          properties:
+            isAiAssisted: { type: boolean }
+            ruleRunId: { type: string }
+            confidence: { type: number, minimum: 0, maximum: 1 }
+        createdBy: { type: string, format: uuid, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateFindingRequest:
+      type: object
+      required: [projectId, title, severity]
+      properties:
+        projectId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        severity: { $ref: '#/components/schemas/Severity' }
+        ruleId: { type: string }
+        location:
+          type: object
+          additionalProperties: true
+        assignedTo: { type: string, format: uuid }
+        dueAt: { type: string, format: date-time }
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdateFindingRequest:
+      type: object
+      properties:
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        severity: { $ref: '#/components/schemas/Severity' }
+        status: { $ref: '#/components/schemas/FindingStatus' }
+        assignedTo: { type: string, format: uuid, nullable: true }
+        dueAt: { type: string, format: date-time, nullable: true }
+        metadata:
+          type: object
+          additionalProperties: true
+
+    BcfIssueDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        findingId:
+          type: string
+          format: uuid
+          nullable: true
+          description: 关联的 Finding ID（可空）
+        projectId: { type: string, format: uuid }
+        topicGuid:
+          type: string
+          format: uuid
+          description: BCF Topic GUID
+        topicType: { $ref: '#/components/schemas/BcfTopicType' }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        priority: { $ref: '#/components/schemas/BcfPriority' }
+        assignedTo: { type: string, format: uuid, nullable: true }
+        dueDate: { type: string, format: date-time, nullable: true }
+        createdBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateBcfIssueRequest:
+      type: object
+      required: [projectId, title]
+      properties:
+        projectId: { type: string, format: uuid }
+        findingId:
+          type: string
+          format: uuid
+          description: 关联 Finding ID
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        topicType:
+          $ref: '#/components/schemas/BcfTopicType'
+        priority: { $ref: '#/components/schemas/BcfPriority' }
+        assignedTo: { type: string, format: uuid }
+        dueDate: { type: string, format: date-time }

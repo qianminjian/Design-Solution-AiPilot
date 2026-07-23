@@ -1,0 +1,312 @@
+# Docker 镜像构建工作流 — 施工图全流程 AI 平台
+#
+# 设计目标：
+#   1. PR 与 main 推送时构建所有服务镜像，验证 Dockerfile 可用。
+#   2. 仅 push 到 main 时才推送到 GitHub Container Registry（ghcr.io）。
+#   3. 多阶段构建支持：core-service（Java 21）、ai-service（Python 3.12）、
+#      bff（NestJS 11）、web（Next.js 15）。
+#   4. 非 root 用户运行（Dockerfile 已配置 appuser/node 切换）。
+#
+# Job 拓扑（并行）：
+#   1. build-core    — Java 21 多阶段构建（eclipse-temurin）
+#   2. build-ai      — Python 3.12 slim 多阶段构建
+#   3. build-bff     — Node 20-alpine 多阶段构建（context=仓库根，引用 packages/shared）
+#   4. build-web     — Node 20-alpine 多阶段构建（context=仓库根，引用 packages/shared）
+#   5. push-images   — main 推送时将镜像推送到 ghcr.io（依赖所有 build-* Job）
+#
+# 权威源：
+# - .trae/rules/deployment.md（Docker 镜像规范、12-factor 配置外部化）
+# - .trae/rules/security.md（容器镜像扫描、trivy）
+
+name: Docker Build
+
+on:
+  push:
+    branches: [main]
+    # 仅在 Dockerfile / 源码变更时触发，节省 CI 资源
+    paths:
+      - "services/**"
+      - "apps/**"
+      - "packages/**"
+      - "docker/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/docker-build.yml"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支后续 push 取消旧 run，节省资源
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# 最小权限 + ghcr.io 推送权限
+permissions:
+  contents: read
+  packages: write
+
+# 公共环境变量（镜像标签策略）
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Job 1: 构建 core-service 镜像（Java 21 + Spring Boot）
+  # 上下文：services/core，Dockerfile: services/core/Dockerfile
+  # ──────────────────────────────────────────────────────────────
+  build-core:
+    name: 构建 core-service（Java 21）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 JDK 21（用于 Buildx 缓存哈希，可选）
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 构建 core-service 镜像（多阶段，PR 不推送）
+        uses: docker/build-push-action@v5
+        with:
+          context: services/core
+          file: services/core/Dockerfile
+          # PR 阶段仅构建（不推送），main 阶段由 push-images Job 统一推送
+          push: false
+          load: true
+          tags: |
+            core-service:ci-${{ github.sha }}
+            core-service:ci
+          # 利用 BuildKit 缓存加速
+          cache-from: type=gha,scope=core-service
+          cache-to: type=gha,mode=max,scope=core-service
+          # 构建元数据（Provenance/SBOM 关闭以加速，CI 阶段不强制）
+          provenance: false
+          sbom: false
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 2: 构建 ai-service 镜像（Python 3.12 + FastAPI）
+  # 上下文：services/ai，Dockerfile: services/ai/Dockerfile
+  # ──────────────────────────────────────────────────────────────
+  build-ai:
+    name: 构建 ai-service（Python 3.12）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 构建 ai-service 镜像（多阶段，PR 不推送）
+        uses: docker/build-push-action@v5
+        with:
+          context: services/ai
+          file: services/ai/Dockerfile
+          push: false
+          load: true
+          tags: |
+            ai-service:ci-${{ github.sha }}
+            ai-service:ci
+          cache-from: type=gha,scope=ai-service
+          cache-to: type=gha,mode=max,scope=ai-service
+          provenance: false
+          sbom: false
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 3: 构建 bff 镜像（NestJS 11）
+  # 上下文：仓库根（构建时引用 packages/shared）
+  # ──────────────────────────────────────────────────────────────
+  build-bff:
+    name: 构建 bff（NestJS）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 pnpm 9
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: 配置 Node 20（启用 pnpm 缓存）
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 构建 bff 镜像（多阶段，PR 不推送）
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/bff/Dockerfile
+          push: false
+          load: true
+          tags: |
+            bff:ci-${{ github.sha }}
+            bff:ci
+          cache-from: type=gha,scope=bff
+          cache-to: type=gha,mode=max,scope=bff
+          provenance: false
+          sbom: false
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 4: 构建 web 镜像（Next.js 15）
+  # 上下文：仓库根（构建时引用 packages/shared）
+  # ──────────────────────────────────────────────────────────────
+  build-web:
+    name: 构建 web（Next.js）
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 pnpm 9
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+          run_install: false
+
+      - name: 配置 Node 20（启用 pnpm 缓存）
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 构建 web 镜像（多阶段，PR 不推送）
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          load: true
+          tags: |
+            web:ci-${{ github.sha }}
+            web:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          # Next.js 构建期环境变量（公开值，运行时通过 NEXT_PUBLIC_BFF_URL 注入）
+          build-args: |
+            NEXT_PUBLIC_BFF_URL=http://localhost:3001
+          provenance: false
+          sbom: false
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 5: 推送镜像到 ghcr.io（仅 main 推送触发）
+  # 使用 GITHUB_TOKEN 登录 ghcr.io，无需额外 secrets
+  # 镜像标签策略：latest（main 分支）、sha-<短 hash>、版本号 tag
+  # ──────────────────────────────────────────────────────────────
+  push-images:
+    name: 推送镜像到 ghcr.io
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build-core, build-ai, build-bff, build-web]
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 登录 ghcr.io（使用 GITHUB_TOKEN）
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 设置 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 提取镜像元数据（core-service）
+        id: meta-core
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/core-service
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 提取镜像元数据（ai-service）
+        id: meta-ai
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/ai-service
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 提取镜像元数据（bff）
+        id: meta-bff
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/bff
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 提取镜像元数据（web）
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: 构建并推送 core-service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/core
+          file: services/core/Dockerfile
+          push: true
+          tags: ${{ steps.meta-core.outputs.tags }}
+          labels: ${{ steps.meta-core.outputs.labels }}
+          cache-from: type=gha,scope=core-service
+          cache-to: type=gha,mode=max,scope=core-service
+
+      - name: 构建并推送 ai-service
+        uses: docker/build-push-action@v5
+        with:
+          context: services/ai
+          file: services/ai/Dockerfile
+          push: true
+          tags: ${{ steps.meta-ai.outputs.tags }}
+          labels: ${{ steps.meta-ai.outputs.labels }}
+          cache-from: type=gha,scope=ai-service
+          cache-to: type=gha,mode=max,scope=ai-service
+
+      - name: 构建并推送 bff
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/bff/Dockerfile
+          push: true
+          tags: ${{ steps.meta-bff.outputs.tags }}
+          labels: ${{ steps.meta-bff.outputs.labels }}
+          cache-from: type=gha,scope=bff
+          cache-to: type=gha,mode=max,scope=bff
+
+      - name: 构建并推送 web
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.meta-web.outputs.tags }}
+          labels: ${{ steps.meta-web.outputs.labels }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web

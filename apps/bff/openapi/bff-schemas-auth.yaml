@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Schemas - Auth & IAM
+  version: 1.0.0
+  description: |
+    BFF 端 Auth + IAM 域 DTO 集合。
+    在 bff-api.yaml 中通过 `$ref: 'bff-schemas-auth.yaml#/components/schemas/...'` 引用。
+    通用组件见 bff-common.yaml。
+
+components:
+  schemas:
+    # ── Auth 域 ──
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, format: password, minLength: 8, maxLength: 128 }
+        rememberMe: { type: boolean, default: false }
+
+    LoginResponse:
+      type: object
+      properties:
+        principal: { $ref: '#/components/schemas/PrincipalSummary' }
+        accessToken:
+          type: string
+          description: JWT access token（BFF 持有，不返回浏览器）
+        accessTokenExpiresIn: { type: integer, example: 900 }
+        refreshTokenSet: { type: boolean, example: true }
+        tenant: { $ref: '#/components/schemas/TenantSummary' }
+        roles:
+          type: array
+          items: { type: string }
+        permissions:
+          type: array
+          items: { type: string }
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        accessTokenExpiresIn: { type: integer }
+        refreshTokenSet: { type: boolean }
+
+    LogoutRequest:
+      type: object
+      properties:
+        allDevices: { type: boolean, default: false }
+
+    LogoutResponse:
+      type: object
+      properties:
+        revoked: { type: boolean }
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string, format: password }
+        newPassword: { type: string, format: password, minLength: 12 }
+
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 12 }
+        displayName: { type: string, maxLength: 128 }
+        locale: { type: string, default: en-US }
+        timezone: { type: string, default: UTC }
+
+    AuthContext:
+      type: object
+      properties:
+        principal: { $ref: '#/components/schemas/PrincipalSummary' }
+        tenant: { $ref: '#/components/schemas/TenantSummary' }
+        roles:
+          type: array
+          items: { type: string }
+        permissions:
+          type: array
+          items: { type: string }
+        session:
+          type: object
+          properties:
+            id: { type: string }
+            issuedAt: { type: string, format: date-time }
+            expiresAt: { type: string, format: date-time }
+
+    PrincipalSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        type: { type: string }
+        status: { type: string }
+        locale: { type: string }
+        timezone: { type: string }
+
+    TenantSummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        code: { type: string }
+        region: { type: string }
+        language: { type: string }
+
+    # ── IAM 域 ──
+    PrincipalDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        type: { $ref: 'bff-common.yaml#/components/schemas/PrincipalType' }
+        email: { type: string, format: email }
+        displayName: { type: string }
+        status: { $ref: 'bff-common.yaml#/components/schemas/PrincipalStatus' }
+        locale: { type: string }
+        timezone: { type: string }
+        classification: { $ref: 'bff-common.yaml#/components/schemas/DataClassification' }
+        externalId: { type: string, nullable: true }
+        lastLoginAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreatePrincipalRequest:
+      type: object
+      required: [email, displayName, password]
+      properties:
+        email: { type: string, format: email }
+        displayName: { type: string, maxLength: 128 }
+        password: { type: string, format: password, minLength: 12 }
+        type: { $ref: 'bff-common.yaml#/components/schemas/PrincipalType' }
+        locale: { type: string }
+        timezone: { type: string }
+        externalId: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+
+    UpdatePrincipalRequest:
+      type: object
+      properties:
+        displayName: { type: string, maxLength: 128 }
+        status: { $ref: 'bff-common.yaml#/components/schemas/PrincipalStatus' }
+        locale: { type: string }
+        timezone: { type: string }
+        metadata:
+          type: object
+          additionalProperties: true
+
+    MembershipDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        principalId: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        role: { type: string }
+        status: { $ref: 'bff-common.yaml#/components/schemas/MembershipStatus' }
+        joinedAt: { type: string, format: date-time }
+        effectiveFrom: { type: string, format: date-time, nullable: true }
+        effectiveTo: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateMembershipRequest:
+      type: object
+      required: [principalId, organizationId, role]
+      properties:
+        principalId: { type: string, format: uuid }
+        organizationId: { type: string, format: uuid }
+        role: { type: string, maxLength: 64 }
+        effectiveFrom: { type: string, format: date-time }
+        effectiveTo: { type: string, format: date-time }
+
+    # 分页
+    OffsetPage_PrincipalDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/PrincipalDto' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        hasMore: { type: boolean }

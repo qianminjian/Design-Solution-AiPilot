@@ -16,6 +16,7 @@ import {
   BellOutlined,
   UserOutlined,
   LogoutOutlined,
+  MonitorOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./logo";
@@ -38,6 +39,7 @@ const SIDER_MENU_ITEMS: SiderMenuItem[] = [
   { key: "/review", icon: <CheckSquareOutlined />, label: "Review" },
   { key: "/documents", icon: <FileTextOutlined />, label: "Documents" },
   { key: "/members", icon: <TeamOutlined />, label: "Members" },
+  { key: "/monitoring", icon: <MonitorOutlined />, label: "Monitoring" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
 

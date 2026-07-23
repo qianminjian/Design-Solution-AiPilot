@@ -1,0 +1,112 @@
+openapi: 3.0.3
+info:
+  title: AiPilot BFF Schemas - Coordination
+  version: 1.0.0
+  description: |
+    BFF 端 Coordination 域 DTO 集合。
+    在 bff-api.yaml 中通过 `$ref: 'bff-schemas-coordination.yaml#/components/schemas/...'` 引用。
+
+components:
+  schemas:
+    FindingDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        projectId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [open, acknowledged, resolving, resolved, waived, closed]
+        ruleId: { type: string, nullable: true }
+        location:
+          type: object
+          properties:
+            view: { type: string, nullable: true }
+            elementId: { type: string, nullable: true }
+            x: { type: number, nullable: true }
+            y: { type: number, nullable: true }
+        assignedTo: { type: string, format: uuid, nullable: true }
+        dueAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        rowVersion: { type: integer }
+
+    CreateFindingRequest:
+      type: object
+      required: [projectId, title, severity]
+      properties:
+        projectId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        ruleId: { type: string }
+        location:
+          type: object
+          additionalProperties: true
+        assignedTo: { type: string, format: uuid }
+        dueAt: { type: string, format: date-time }
+
+    UpdateFindingRequest:
+      type: object
+      properties:
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [open, acknowledged, resolving, resolved, waived, closed]
+        assignedTo: { type: string, format: uuid, nullable: true }
+        dueAt: { type: string, format: date-time, nullable: true }
+
+    BcfIssueDto:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        findingId: { type: string, format: uuid, nullable: true }
+        projectId: { type: string, format: uuid }
+        topicGuid: { type: string, description: BCF Topic GUID }
+        topicType: { type: string }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        priority:
+          type: string
+          enum: [low, normal, high, critical]
+        assignedTo: { type: string, format: uuid, nullable: true }
+        dueDate: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateBcfIssueRequest:
+      type: object
+      required: [projectId, title]
+      properties:
+        projectId: { type: string, format: uuid }
+        findingId: { type: string, format: uuid }
+        title: { type: string, maxLength: 256 }
+        description: { type: string, maxLength: 4096 }
+        topicType: { type: string, default: Issue }
+        priority:
+          type: string
+          enum: [low, normal, high, critical]
+        assignedTo: { type: string, format: uuid }
+        dueDate: { type: string, format: date-time }
+
+    OffsetPage_FindingDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/FindingDto' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        hasMore: { type: boolean }
