@@ -102,6 +102,22 @@ public final class ErrorCode {
     /** 检查运行状态不允许此操作 */
     public static final int INVALID_RUN_STATUS = 4249;
 
+    // ── TEVV 域错误码段（4251-4260）──
+    /** 数据集不存在 */
+    public static final int DATASET_NOT_FOUND = 4251;
+    /** 数据集名称+版本重复 */
+    public static final int DATASET_NAME_VERSION_EXISTS = 4252;
+    /** 数据集状态非法（不可执行当前操作） */
+    public static final int INVALID_DATASET_STATUS = 4253;
+    /** 验证项不存在 */
+    public static final int VERIFICATION_ITEM_NOT_FOUND = 4254;
+    /** 验证项编号重复 */
+    public static final int VERIFICATION_ITEM_CODE_EXISTS = 4255;
+    /** Gate 编号非法 */
+    public static final int INVALID_GATE_NUMBER = 4256;
+    /** 豁免缺少原因 */
+    public static final int WAIVER_REASON_REQUIRED = 4257;
+
     // ── 服务端错误段（500-599）──
     /** 内部异常 */
     public static final int INTERNAL_ERROR = 500;
