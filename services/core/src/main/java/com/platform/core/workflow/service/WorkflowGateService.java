@@ -6,11 +6,11 @@ import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import com.platform.core.portfolio.dto.DecideGateRequest;
 import com.platform.core.portfolio.dto.GateDecisionDto;
-import com.platform.core.workflow.domain.GateDecision;
-import com.platform.core.workflow.domain.ProjectBaseline;
-import com.platform.core.workflow.domain.RevisionStatus;
-import com.platform.core.workflow.repository.GateDecisionRepository;
-import com.platform.core.workflow.repository.ProjectBaselineRepository;
+import com.platform.core.workflow.domain.WorkflowGateDecision;
+import com.platform.core.workflow.domain.WorkflowProjectBaseline;
+import com.platform.core.workflow.domain.WorkflowRevisionStatus;
+import com.platform.core.workflow.repository.WorkflowGateDecisionRepository;
+import com.platform.core.workflow.repository.WorkflowProjectBaselineRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,16 +35,16 @@ import java.util.UUID;
  * <p>与 portfolio.GateService 的区别：本服务操作 workflow schema 独立表，API 路径不嵌套在 project 下。
  */
 @Service
-public class GateService {
+public class WorkflowGateService {
 
-    private static final Logger log = LoggerFactory.getLogger(GateService.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkflowGateService.class);
 
-    private final GateDecisionRepository gateRepository;
-    private final ProjectBaselineRepository baselineRepository;
+    private final WorkflowGateDecisionRepository gateRepository;
+    private final WorkflowProjectBaselineRepository baselineRepository;
     private final ObjectMapper objectMapper;
 
-    public GateService(GateDecisionRepository gateRepository,
-                       ProjectBaselineRepository baselineRepository,
+    public WorkflowGateService(WorkflowGateDecisionRepository gateRepository,
+                       WorkflowProjectBaselineRepository baselineRepository,
                        ObjectMapper objectMapper) {
         this.gateRepository = gateRepository;
         this.baselineRepository = baselineRepository;
@@ -63,7 +63,7 @@ public class GateService {
      */
     @Transactional(readOnly = true)
     public List<GateDecisionDto> listGateDecisions(UUID tenantId, UUID stageId, String status, String decision) {
-        List<GateDecision> gates;
+        List<WorkflowGateDecision> gates;
         if (status != null && !status.isBlank()) {
             gates = gateRepository.findByStageIdAndStatus(stageId, status);
         } else {
@@ -90,7 +90,7 @@ public class GateService {
      */
     @Transactional
     public GateDecisionDto decideGate(UUID tenantId, UUID gateId, DecideGateRequest request) {
-        GateDecision gate = loadGateOrThrow(tenantId, gateId);
+        WorkflowGateDecision gate = loadGateOrThrow(tenantId, gateId);
 
         if (request.baselineId() != null) {
             validateBaselineFrozen(tenantId, request.baselineId());
@@ -103,7 +103,7 @@ public class GateService {
         gate.setDecidedAt(Instant.now());
         gate.setStatus("DECIDED");
 
-        GateDecision saved = gateRepository.save(gate);
+        WorkflowGateDecision saved = gateRepository.save(gate);
         log.info("工作流门禁决策成功 tenantId={} gateId={} decision={}",
                 tenantId, gateId, request.decision());
         return toDto(saved);
@@ -116,18 +116,18 @@ public class GateService {
      * 核心不变量：Gate 只能引用冻结基线
      */
     private void validateBaselineFrozen(UUID tenantId, UUID baselineId) {
-        ProjectBaseline baseline = baselineRepository.findByIdAndTenantId(baselineId, tenantId)
+        WorkflowProjectBaseline baseline = baselineRepository.findByIdAndTenantId(baselineId, tenantId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.BASELINE_NOT_FOUND,
                         "项目基线不存在: " + baselineId));
-        if (baseline.getStatus() != RevisionStatus.PUBLISHED) {
+        if (baseline.getStatus() != WorkflowRevisionStatus.PUBLISHED) {
             throw new BusinessException(ErrorCode.BASELINE_NOT_FROZEN,
                     "基线未冻结，不可被门禁引用: baselineId=" + baselineId
                             + " status=" + baseline.getStatus());
         }
     }
 
-    private GateDecision loadGateOrThrow(UUID tenantId, UUID gateId) {
+    private WorkflowGateDecision loadGateOrThrow(UUID tenantId, UUID gateId) {
         return gateRepository.findByIdAndTenantId(gateId, tenantId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.GATE_NOT_FOUND,
@@ -149,7 +149,7 @@ public class GateService {
         }
     }
 
-    private GateDecisionDto toDto(GateDecision g) {
+    private GateDecisionDto toDto(WorkflowGateDecision g) {
         return new GateDecisionDto(
                 g.getId(),
                 g.getTenantId(),

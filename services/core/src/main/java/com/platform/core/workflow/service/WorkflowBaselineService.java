@@ -3,9 +3,9 @@ package com.platform.core.workflow.service;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import com.platform.core.portfolio.dto.ProjectBaselineDto;
-import com.platform.core.workflow.domain.ProjectBaseline;
-import com.platform.core.workflow.domain.RevisionStatus;
-import com.platform.core.workflow.repository.ProjectBaselineRepository;
+import com.platform.core.workflow.domain.WorkflowProjectBaseline;
+import com.platform.core.workflow.domain.WorkflowRevisionStatus;
+import com.platform.core.workflow.repository.WorkflowProjectBaselineRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,13 +35,13 @@ import java.util.UUID;
  * </ul>
  */
 @Service
-public class BaselineService {
+public class WorkflowBaselineService {
 
-    private static final Logger log = LoggerFactory.getLogger(BaselineService.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkflowBaselineService.class);
 
-    private final ProjectBaselineRepository baselineRepository;
+    private final WorkflowProjectBaselineRepository baselineRepository;
 
-    public BaselineService(ProjectBaselineRepository baselineRepository) {
+    public WorkflowBaselineService(WorkflowProjectBaselineRepository baselineRepository) {
         this.baselineRepository = baselineRepository;
     }
 
@@ -58,18 +58,18 @@ public class BaselineService {
      */
     @Transactional
     public ProjectBaselineDto freezeBaseline(UUID tenantId, UUID baselineId) {
-        ProjectBaseline baseline = loadBaselineOrThrow(tenantId, baselineId);
-        if (baseline.getStatus() != RevisionStatus.DRAFT) {
+        WorkflowProjectBaseline baseline = loadBaselineOrThrow(tenantId, baselineId);
+        if (baseline.getStatus() != WorkflowRevisionStatus.DRAFT) {
             throw new BusinessException(ErrorCode.BASELINE_NOT_FROZEN,
                     "基线当前状态不可冻结: baselineId=" + baselineId
                             + " status=" + baseline.getStatus()
                             + "（仅 DRAFT 状态可冻结）");
         }
 
-        baseline.setStatus(RevisionStatus.PUBLISHED);
+        baseline.setStatus(WorkflowRevisionStatus.PUBLISHED);
         baseline.setFrozenAt(Instant.now());
 
-        ProjectBaseline saved = baselineRepository.save(baseline);
+        WorkflowProjectBaseline saved = baselineRepository.save(baseline);
         log.info("工作流冻结基线成功 tenantId={} baselineId={} revisionNo={}",
                 tenantId, baselineId, saved.getRevisionNo());
         return toDto(saved);
@@ -84,7 +84,7 @@ public class BaselineService {
      */
     @Transactional(readOnly = true)
     public ProjectBaselineDto getBaseline(UUID tenantId, UUID baselineId) {
-        ProjectBaseline baseline = loadBaselineOrThrow(tenantId, baselineId);
+        WorkflowProjectBaseline baseline = loadBaselineOrThrow(tenantId, baselineId);
         return toDto(baseline);
     }
 
@@ -100,19 +100,19 @@ public class BaselineService {
         return baselineRepository.findByProjectIdOrderByRevisionNoDesc(projectId).stream()
                 .filter(b -> tenantId.equals(b.getTenantId()))
                 .map(this::toDto)
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
     }
 
     // ── 内部辅助方法 ──
 
-    private ProjectBaseline loadBaselineOrThrow(UUID tenantId, UUID baselineId) {
+    private WorkflowProjectBaseline loadBaselineOrThrow(UUID tenantId, UUID baselineId) {
         return baselineRepository.findByIdAndTenantId(baselineId, tenantId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.BASELINE_NOT_FOUND,
                         "项目基线不存在: " + baselineId));
     }
 
-    private ProjectBaselineDto toDto(ProjectBaseline b) {
+    private ProjectBaselineDto toDto(WorkflowProjectBaseline b) {
         return new ProjectBaselineDto(
                 b.getId(),
                 b.getTenantId(),

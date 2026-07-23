@@ -8,7 +8,7 @@ package com.platform.core.workflow.domain;
  * <p>语义说明：DB 中的 PUBLISHED 状态对应契约中的 "frozen"（已冻结/已发布），
  * 即基线不可变、可被门禁决策引用。</p>
  */
-public enum RevisionStatus {
+public enum WorkflowRevisionStatus {
 
     /** 草稿（可编辑，可被冻结为 PUBLISHED） */
     DRAFT,

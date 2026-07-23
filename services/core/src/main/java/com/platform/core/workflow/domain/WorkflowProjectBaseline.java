@@ -7,12 +7,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.GenericGenerator;
+
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
-import org.hibernate.id.uuid.UuidGenerator;
+
 
 import java.time.Instant;
 import java.util.UUID;
@@ -35,11 +36,10 @@ import java.util.UUID;
 @Table(name = "project_baseline", schema = "workflow")
 @Where(clause = "deleted_at IS NULL")
 @SQLDelete(sql = "UPDATE workflow.project_baseline SET deleted_at = NOW(), deleted_by = NULL WHERE id = ?")
-@GenericGenerator(name = "uuid_v7", type = UuidGenerator.class)
-public class ProjectBaseline extends TenantBaseEntity {
+public class WorkflowProjectBaseline extends TenantBaseEntity {
 
     @Id
-    @GeneratedValue(generator = "uuid_v7")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
@@ -57,7 +57,7 @@ public class ProjectBaseline extends TenantBaseEntity {
     /** 修订状态：DRAFT / PUBLISHED / SUPERSEDED（PUBLISHED 即冻结可被引用） */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private RevisionStatus status = RevisionStatus.DRAFT;
+    private WorkflowRevisionStatus status = WorkflowRevisionStatus.DRAFT;
 
     /** 冻结时间（status 切换为 PUBLISHED 时设置） */
     @Column(name = "frozen_at")
@@ -118,11 +118,11 @@ public class ProjectBaseline extends TenantBaseEntity {
         this.name = name;
     }
 
-    public RevisionStatus getStatus() {
+    public WorkflowRevisionStatus getStatus() {
         return status;
     }
 
-    public void setStatus(RevisionStatus status) {
+    public void setStatus(WorkflowRevisionStatus status) {
         this.status = status;
     }
 

@@ -3,7 +3,11 @@
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Space, Spin, Result, App } from "antd";
-import { ArrowLeftOutlined, FolderOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  FolderOutlined,
+  ApartmentOutlined,
+} from "@ant-design/icons";
 import { useProjectDetail } from "@/hooks/use-project-detail";
 import { useGates } from "@/hooks/use-gates";
 import { ProjectHeader } from "@/components/project/project-header";
@@ -115,12 +119,20 @@ export default function ProjectDetailPage({
         >
           返回项目列表
         </Button>
-        <Button
-          icon={<FolderOutlined />}
-          onClick={() => router.push(`/projects/${projectId}/documents`)}
-        >
-          文档库
-        </Button>
+        <Space>
+          <Button
+            icon={<FolderOutlined />}
+            onClick={() => router.push(`/projects/${projectId}/documents`)}
+          >
+            文档库
+          </Button>
+          <Button
+            icon={<ApartmentOutlined />}
+            onClick={() => router.push(`/projects/${projectId}/coordination`)}
+          >
+            多专业协调
+          </Button>
+        </Space>
       </div>
 
       {/* 项目头部 */}

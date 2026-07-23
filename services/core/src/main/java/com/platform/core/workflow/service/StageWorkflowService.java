@@ -5,8 +5,8 @@ import com.platform.core.common.response.ErrorCode;
 import com.platform.core.portfolio.dto.StageInstanceDto;
 import com.platform.core.portfolio.dto.TransitionStageRequest;
 import com.platform.core.portfolio.support.StageDefinitions;
-import com.platform.core.workflow.domain.StageInstance;
-import com.platform.core.workflow.repository.StageInstanceRepository;
+import com.platform.core.workflow.domain.WorkflowStageInstance;
+import com.platform.core.workflow.repository.WorkflowStageInstanceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -36,9 +36,9 @@ public class StageWorkflowService {
 
     private static final Logger log = LoggerFactory.getLogger(StageWorkflowService.class);
 
-    private final StageInstanceRepository stageInstanceRepository;
+    private final WorkflowStageInstanceRepository stageInstanceRepository;
 
-    public StageWorkflowService(StageInstanceRepository stageInstanceRepository) {
+    public StageWorkflowService(WorkflowStageInstanceRepository stageInstanceRepository) {
         this.stageInstanceRepository = stageInstanceRepository;
     }
 
@@ -54,7 +54,7 @@ public class StageWorkflowService {
      */
     @Transactional(readOnly = true)
     public List<StageInstanceDto> listStageInstances(UUID tenantId, UUID projectId, String status, String stageCode) {
-        List<StageInstance> stages;
+        List<WorkflowStageInstance> stages;
         if (status != null && !status.isBlank()) {
             stages = stageInstanceRepository.findByProjectIdAndStatus(projectId, status);
         } else {
@@ -83,13 +83,13 @@ public class StageWorkflowService {
      */
     @Transactional
     public StageInstanceDto transitionStage(UUID tenantId, UUID stageId, TransitionStageRequest request) {
-        StageInstance stage = loadStageOrThrow(tenantId, stageId);
+        WorkflowStageInstance stage = loadStageOrThrow(tenantId, stageId);
         String currentStatus = stage.getStatus();
         String targetStatus = request.targetStatus();
         validateTransition(currentStatus, targetStatus);
 
         applyTransition(stage, targetStatus);
-        StageInstance saved = stageInstanceRepository.save(stage);
+        WorkflowStageInstance saved = stageInstanceRepository.save(stage);
         log.info("工作流阶段流转成功 tenantId={} stageId={} {} → {}",
                 tenantId, stageId, currentStatus, targetStatus);
         return toDto(saved);
@@ -110,7 +110,7 @@ public class StageWorkflowService {
         }
     }
 
-    private void applyTransition(StageInstance stage, String targetStatus) {
+    private void applyTransition(WorkflowStageInstance stage, String targetStatus) {
         // 进入 ACTIVE 时若 startedAt 为空则填充
         if (StageDefinitions.STATUS_ACTIVE.equals(targetStatus) && stage.getStartedAt() == null) {
             stage.setStartedAt(Instant.now());
@@ -122,14 +122,14 @@ public class StageWorkflowService {
         stage.setStatus(targetStatus);
     }
 
-    private StageInstance loadStageOrThrow(UUID tenantId, UUID stageId) {
+    private WorkflowStageInstance loadStageOrThrow(UUID tenantId, UUID stageId) {
         return stageInstanceRepository.findByIdAndTenantId(stageId, tenantId)
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.STAGE_NOT_FOUND,
                         "阶段实例不存在: " + stageId));
     }
 
-    private StageInstanceDto toDto(StageInstance s) {
+    private StageInstanceDto toDto(WorkflowStageInstance s) {
         return new StageInstanceDto(
                 s.getId(),
                 s.getTenantId(),

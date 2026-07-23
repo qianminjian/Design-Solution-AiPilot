@@ -3,8 +3,8 @@ package com.platform.core.workflow;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.platform.core.iam.domain.DataClassification;
 import com.platform.core.testsupport.AbstractIntegrationTest;
-import com.platform.core.workflow.domain.StageInstance;
-import com.platform.core.workflow.repository.StageInstanceRepository;
+import com.platform.core.workflow.domain.WorkflowStageInstance;
+import com.platform.core.workflow.repository.WorkflowStageInstanceRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * 工作流阶段实例（StageInstance）API 集成测试
+ * 工作流阶段实例（WorkflowStageInstance）API 集成测试
  *
  * <p>覆盖 workflow 域阶段端点：
  * <ul>
@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>状态机校验遵循 D05.4.1（NOT_STARTED → ACTIVE 合法，NOT_STARTED → APPROVED 非法）。
  * 测试数据通过 workflow Repository 直接创建（workflow 域暂无创建阶段 API）。
  */
-@DisplayName("工作流阶段实例（StageInstance）API 集成测试")
+@DisplayName("工作流阶段实例（WorkflowStageInstance）API 集成测试")
 class StageApiIT extends AbstractIntegrationTest {
 
     /** 项目端点（用于创建测试项目） */
     private static final String PROJECTS_URL = "/api/v1/projects";
 
     @Autowired
-    private StageInstanceRepository stageInstanceRepository;
+    private WorkflowStageInstanceRepository stageInstanceRepository;
 
     /**
      * 应该按项目 ID 列出所有阶段（按 stage_order 升序）
@@ -213,7 +213,7 @@ class StageApiIT extends AbstractIntegrationTest {
      */
     private UUID createStage(UUID tenantId, UUID projectId, String stageCode,
                              String stageName, int stageOrder, String status) {
-        StageInstance stage = new StageInstance();
+        WorkflowStageInstance stage = new WorkflowStageInstance();
         stage.setTenantId(tenantId);
         stage.setProjectId(projectId);
         stage.setStageCode(stageCode);
@@ -222,7 +222,7 @@ class StageApiIT extends AbstractIntegrationTest {
         stage.setStatus(status);
         stage.setClassification(DataClassification.PROJECT_RECORD);
         stage.setMetadata("{}");
-        StageInstance saved = stageInstanceRepository.save(stage);
+        WorkflowStageInstance saved = stageInstanceRepository.save(stage);
         return saved.getId();
     }
 }
