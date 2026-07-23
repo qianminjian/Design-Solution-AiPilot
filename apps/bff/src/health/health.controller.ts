@@ -19,9 +19,25 @@ export class HealthController {
   ): Promise<HealthCheckResult> {
     const result: HealthCheckResult = await this.healthService.checkAll();
     response.status(
-      result.status === "UP"
-        ? HttpStatus.OK
-        : HttpStatus.SERVICE_UNAVAILABLE,
+      result.status === "UP" ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE,
+    );
+    return result;
+  }
+
+  /** 存活检查：仅判断进程是否存活，不检查下游依赖 */
+  @Get("live")
+  liveness(): { status: string; timestamp: string } {
+    return { status: "up", timestamp: new Date().toISOString() };
+  }
+
+  /** 就绪检查：判断下游依赖是否就绪 */
+  @Get("ready")
+  async readiness(
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<HealthCheckResult> {
+    const result: HealthCheckResult = await this.healthService.checkAll();
+    response.status(
+      result.status === "UP" ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE,
     );
     return result;
   }

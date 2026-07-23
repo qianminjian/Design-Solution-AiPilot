@@ -13,17 +13,7 @@
     <!-- 服务名（与 application.yml 的 spring.application.name 一致） -->
     <property name="SERVICE_NAME" value="${SERVICE_NAME:-core-service}"/>
 
-    <!--
-      通用 JSON 编码器配置
-      - customFields：补充 service 字段，统一字段命名
-      - 注意：logback-spring.xml 默认不开启 Maven 资源过滤，
-        故不使用 @project.version@ 占位符，version 由构建链路在镜像标签中体现
-    -->
-    <property name="LOGSTASH_ENCODER_CONFIG">
-        {
-        "service": "${SERVICE_NAME}"
-        }
-    </property>
+    
 
     <!--
       开发/默认 profile：人类可读控制台输出
@@ -60,7 +50,7 @@
                 <!-- MDC 中 traceId 字段提升为顶层字段（key 与 TraceIdFilter.MDC_TRACE_ID 一致） -->
                 <includeMdcKeyName>traceId</includeMdcKeyName>
                 <!-- 静态业务字段 -->
-                <customFields>${LOGSTASH_ENCODER_CONFIG}</customFields>
+                <customFields>{"service": "${SERVICE_NAME}"}</customFields>
                 <!-- 关闭 caller 数据（性能开销大，生产不建议开） -->
                 <includeCallerData>false</includeCallerData>
             </encoder>
