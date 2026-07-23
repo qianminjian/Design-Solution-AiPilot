@@ -14,15 +14,8 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
+    "*.{ts,tsx,js,jsx,json,yml,yaml,css,md}": [
       "prettier --write"
-    ],
-    "*.{json,yml,yaml,css,md}": [
-      "prettier --write"
-    ],
-    "*.py": [
-      "black"
     ]
   },
   "devDependencies": {
