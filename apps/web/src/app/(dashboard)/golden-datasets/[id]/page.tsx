@@ -1,0 +1,395 @@
+"use client";
+
+import { Card, Table, Tag, Button, Space, Typography, Modal, Form, Input, Select, Spin, Alert, Breadcrumb } from "antd";
+import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
+
+const { Title, Text } = Typography;
+
+/** 验证类型 */
+type VerificationType = "MANUAL" | "AUTOMATED";
+
+/** 验证状态 */
+type VerificationStatus = "PENDING" | "PASSED" | "FAILED" | "WAIVED";
+
+/** 风险等级 */
+type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+/** 验证项 DTO */
+interface VerificationItemDto {
+  id: string;
+  datasetId: string;
+  gateCode: string;
+  verificationType: VerificationType;
+  riskLevel: RiskLevel;
+  status: VerificationStatus;
+  description: string;
+  waiverReason?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  createdAt: string;
+}
+
+/** 创建验证项请求 */
+interface CreateVerificationItemRequest {
+  gateCode: string;
+  verificationType: VerificationType;
+  riskLevel: RiskLevel;
+  description: string;
+}
+
+/** 验证类型标签 */
+const TYPE_LABELS: Record<VerificationType, string> = {
+  MANUAL: "手动验证",
+  AUTOMATED: "自动验证",
+};
+
+/** 状态标签配置 */
+const STATUS_CONFIG: Record<VerificationStatus, { label: string; color: string; icon: React.ReactNode }> = {
+  PENDING: { label: "待验证", color: "default", icon: <QuestionCircleOutlined /> },
+  PASSED: { label: "通过", color: "success", icon: <CheckCircleOutlined /> },
+  FAILED: { label: "未通过", color: "error", icon: <CloseCircleOutlined /> },
+  WAIVED: { label: "豁免", color: "warning", icon: <ExclamationCircleOutlined /> },
+};
+
+/** 风险等级配置 */
+const RISK_CONFIG: Record<RiskLevel, { label: string; color: string }> = {
+  LOW: { label: "低", color: "green" },
+  MEDIUM: { label: "中", color: "orange" },
+  HIGH: { label: "高", color: "red" },
+  CRITICAL: { label: "严重", color: "magenta" },
+};
+
+/** 验证类型选项 */
+const TYPE_OPTIONS: { value: VerificationType; label: string }[] = [
+  { value: "MANUAL", label: "手动验证" },
+  { value: "AUTOMATED", label: "自动验证" },
+];
+
+/** 风险等级选项 */
+const RISK_OPTIONS: { value: RiskLevel; label: string }[] = [
+  { value: "LOW", label: "低" },
+  { value: "MEDIUM", label: "中" },
+  { value: "HIGH", label: "高" },
+  { value: "CRITICAL", label: "严重" },
+];
+
+/** Gate 代码选项（根据 D05 阶段门） */
+const GATE_CODE_OPTIONS = [
+  { value: "GATE-P1", label: "GATE-P1 方案准入" },
+  { value: "GATE-P2", label: "GATE-P2 扩初准入" },
+  { value: "GATE-P5", label: "GATE-P5 施工图交付" },
+  { value: "GATE-P6", label: "GATE-P6 审批通过" },
+  { value: "GATE-P7", label: "GATE-P7 归档完成" },
+];
+
+/**
+ * 查询验证项列表
+ */
+function useVerificationItems(datasetId: string) {
+  return useQuery<VerificationItemDto[]>({
+    queryKey: ["verification-items", datasetId],
+    queryFn: () => apiGet(`/api/v1/verification-items?datasetId=${datasetId}`),
+    enabled: !!datasetId,
+  });
+}
+
+/**
+ * 创建验证项
+ */
+function useCreateVerificationItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ datasetId, data }: { datasetId: string; data: CreateVerificationItemRequest }) =>
+      apiPost(`/api/v1/verification-items`, { ...data, datasetId }),
+    onSuccess: (_, variables) =>
+      queryClient.invalidateQueries({ queryKey: ["verification-items", variables.datasetId] }),
+  });
+}
+
+/**
+ * 更新验证状态
+ */
+function useUpdateStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, status, waiverReason }: { itemId: string; status: VerificationStatus; waiverReason?: string }) =>
+      apiPatch(`/api/v1/verification-items/${itemId}/status?status=${status}${waiverReason ? `&waiverReason=${encodeURIComponent(waiverReason)}` : ""}`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["verification-items"] }),
+  });
+}
+
+export default function VerificationItemsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const datasetId = params.id as string;
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [waiveModalVisible, setWaiveModalVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<VerificationItemDto | null>(null);
+  const [form] = Form.useForm<CreateVerificationItemRequest>();
+  const [waiveForm] = Form.useForm<{ reason: string }>();
+
+  const { data: items, isLoading, error } = useVerificationItems(datasetId);
+  const createMutation = useCreateVerificationItem();
+  const updateStatusMutation = useUpdateStatus();
+
+  const handleCreate = (values: CreateVerificationItemRequest) => {
+    createMutation.mutate(
+      { datasetId, data: values },
+      {
+        onSuccess: () => {
+          setModalVisible(false);
+          form.resetFields();
+        },
+      }
+    );
+  };
+
+  const handleUpdateStatus = (itemId: string, status: VerificationStatus) => {
+    if (status === "WAIVED") {
+      setSelectedItem(items?.find((i) => i.id === itemId) ?? null);
+      setWaiveModalVisible(true);
+      return;
+    }
+    updateStatusMutation.mutate({ itemId, status });
+  };
+
+  const handleWaive = (values: { reason: string }) => {
+    if (selectedItem) {
+      updateStatusMutation.mutate(
+        { itemId: selectedItem.id, status: "WAIVED", waiverReason: values.reason },
+        { onSuccess: () => {
+          setWaiveModalVisible(false);
+          setSelectedItem(null);
+          waiveForm.resetFields();
+        }}
+      );
+    }
+  };
+
+  if (isLoading) {
+    return <Spin tip="加载验证项..." />;
+  }
+
+  if (error) {
+    return <Alert type="error" message="加载失败" description={(error as Error).message} />;
+  }
+
+  const columns = [
+    {
+      title: "Gate 代码",
+      dataIndex: "gateCode",
+      key: "gateCode",
+      width: 120,
+    },
+    {
+      title: "验证类型",
+      dataIndex: "verificationType",
+      key: "verificationType",
+      width: 100,
+      render: (type: VerificationType) => <Tag>{TYPE_LABELS[type]}</Tag>,
+    },
+    {
+      title: "风险等级",
+      dataIndex: "riskLevel",
+      key: "riskLevel",
+      width: 80,
+      render: (level: RiskLevel) => {
+        const config = RISK_CONFIG[level];
+        return <Tag color={config.color}>{config.label}</Tag>;
+      },
+    },
+    {
+      title: "描述",
+      dataIndex: "description",
+      key: "description",
+      ellipsis: true,
+    },
+    {
+      title: "状态",
+      dataIndex: "status",
+      key: "status",
+      width: 100,
+      render: (status: VerificationStatus) => {
+        const config = STATUS_CONFIG[status];
+        return (
+          <Tag color={config.color} icon={config.icon}>
+            {config.label}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "验证时间",
+      dataIndex: "verifiedAt",
+      key: "verifiedAt",
+      width: 150,
+      render: (date?: string) => date ? new Date(date).toLocaleString("zh-CN") : "-",
+    },
+    {
+      title: "操作",
+      key: "actions",
+      width: 200,
+      render: (_: unknown, record: VerificationItemDto) => (
+        <Space>
+          {record.status === "PENDING" && (
+            <>
+              <Button
+                size="small"
+                onClick={() => handleUpdateStatus(record.id, "PASSED")}
+                loading={updateStatusMutation.isPending}
+              >
+                通过
+              </Button>
+              <Button
+                size="small"
+                danger
+                onClick={() => handleUpdateStatus(record.id, "FAILED")}
+                loading={updateStatusMutation.isPending}
+              >
+                未通过
+              </Button>
+              <Button
+                size="small"
+                type="dashed"
+                onClick={() => handleUpdateStatus(record.id, "WAIVED")}
+              >
+                豁免
+              </Button>
+            </>
+          )}
+          {record.status === "WAIVED" && record.waiverReason && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              原因: {record.waiverReason}
+            </Text>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <Breadcrumb
+        items={[
+          { title: "金样数据集", onClick: () => router.push("/golden-datasets") },
+          { title: `验证项管理 (${datasetId.slice(0, 8)}...)` },
+        ]}
+        style={{ marginBottom: 16 }}
+      />
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <Title level={4}>验证项管理</Title>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setModalVisible(true)}
+          loading={createMutation.isPending}
+        >
+          创建验证项
+        </Button>
+      </div>
+
+      <Card>
+        <Table
+          columns={columns}
+          dataSource={items}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+          bordered
+        />
+      </Card>
+
+      <Modal
+        title="创建验证项"
+        open={modalVisible}
+        onCancel={() => {
+          setModalVisible(false);
+          form.resetFields();
+        }}
+        footer={null}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleCreate}
+          initialValues={{ verificationType: "MANUAL", riskLevel: "MEDIUM" }}
+        >
+          <Form.Item
+            name="gateCode"
+            label="Gate 代码"
+            rules={[{ required: true, message: "请选择 Gate" }]}
+          >
+            <Select options={GATE_CODE_OPTIONS} placeholder="选择阶段门" />
+          </Form.Item>
+
+          <Form.Item
+            name="verificationType"
+            label="验证类型"
+            rules={[{ required: true, message: "请选择验证类型" }]}
+          >
+            <Select options={TYPE_OPTIONS} />
+          </Form.Item>
+
+          <Form.Item
+            name="riskLevel"
+            label="风险等级"
+            rules={[{ required: true, message: "请选择风险等级" }]}
+          >
+            <Select options={RISK_OPTIONS} />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="描述"
+            rules={[{ required: true, message: "请输入描述" }]}
+          >
+            <Input.TextArea placeholder="验证项描述" />
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button onClick={() => setModalVisible(false)}>取消</Button>
+              <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
+                创建
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="豁免验证项"
+        open={waiveModalVisible}
+        onCancel={() => {
+          setWaiveModalVisible(false);
+          setSelectedItem(null);
+          waiveForm.resetFields();
+        }}
+        footer={null}
+      >
+        <Form form={waiveForm} layout="vertical" onFinish={handleWaive}>
+          <Form.Item
+            name="reason"
+            label="豁免原因"
+            rules={[{ required: true, message: "请输入豁免原因" }]}
+          >
+            <Input.TextArea placeholder="说明豁免原因" />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button onClick={() => setWaiveModalVisible(false)}>取消</Button>
+              <Button type="primary" htmlType="submit" loading={updateStatusMutation.isPending}>
+                确认豁免
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
+  );
+}

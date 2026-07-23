@@ -1,26 +1,9 @@
 "use client";
 
-import {
-  Card,
-  Table,
-  Tag,
-  Button,
-  Space,
-  Typography,
-  Modal,
-  Form,
-  Input,
-  Select,
-  Spin,
-  Alert,
-} from "antd";
-import {
-  PlusOutlined,
-  LockOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons";
+import { Card, Table, Tag, Button, Space, Typography, Modal, Form, Input, Select, Spin, Alert } from "antd";
+import { PlusOutlined, LockOutlined, CheckCircleOutlined, CloseCircleOutlined, FileSearchOutlined } from "@ant-design/icons";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
 
@@ -130,6 +113,7 @@ function useFreezeDataset() {
 }
 
 export default function GoldenDatasetsPage() {
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm<CreateDatasetRequest>();
 
@@ -225,9 +209,16 @@ export default function GoldenDatasetsPage() {
     {
       title: "操作",
       key: "actions",
-      width: 150,
+      width: 200,
       render: (_: unknown, record: GoldenDatasetDto) => (
         <Space>
+          <Button
+            size="small"
+            icon={<FileSearchOutlined />}
+            onClick={() => router.push(`/golden-datasets/${record.id}`)}
+          >
+            验证项
+          </Button>
           {record.status === "DRAFT" && (
             <Button
               type="primary"
