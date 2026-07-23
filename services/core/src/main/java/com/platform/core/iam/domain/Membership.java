@@ -5,10 +5,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.id.uuid.UuidGenerator;
+
+
 
 import com.platform.core.common.entity.TenantBaseEntity;
 
@@ -20,11 +21,10 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "membership", schema = "iam")
-@GenericGenerator(name = "uuid_v7", type = UuidGenerator.class)
 public class Membership extends TenantBaseEntity {
 
     @Id
-    @GeneratedValue(generator = "uuid_v7")
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 

@@ -2,7 +2,6 @@ package com.platform.core.auth.token;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -22,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 生产环境使用 Redis 时由 Redis TTL 自动清理
  */
 @Component
-@ConditionalOnMissingBean(RefreshTokenStore.class)
 public class InMemoryRefreshTokenStore implements RefreshTokenStore {
 
     private static final Logger log = LoggerFactory.getLogger(InMemoryRefreshTokenStore.class);
