@@ -28,6 +28,7 @@ import {
   LogoutOutlined,
   MonitorOutlined,
   DatabaseOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./logo";
@@ -54,6 +55,7 @@ const SIDER_MENU_ITEMS: SiderMenuItem[] = [
     icon: <DatabaseOutlined />,
     label: "Golden Datasets",
   },
+  { key: "/compliance-rules", icon: <SafetyCertificateOutlined />, label: "Compliance Rules" },
   { key: "/members", icon: <TeamOutlined />, label: "Members" },
   { key: "/monitoring", icon: <MonitorOutlined />, label: "Monitoring" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
