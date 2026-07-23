@@ -7,7 +7,7 @@ import {
 import { Observable, catchError, map, tap, throwError } from "rxjs";
 import { Request, Response } from "express";
 import { AxiosError } from "axios";
-import { HttpHeader } from "@design-platform/shared";
+import { ApiErrorResponse, HttpHeader } from "@design-platform/shared";
 
 /**
  * 代理服务返回结果
@@ -35,6 +35,24 @@ function isProxyResult(value: unknown): value is ProxyResult {
 }
 
 /**
+ * 判断是否为 Java 侧的 ApiResponse 格式
+ */
+function isApiResponse(value: unknown): value is {
+  code: number;
+  data: unknown;
+  message?: string | null;
+  traceId?: string;
+} {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "code" in value &&
+    typeof (value as { code: unknown }).code === "number" &&
+    "data" in value
+  );
+}
+
+/**
  * 不应透传给前端的 hop-by-hop 头
  * 参考 RFC 7230 §6.1
  */
@@ -53,11 +71,55 @@ const HOP_BY_HOP_HEADERS = new Set<string>([
 ]);
 
 /**
+ * 根据 HTTP 状态码生成默认标题
+ */
+function exceptionTitle(status: number): string {
+  const titleMap: Record<number, string> = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    409: "Conflict",
+    412: "Precondition Failed",
+    413: "Payload Too Large",
+    415: "Unsupported Media Type",
+    422: "Unprocessable Entity",
+    428: "Precondition Required",
+    429: "Too Many Requests",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+    504: "Gateway Timeout",
+  };
+  return titleMap[status] ?? "Internal Server Error";
+}
+
+/**
+ * 将 Java 侧 ApiResponse.error 格式转换为 ApiErrorResponse 格式
+ */
+function convertApiErrorToProblemDetail(
+  apiResponse: { code: number; message?: string | null; traceId?: string },
+  status: number,
+  traceId: string,
+): ApiErrorResponse {
+  const message = apiResponse.message ?? "";
+  return {
+    code: apiResponse.code,
+    errorCode: String(apiResponse.code),
+    status,
+    title: exceptionTitle(status),
+    detail: message,
+    correlationId: apiResponse.traceId ?? traceId,
+    retryable: status >= 500 || status === 429,
+  };
+}
+
+/**
  * 代理拦截器
  * - 将下游 Core Service 返回的 ApiResponse 原样透传给前端
  * - 保留下游状态码与 ETag/Content-Type 等业务相关头
- * - 下游错误（非 2xx）会被 ProxyService 转为 AxiosError 抛出，
- *   交由全局 HttpExceptionFilter 统一处理
+ * - 下游错误（ApiResponse.error 格式）转换为 ApiErrorResponse 格式
+ * - 下游异常（AxiosError）交由全局 HttpExceptionFilter 统一处理
  */
 @Injectable()
 export class ProxyInterceptor<T = unknown> implements NestInterceptor<
@@ -89,7 +151,21 @@ export class ProxyInterceptor<T = unknown> implements NestInterceptor<
           }
         }
       }),
-      map((result: unknown) => (isProxyResult(result) ? result.data : result)),
+      map((result: unknown) => {
+        if (!isProxyResult(result)) {
+          return result;
+        }
+        // 错误响应：将 ApiResponse.error 转换为 ApiErrorResponse 格式
+        if (result.status >= 400 && isApiResponse(result.data)) {
+          return convertApiErrorToProblemDetail(
+            result.data,
+            result.status,
+            traceId,
+          );
+        }
+        // 成功响应：直接返回下游响应体（ApiResponse 格式）
+        return result.data;
+      }),
       catchError((error: unknown) =>
         throwError(() => this.wrapError(error, traceId)),
       ),
