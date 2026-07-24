@@ -36,6 +36,7 @@ import { RagPanel } from "@/components/review/rag-panel";
 import { FindingList } from "@/components/review/finding-list";
 import { GateSummaryCard } from "@/components/review/gate-summary";
 import { BcfIssueList } from "@/components/review/bcf-issue-list";
+import { AiReviewPanel } from "@/components/review/ai-review-panel";
 
 const { Title, Text } = Typography;
 
@@ -81,8 +82,12 @@ export default function AiReviewPage({
   const { message } = App.useApp();
 
   // 筛选状态
-  const [statusFilter, setStatusFilter] = useState<BcfIssueStatus | undefined>(undefined);
-  const [priorityFilter, setPriorityFilter] = useState<BcfIssuePriority | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<BcfIssueStatus | undefined>(
+    undefined,
+  );
+  const [priorityFilter, setPriorityFilter] = useState<
+    BcfIssuePriority | undefined
+  >(undefined);
   const [sortBy, setSortBy] = useState<string>("createdAt_desc");
 
   // 数据查询
@@ -116,12 +121,17 @@ export default function AiReviewPage({
   const updateIssueStatus = useUpdateBcfIssueStatus();
   const assignIssue = useAssignBcfIssue();
 
-  const anyLoading = checkLoading || findingsLoading || gateLoading || bcfLoading;
+  const anyLoading =
+    checkLoading || findingsLoading || gateLoading || bcfLoading;
 
-  const pendingCount = findings?.filter((f) => f.status === "pending").length ?? 0;
-  const criticalCount = findings?.filter((f) => f.severity === "critical").length ?? 0;
-  const approvedCount = findings?.filter((f) => f.status === "approved").length ?? 0;
-  const rejectedCount = findings?.filter((f) => f.status === "rejected").length ?? 0;
+  const pendingCount =
+    findings?.filter((f) => f.status === "pending").length ?? 0;
+  const criticalCount =
+    findings?.filter((f) => f.severity === "critical").length ?? 0;
+  const approvedCount =
+    findings?.filter((f) => f.status === "approved").length ?? 0;
+  const rejectedCount =
+    findings?.filter((f) => f.status === "rejected").length ?? 0;
 
   // BCF 问题筛选与排序
   const filteredIssues = useMemo(() => {
@@ -142,10 +152,15 @@ export default function AiReviewPage({
     const dir = direction === "asc" ? 1 : -1;
     result.sort((a, b) => {
       if (field === "createdAt") {
-        return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        return (
+          dir *
+          (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        );
       }
       if (field === "priority") {
-        return dir * (PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority]);
+        return (
+          dir * (PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority])
+        );
       }
       return 0;
     });
@@ -154,11 +169,16 @@ export default function AiReviewPage({
   }, [bcfIssues, statusFilter, priorityFilter, sortBy]);
 
   // BCF 问题统计
-  const openIssueCount = bcfIssues?.filter((i) => i.status === "open").length ?? 0;
-  const inProgressIssueCount = bcfIssues?.filter((i) => i.status === "in_progress").length ?? 0;
+  const openIssueCount =
+    bcfIssues?.filter((i) => i.status === "open").length ?? 0;
+  const inProgressIssueCount =
+    bcfIssues?.filter((i) => i.status === "in_progress").length ?? 0;
 
   // 处理状态变更
-  const handleStatusChange = async (issueId: string, status: BcfIssueStatus) => {
+  const handleStatusChange = async (
+    issueId: string,
+    status: BcfIssueStatus,
+  ) => {
     try {
       await updateIssueStatus.mutateAsync({ issueId, status });
       message.success("状态更新成功");
@@ -266,7 +286,9 @@ export default function AiReviewPage({
               </div>
               <div>
                 <div style={{ fontSize: 12, color: "#666" }}>待审查项</div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#faad14" }}>
+                <div
+                  style={{ fontSize: 24, fontWeight: 700, color: "#faad14" }}
+                >
                   {pendingCount}
                 </div>
                 {criticalCount > 0 && (
@@ -301,7 +323,9 @@ export default function AiReviewPage({
               </div>
               <div>
                 <div style={{ fontSize: 12, color: "#666" }}>已批准</div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#52c41a" }}>
+                <div
+                  style={{ fontSize: 24, fontWeight: 700, color: "#52c41a" }}
+                >
                   {approvedCount}
                 </div>
               </div>
@@ -331,7 +355,9 @@ export default function AiReviewPage({
               </div>
               <div>
                 <div style={{ fontSize: 12, color: "#666" }}>已拒绝</div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#ff4d4f" }}>
+                <div
+                  style={{ fontSize: 24, fontWeight: 700, color: "#ff4d4f" }}
+                >
                   {rejectedCount}
                 </div>
               </div>
@@ -361,7 +387,9 @@ export default function AiReviewPage({
               </div>
               <div>
                 <div style={{ fontSize: 12, color: "#666" }}>协调问题</div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: "#722ed1" }}>
+                <div
+                  style={{ fontSize: 24, fontWeight: 700, color: "#722ed1" }}
+                >
                   {openIssueCount + inProgressIssueCount}
                 </div>
                 <div style={{ fontSize: 12, color: "#722ed1" }}>
@@ -390,7 +418,10 @@ export default function AiReviewPage({
             }
             size="small"
           >
-            <CheckResultList data={checkRun?.results ?? []} loading={checkLoading} />
+            <CheckResultList
+              data={checkRun?.results ?? []}
+              loading={checkLoading}
+            />
           </Card>
         </Col>
         <Col span={8}>
@@ -471,6 +502,11 @@ export default function AiReviewPage({
           onAssign={handleAssign}
         />
       </Card>
+
+      <Divider />
+
+      {/* AI 生成记录人工复核（AI 安全红线闭环，security.md §12） */}
+      <AiReviewPanel projectId={projectId} />
     </Space>
   );
 }

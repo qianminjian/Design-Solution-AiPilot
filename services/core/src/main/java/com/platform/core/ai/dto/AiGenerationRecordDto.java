@@ -24,6 +24,12 @@ public record AiGenerationRecordDto(
     Boolean requiresHumanReview,
     Integer latencyMs,
     String traceId,
+    /** 人工复核状态：PENDING / APPROVED / REJECTED / RETURNED */
+    String reviewStatus,
+    UUID reviewerId,
+    String reviewComment,
+    Instant reviewedAt,
+    Map<String, Object> reviewDecision,
     UUID createdBy,
     Instant createdAt,
     Instant updatedAt,

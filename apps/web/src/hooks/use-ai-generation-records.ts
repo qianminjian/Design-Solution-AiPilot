@@ -1,12 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   AiGenerationRecordDto,
   CreateAiGenerationRecordRequest,
+  SubmitReviewRequest,
 } from "@design-platform/shared";
 import { AiGenerationRecordApiPaths } from "@design-platform/shared";
-import { apiGet, apiPost } from "@/lib/api-client";
+import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
 
 /** AI 生成记录查询键前缀 */
 const AI_GEN_RECORD_QUERY_KEY = ["ai-generation-records"] as const;
@@ -65,6 +66,70 @@ export function useAiGenerationRecordsByProject(
           projectId as string,
         )}`,
       ),
+  });
+}
+
+/**
+ * 查询项目内待人工复核的 AI 生成记录
+ * 对应契约：GET /api/v1/ai-generation-records/reviews/pending?projectId=xxx
+ *
+ * AI 安全红线（security.md §12）：
+ * requiresHumanReview=true 的记录必须经人工复核才能采纳。
+ */
+export function usePendingAiReviews(projectId: string | null | undefined) {
+  return useQuery<AiGenerationRecordDto[]>({
+    queryKey: [
+      ...AI_GEN_RECORD_QUERY_KEY,
+      "pending-reviews",
+      projectId,
+    ] as const,
+    enabled: typeof projectId === "string" && projectId.length > 0,
+    queryFn: () =>
+      apiGet<AiGenerationRecordDto[]>(
+        AiGenerationRecordApiPaths.pendingReviews(projectId as string),
+      ),
+  });
+}
+
+/**
+ * 提交人工复核决策
+ * 对应契约：PATCH /api/v1/ai-generation-records/{id}/review
+ *
+ * 决策类型：
+ * - APPROVED：复核通过
+ * - REJECTED：复核驳回
+ * - RETURNED：退回重生成
+ *
+ * 高风险（high/critical）记录须在 decisionContext 提供 secondReviewer 与 signer。
+ */
+export function useSubmitAiReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    AiGenerationRecordDto,
+    Error,
+    {
+      id: string;
+      payload: SubmitReviewRequest;
+    }
+  >({
+    mutationFn: ({ id, payload }) =>
+      apiPatch<AiGenerationRecordDto>(
+        AiGenerationRecordApiPaths.submitReview(id),
+        payload,
+      ),
+    onSuccess: () => {
+      // 复核完成后刷新待复核列表与详情
+      void queryClient.invalidateQueries({
+        queryKey: [...AI_GEN_RECORD_QUERY_KEY, "pending-reviews"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [...AI_GEN_RECORD_QUERY_KEY, "detail"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [...AI_GEN_RECORD_QUERY_KEY, "by-project"],
+      });
+    },
   });
 }
 

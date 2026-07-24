@@ -39,6 +39,11 @@ public final class ErrorCode {
     public static final int NOT_FOUND = 404;
 
     // ── 业务规则失败段（422）──
+    /**
+     * 通用业务规则违反
+     * 用于 AI 安全红线等场景下，操作前置条件不满足时的拒绝（如无需复核、已复核、缺少签章）
+     */
+    public static final int BUSINESS_RULE_VIOLATION = 4220;
     /** 主体已存在（邮箱重复等） */
     public static final int PRINCIPAL_ALREADY_EXISTS = 4221;
     /** 租户不存在 */

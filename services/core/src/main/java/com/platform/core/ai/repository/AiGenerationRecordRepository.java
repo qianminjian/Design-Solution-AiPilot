@@ -23,6 +23,12 @@ public interface AiGenerationRecordRepository extends JpaRepository<AiGeneration
     /** 按项目查询 AI 生成记录（按时间倒序） */
     List<AiGenerationRecord> findByTenantIdAndProjectIdOrderByCreatedAtDesc(UUID tenantId, UUID projectId);
 
+    /**
+     * 按项目与复核状态查询 AI 生成记录
+     * 用于人工复核工作台查询待复核（PENDING）记录
+     */
+    List<AiGenerationRecord> findByTenantIdAndProjectIdAndReviewStatus(UUID tenantId, UUID projectId, String reviewStatus);
+
     /** 按 traceId 查询（全链路追溯） */
     Optional<AiGenerationRecord> findByTenantIdAndTraceId(UUID tenantId, String traceId);
 }

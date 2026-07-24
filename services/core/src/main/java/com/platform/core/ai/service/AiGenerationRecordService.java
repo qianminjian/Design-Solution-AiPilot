@@ -5,18 +5,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.platform.core.ai.domain.AiGenerationRecord;
 import com.platform.core.ai.dto.AiGenerationRecordDto;
 import com.platform.core.ai.dto.CreateAiGenerationRecordRequest;
+import com.platform.core.ai.dto.SubmitReviewRequest;
 import com.platform.core.ai.repository.AiGenerationRecordRepository;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * AI 生成记录服务 — 审计追溯
+ * AI 生成记录服务 — 审计追溯与人工复核闭环
+ *
+ * 复核状态机：PENDING → APPROVED / REJECTED / RETURNED
+ * AI 安全红线（security.md §12）：
+ * - requiresHumanReview=true 的记录必须经人工复核才能采纳
+ * - 风险等级 high/critical 须双人复核 + 注册师签章
  */
 @Service
 public class AiGenerationRecordService {
@@ -81,6 +88,14 @@ public class AiGenerationRecordService {
                 .toList();
     }
 
+    /** 查询项目内待人工复核的 AI 生成记录 */
+    @Transactional(readOnly = true)
+    public List<AiGenerationRecordDto> listPendingReviews(UUID tenantId, UUID projectId) {
+        return repository.findByTenantIdAndProjectIdAndReviewStatus(tenantId, projectId, "PENDING").stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     /** 关联设计选项（接受候选为设计选项时调用） */
     @Transactional
     public AiGenerationRecordDto linkDesignOption(UUID tenantId, UUID recordId, UUID designOptionId) {
@@ -89,6 +104,55 @@ public class AiGenerationRecordService {
         record.setDesignOptionId(designOptionId);
         AiGenerationRecord saved = repository.save(record);
         return toDto(saved);
+    }
+
+    /**
+     * 提交人工复核决策（AI 安全红线闭环）
+     *
+     * 仅当 requiresHumanReview=true 且 reviewStatus=PENDING 时允许提交。
+     * 高风险（riskLevel=high/critical）须在 decisionContext 提供 secondReviewer 与 signer 信息。
+     */
+    @Transactional
+    public AiGenerationRecordDto submitReview(UUID tenantId, UUID recordId, SubmitReviewRequest request, UUID reviewerId) {
+        AiGenerationRecord record = repository.findByIdAndTenantId(recordId, tenantId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "AI 生成记录不存在"));
+
+        if (Boolean.FALSE.equals(record.getRequiresHumanReview())) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATION, "该记录无需人工复核");
+        }
+        if (!"PENDING".equals(record.getReviewStatus())) {
+            throw new BusinessException(ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "记录已复核，当前状态: " + record.getReviewStatus());
+        }
+
+        // 高风险记录双人复核校验
+        String riskLevel = record.getRiskLevel();
+        if ("high".equalsIgnoreCase(riskLevel) || "critical".equalsIgnoreCase(riskLevel)) {
+            validateHighRiskReview(request, riskLevel);
+        }
+
+        record.setReviewStatus(request.decision());
+        record.setReviewerId(reviewerId);
+        record.setReviewComment(request.comment());
+        record.setReviewedAt(Instant.now());
+        record.setReviewDecision(toJson(request.decisionContext()));
+        record.setUpdatedBy(reviewerId);
+
+        AiGenerationRecord saved = repository.save(record);
+        return toDto(saved);
+    }
+
+    /** 高风险记录双人复核与注册师签章校验 */
+    private void validateHighRiskReview(SubmitReviewRequest request, String riskLevel) {
+        Map<String, Object> ctx = request.decisionContext();
+        if (ctx == null
+                || !ctx.containsKey("secondReviewer")
+                || !ctx.containsKey("signer")) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "风险等级 " + riskLevel + " 须双人复核 + 注册师签章（decisionContext 须含 secondReviewer 与 signer）"
+            );
+        }
     }
 
     private AiGenerationRecordDto toDto(AiGenerationRecord e) {
@@ -103,6 +167,8 @@ public class AiGenerationRecordService {
                 e.getRiskLevel(),
                 fromJson(e.getGuardrailResult()),
                 e.getRequiresHumanReview(), e.getLatencyMs(), e.getTraceId(),
+                e.getReviewStatus(), e.getReviewerId(), e.getReviewComment(), e.getReviewedAt(),
+                fromJson(e.getReviewDecision()),
                 e.getCreatedBy(), e.getCreatedAt(), e.getUpdatedAt(), e.getRowVersion()
         );
     }

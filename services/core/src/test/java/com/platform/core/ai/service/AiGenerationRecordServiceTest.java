@@ -290,6 +290,142 @@ class AiGenerationRecordServiceTest {
         assertThat(dto.variables().get("_raw")).isEqualTo("not-a-json");
     }
 
+    // ── 人工复核闭环测试（security.md §12 AI 安全红线） ──
+
+    @Test
+    @DisplayName("listPendingReviews 应该返回项目内 PENDING 状态的记录")
+    void listPendingReviewsShouldReturnOnlyPendingRecords() {
+        // Arrange
+        AiGenerationRecord pending1 = buildPersistedRecord();
+        pending1.setReviewStatus("PENDING");
+        AiGenerationRecord pending2 = buildPersistedRecord();
+        pending2.setId(UUID.randomUUID());
+        pending2.setReviewStatus("PENDING");
+        when(repository.findByTenantIdAndProjectIdAndReviewStatus(eq(tenantId), eq(projectId), eq("PENDING")))
+                .thenReturn(List.of(pending1, pending2));
+
+        // Act
+        List<AiGenerationRecordDto> result = service.listPendingReviews(tenantId, projectId);
+
+        // Assert
+        assertThat(result).hasSize(2);
+        assertThat(result).allSatisfy(dto -> assertThat(dto.reviewStatus()).isEqualTo("PENDING"));
+        verify(repository).findByTenantIdAndProjectIdAndReviewStatus(eq(tenantId), eq(projectId), eq("PENDING"));
+    }
+
+    @Test
+    @DisplayName("submitReview 应该将 PENDING 状态更新为 APPROVED 并记录复核信息")
+    void submitReviewShouldUpdateStatusToApproved() {
+        // Arrange
+        AiGenerationRecord record = buildPersistedRecord();
+        record.setReviewStatus("PENDING");
+        record.setRiskLevel("medium");
+        when(repository.findByIdAndTenantId(eq(recordId), eq(tenantId)))
+                .thenReturn(Optional.of(record));
+        when(repository.save(any(AiGenerationRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        com.platform.core.ai.dto.SubmitReviewRequest request = new com.platform.core.ai.dto.SubmitReviewRequest(
+                "APPROVED", "符合规范要求", null
+        );
+
+        // Act
+        AiGenerationRecordDto dto = service.submitReview(tenantId, recordId, request, userId);
+
+        // Assert：状态变更、复核信息持久化
+        assertThat(dto.reviewStatus()).isEqualTo("APPROVED");
+        assertThat(dto.reviewerId()).isEqualTo(userId);
+        assertThat(dto.reviewComment()).isEqualTo("符合规范要求");
+        assertThat(dto.reviewedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("submitReview 应该拒绝 requiresHumanReview=false 的记录")
+    void submitReviewShouldRejectRecordNotRequiringReview() {
+        // Arrange
+        AiGenerationRecord record = buildPersistedRecord();
+        record.setRequiresHumanReview(Boolean.FALSE);
+        record.setReviewStatus("PENDING");
+        when(repository.findByIdAndTenantId(eq(recordId), eq(tenantId)))
+                .thenReturn(Optional.of(record));
+
+        com.platform.core.ai.dto.SubmitReviewRequest request = new com.platform.core.ai.dto.SubmitReviewRequest(
+                "APPROVED", null, null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.submitReview(tenantId, recordId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("无需人工复核");
+    }
+
+    @Test
+    @DisplayName("submitReview 应该拒绝已复核记录的重复提交")
+    void submitReviewShouldRejectAlreadyReviewedRecord() {
+        // Arrange
+        AiGenerationRecord record = buildPersistedRecord();
+        record.setReviewStatus("APPROVED"); // 已复核
+        when(repository.findByIdAndTenantId(eq(recordId), eq(tenantId)))
+                .thenReturn(Optional.of(record));
+
+        com.platform.core.ai.dto.SubmitReviewRequest request = new com.platform.core.ai.dto.SubmitReviewRequest(
+                "REJECTED", null, null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.submitReview(tenantId, recordId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("记录已复核");
+    }
+
+    @Test
+    @DisplayName("submitReview 应该对高风险记录强制双人复核与注册师签章校验")
+    void submitReviewShouldEnforceDualReviewForHighRisk() {
+        // Arrange：高风险记录 + 未提供 secondReviewer 与 signer
+        AiGenerationRecord record = buildPersistedRecord();
+        record.setReviewStatus("PENDING");
+        record.setRiskLevel("high");
+        when(repository.findByIdAndTenantId(eq(recordId), eq(tenantId)))
+                .thenReturn(Optional.of(record));
+
+        com.platform.core.ai.dto.SubmitReviewRequest request = new com.platform.core.ai.dto.SubmitReviewRequest(
+                "APPROVED", null, Map.of() // 空 decisionContext
+        );
+
+        // Act + Assert：高风险须双人复核 + 签章
+        assertThatThrownBy(() -> service.submitReview(tenantId, recordId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("双人复核")
+                .hasMessageContaining("签章");
+    }
+
+    @Test
+    @DisplayName("submitReview 应该接受高风险记录并提供完整签章信息")
+    void submitReviewShouldAcceptHighRiskWithFullSigner() {
+        // Arrange：高风险 + 提供完整 secondReviewer 与 signer
+        AiGenerationRecord record = buildPersistedRecord();
+        record.setReviewStatus("PENDING");
+        record.setRiskLevel("critical");
+        when(repository.findByIdAndTenantId(eq(recordId), eq(tenantId)))
+                .thenReturn(Optional.of(record));
+        when(repository.save(any(AiGenerationRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Map<String, Object> decisionContext = Map.of(
+                "secondReviewer", "user-002",
+                "signer", Map.of("name", "张工", "certificateNo", "REG-001")
+        );
+        com.platform.core.ai.dto.SubmitReviewRequest request = new com.platform.core.ai.dto.SubmitReviewRequest(
+                "APPROVED", "极高风险已双人复核", decisionContext
+        );
+
+        // Act
+        AiGenerationRecordDto dto = service.submitReview(tenantId, recordId, request, userId);
+
+        // Assert：决策上下文已序列化存储
+        assertThat(dto.reviewStatus()).isEqualTo("APPROVED");
+        assertThat(dto.reviewDecision()).isNotNull();
+        assertThat(dto.reviewDecision()).containsKey("secondReviewer");
+    }
+
     // ── 辅助方法 ──
 
     /** 构造已持久化的记录（带 id、时间戳） */

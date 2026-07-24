@@ -189,4 +189,118 @@ describe("AiGenerationRecordProxyController", () => {
       }),
     );
   });
+
+  it("GET /reviews/pending 应该透传路径与 projectId query 到 Core Service", async () => {
+    // Arrange
+    const proxyService = createProxyServiceMock();
+    const controller = new AiGenerationRecordProxyController(proxyService);
+    const request = createRequest({
+      method: "GET",
+      originalUrl:
+        "/api/v1/ai-generation-records/reviews/pending?projectId=proj-001",
+      query: { projectId: "proj-001" },
+    });
+    vi.mocked(proxyService.forward).mockResolvedValue(
+      createProxyResult({ items: [] }),
+    );
+
+    // Act
+    await controller.proxy(request);
+
+    // Assert：路径与 query 完整透传，等待 Java Core Controller 路由匹配
+    expect(proxyService.forward).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "GET",
+        path: "/api/v1/ai-generation-records/reviews/pending?projectId=proj-001",
+        query: { projectId: "proj-001" },
+        body: undefined,
+      }),
+    );
+  });
+
+  it("PATCH /{id}/review 应该转发 body 与路径到 Core Service", async () => {
+    // Arrange
+    const proxyService = createProxyServiceMock();
+    const controller = new AiGenerationRecordProxyController(proxyService);
+    const reviewBody = {
+      decision: "APPROVED",
+      comment: "符合规范要求",
+      decisionContext: {
+        secondReviewer: "user-002",
+        signer: { name: "张工", certificateNo: "REG-001" },
+      },
+    };
+    const headerMock = vi.fn((name: string) => {
+      const map: Record<string, string> = {
+        [HttpHeader.AUTHORIZATION]: "Bearer token-xyz",
+        [HttpHeader.X_TENANT_ID]: "tenant-001",
+        "x-user-id": "reviewer-001",
+        "content-type": "application/json",
+      };
+      return map[name];
+    });
+    const request = createRequest({
+      method: "PATCH",
+      originalUrl: "/api/v1/ai-generation-records/rec-001/review",
+      body: reviewBody,
+      header: headerMock,
+    });
+    vi.mocked(proxyService.forward).mockResolvedValue(
+      createProxyResult(
+        {
+          id: "rec-001",
+          reviewStatus: "APPROVED",
+          reviewerId: "reviewer-001",
+        },
+        200,
+      ),
+    );
+
+    // Act
+    const result = await controller.proxy(request);
+
+    // Assert：复核决策 body 透传
+    expect(proxyService.forward).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "PATCH",
+        body: reviewBody,
+        path: "/api/v1/ai-generation-records/rec-001/review",
+      }),
+    );
+    // Assert：reviewer-001 通过 x-user-id 透传到 Java Core
+    const callArgs = vi.mocked(proxyService.forward).mock.calls[0][0];
+    expect(callArgs.headers).toMatchObject({
+      [HttpHeader.AUTHORIZATION]: "Bearer token-xyz",
+      [HttpHeader.X_TENANT_ID]: "tenant-001",
+      "x-user-id": "reviewer-001",
+      "content-type": "application/json",
+    });
+    // Assert：响应状态码
+    expect(result.status).toBe(200);
+  });
+
+  it("GET /reviews/pending 不携带 body 且不与 /{id} 冲突", async () => {
+    // Arrange：验证 reviews 子路径不会被解析为 UUID {id}
+    const proxyService = createProxyServiceMock();
+    const controller = new AiGenerationRecordProxyController(proxyService);
+    const request = createRequest({
+      method: "GET",
+      originalUrl:
+        "/api/v1/ai-generation-records/reviews/pending?projectId=proj-001",
+      query: { projectId: "proj-001" },
+    });
+    vi.mocked(proxyService.forward).mockResolvedValue(
+      createProxyResult({ items: [] }),
+    );
+
+    // Act
+    await controller.proxy(request);
+
+    // Assert：BFF 通配透传，路径完整保留，路由分发由 Java Core Controller 决定
+    const callArgs = vi.mocked(proxyService.forward).mock.calls[0][0];
+    expect(callArgs.path).toBe(
+      "/api/v1/ai-generation-records/reviews/pending?projectId=proj-001",
+    );
+    expect(callArgs.body).toBeUndefined();
+  });
 });

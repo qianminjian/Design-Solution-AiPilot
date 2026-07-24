@@ -62,6 +62,26 @@ public class AiGenerationRecord extends TenantBaseEntity {
     @Column(length = 64)
     private String traceId;
 
+    /** 人工复核状态：PENDING / APPROVED / REJECTED / RETURNED */
+    @Column(nullable = false, length = 16)
+    private String reviewStatus = "PENDING";
+
+    /** 复核人 ID */
+    @Column
+    private UUID reviewerId;
+
+    /** 复核意见 */
+    @Column(columnDefinition = "TEXT")
+    private String reviewComment;
+
+    /** 复核时间 */
+    @Column
+    private java.time.Instant reviewedAt;
+
+    /** 复核决策上下文（双人复核、签章信息等） */
+    @Column(columnDefinition = "jsonb")
+    private String reviewDecision;
+
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public UUID getProjectId() { return projectId; }
@@ -92,4 +112,14 @@ public class AiGenerationRecord extends TenantBaseEntity {
     public void setLatencyMs(Integer latencyMs) { this.latencyMs = latencyMs; }
     public String getTraceId() { return traceId; }
     public void setTraceId(String traceId) { this.traceId = traceId; }
+    public String getReviewStatus() { return reviewStatus; }
+    public void setReviewStatus(String reviewStatus) { this.reviewStatus = reviewStatus; }
+    public UUID getReviewerId() { return reviewerId; }
+    public void setReviewerId(UUID reviewerId) { this.reviewerId = reviewerId; }
+    public String getReviewComment() { return reviewComment; }
+    public void setReviewComment(String reviewComment) { this.reviewComment = reviewComment; }
+    public java.time.Instant getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(java.time.Instant reviewedAt) { this.reviewedAt = reviewedAt; }
+    public String getReviewDecision() { return reviewDecision; }
+    public void setReviewDecision(String reviewDecision) { this.reviewDecision = reviewDecision; }
 }
