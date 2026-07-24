@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { of, throwError } from "rxjs";
-import type { AxiosError, AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { ProxyService } from "../../../src/proxy/proxy.service";
 import {
   createHttpServiceMock,

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 
 export const coreServiceHandlers = [
-  http.post("/api/v1/auth/login", ({ request }) => {
+  http.post("/api/v1/auth/login", () => {
     return HttpResponse.json(
       {
         accessToken: "test-access-token",
@@ -12,7 +12,7 @@ export const coreServiceHandlers = [
     );
   }),
 
-  http.post("/api/v1/auth/register", ({ request }) => {
+  http.post("/api/v1/auth/register", () => {
     return HttpResponse.json(
       {
         id: "u2",
@@ -23,7 +23,7 @@ export const coreServiceHandlers = [
     );
   }),
 
-  http.post("/api/v1/auth/refresh", ({ request }) => {
+  http.post("/api/v1/auth/refresh", () => {
     return HttpResponse.json(
       {
         accessToken: "new-access-token",
@@ -33,7 +33,7 @@ export const coreServiceHandlers = [
     );
   }),
 
-  http.post("/api/v1/auth/logout", ({ request }) => {
+  http.post("/api/v1/auth/logout", () => {
     return HttpResponse.json({ success: true }, { status: 200 });
   }),
 
@@ -45,12 +45,20 @@ export const coreServiceHandlers = [
         { status: 401 },
       );
     }
-    return HttpResponse.json({ id: "u1", username: "testuser" }, { status: 200 });
+    return HttpResponse.json(
+      { id: "u1", username: "testuser" },
+      { status: 200 },
+    );
   }),
 
-  http.get("/api/v1/projects", ({ request }) => {
+  http.get("/api/v1/projects", () => {
     return HttpResponse.json(
-      { items: [{ id: "p1", name: "项目A" }, { id: "p2", name: "项目B" }] },
+      {
+        items: [
+          { id: "p1", name: "项目A" },
+          { id: "p2", name: "项目B" },
+        ],
+      },
       { status: 200 },
     );
   }),
@@ -68,14 +76,14 @@ export const coreServiceHandlers = [
     );
   }),
 
-  http.post("/api/v1/projects", ({ request }) => {
+  http.post("/api/v1/projects", () => {
     return HttpResponse.json(
       { id: "p3", name: "新项目", status: "DRAFT" },
       { status: 201 },
     );
   }),
 
-  http.get("/api/v1/principals", ({ request }) => {
+  http.get("/api/v1/principals", () => {
     return HttpResponse.json(
       { items: [{ id: "pr1", name: "主创建筑师" }] },
       { status: 200 },

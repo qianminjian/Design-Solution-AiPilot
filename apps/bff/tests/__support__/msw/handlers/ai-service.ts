@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 
 export const aiServiceHandlers = [
-  http.post("/api/v1/capabilities/text-generation", ({ request }) => {
+  http.post("/api/v1/capabilities/text-generation", () => {
     return HttpResponse.json(
       {
         id: "gen-1",
@@ -12,7 +12,7 @@ export const aiServiceHandlers = [
     );
   }),
 
-  http.post("/api/v1/capabilities/vision", ({ request }) => {
+  http.post("/api/v1/capabilities/vision", () => {
     return HttpResponse.json(
       {
         id: "vision-1",
@@ -23,7 +23,7 @@ export const aiServiceHandlers = [
     );
   }),
 
-  http.post("/api/v1/capabilities/embeddings", ({ request }) => {
+  http.post("/api/v1/capabilities/embeddings", () => {
     return HttpResponse.json(
       {
         id: "embed-1",
@@ -34,7 +34,7 @@ export const aiServiceHandlers = [
     );
   }),
 
-  http.get("/api/v1/prompts", ({ request }) => {
+  http.get("/api/v1/prompts", () => {
     return HttpResponse.json(
       {
         items: [

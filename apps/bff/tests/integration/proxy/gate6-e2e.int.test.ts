@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import { Test, type TestingModule } from "@nestjs/testing";
-import { INestApplication, HttpStatus } from "@nestjs/common";
+import { INestApplication } from "@nestjs/common";
 import { AppModule } from "../../../src/app.module";
 import { ProxyService } from "../../../src/proxy/proxy.service";
 import {
