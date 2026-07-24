@@ -65,7 +65,7 @@ async function setupLoggedInState(page: Page): Promise<void> {
 }
 
 test.describe("项目列表页", () => {
-  test("应该在加载后显示 Table、搜索框与状态筛选器", async ({ page }) => {
+  test("应该在加载后显示搜索框、状态筛选器与视图切换按钮", async ({ page }) => {
     // Arrange（准备）
     await setupLoggedInState(page);
     await page.route(isProjectsListUrl, mockProjectsListSuccess);
@@ -83,11 +83,12 @@ test.describe("项目列表页", () => {
       page.getByRole("combobox", { name: "状态筛选" }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "新建项目" })).toBeVisible();
-    // Table 容器存在（Ant Design Table 渲染为 table 元素）
-    await expect(page.locator("table")).toBeVisible();
+    // 视图切换按钮可见（默认为卡片视图）
+    await expect(page.getByRole("button", { name: "列表视图" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "卡片视图" })).toBeVisible();
   });
 
-  test("应该在表格中渲染 mock 返回的项目数据", async ({ page }) => {
+  test("应该在卡片视图中渲染 mock 返回的项目数据", async ({ page }) => {
     // Arrange（准备）
     await setupLoggedInState(page);
     await page.route(isProjectsListUrl, mockProjectsListSuccess);
@@ -95,18 +96,31 @@ test.describe("项目列表页", () => {
     // Act（执行）
     await page.goto("/projects");
 
-    // Assert（断言）：表格包含 mock 数据中的项目名称与编码
+    // Assert（断言）：卡片视图（默认）包含 mock 数据中的项目名称与编码
     // fixture 数据确定性，使用非空断言（noUncheckedIndexedAccess 兼容）
     const firstProject = MOCK_PROJECTS[0]!;
     const secondProject = MOCK_PROJECTS[1]!;
+    await expect(page.getByText(firstProject.name)).toBeVisible();
+    await expect(page.getByText(secondProject.name)).toBeVisible();
+    // 项目编码以 Text code 形式渲染
+    await expect(page.getByText(firstProject.code)).toBeVisible();
+  });
+
+  test("应该在切换到列表视图后用 Table 渲染项目数据", async ({ page }) => {
+    // Arrange（准备）
+    await setupLoggedInState(page);
+    await page.route(isProjectsListUrl, mockProjectsListSuccess);
+
+    // Act（执行）：访问页面并切换到列表视图
+    await page.goto("/projects");
+    await page.getByRole("button", { name: "列表视图" }).click();
+
+    // Assert（断言）：Table 容器可见且包含 mock 数据
+    await expect(page.locator("table")).toBeVisible();
+    const firstProject = MOCK_PROJECTS[0]!;
     await expect(
       page.getByRole("row", { name: new RegExp(firstProject.name) }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("row", { name: new RegExp(secondProject.name) }),
-    ).toBeVisible();
-    // 项目编码以 Text code 形式渲染
-    await expect(page.getByText(firstProject.code)).toBeVisible();
   });
 
   test("应该在搜索框输入关键字后触发带 keyword 的查询", async ({ page }) => {

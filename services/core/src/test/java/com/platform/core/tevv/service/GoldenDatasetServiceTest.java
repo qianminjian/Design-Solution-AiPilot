@@ -125,5 +125,82 @@ class GoldenDatasetServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode()).isEqualTo(ErrorCode.INVALID_DATASET_STATUS));
         }
+
+        @Test
+        @DisplayName("应该在跨租户访问时抛 DATASET_NOT_FOUND 异常")
+        void shouldRejectCrossTenantFreeze() {
+            GoldenDataset ds = new GoldenDataset();
+            ds.setId(UUID.randomUUID());
+            ds.setTenantId(UUID.randomUUID()); // 不同租户
+            ds.setStatus(DatasetStatus.DRAFT);
+
+            when(datasetRepository.findById(ds.getId())).thenReturn(Optional.of(ds));
+
+            assertThatThrownBy(() -> service.freeze(tenantId, ds.getId(), userId))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                            .isEqualTo(ErrorCode.DATASET_NOT_FOUND));
+        }
+
+        @Test
+        @DisplayName("冻结时应记录 frozenBy 与 frozenAt")
+        void shouldRecordFrozenByAndFrozenAt() {
+            GoldenDataset ds = new GoldenDataset();
+            ds.setId(UUID.randomUUID());
+            ds.setTenantId(tenantId);
+            ds.setStatus(DatasetStatus.DRAFT);
+
+            when(datasetRepository.findById(ds.getId())).thenReturn(Optional.of(ds));
+            when(datasetRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            service.freeze(tenantId, ds.getId(), userId);
+
+            verify(datasetRepository).save(argThat(d ->
+                    d.getStatus() == DatasetStatus.FROZEN
+                            && userId.equals(d.getFrozenBy())
+                            && d.getFrozenAt() != null
+            ));
+        }
+    }
+
+    // ── 查询数据集 ──
+
+    @Nested
+    @DisplayName("查询数据集")
+    class ListDataset {
+
+        @Test
+        @DisplayName("应该成功查询租户下 FROZEN 状态数据集列表")
+        void shouldListFrozenDatasetsByTenant() {
+            GoldenDataset ds1 = new GoldenDataset();
+            ds1.setId(UUID.randomUUID());
+            ds1.setName("办公楼金样-1");
+            ds1.setStatus(DatasetStatus.FROZEN);
+
+            GoldenDataset ds2 = new GoldenDataset();
+            ds2.setId(UUID.randomUUID());
+            ds2.setName("办公楼金样-2");
+            ds2.setStatus(DatasetStatus.FROZEN);
+
+            when(datasetRepository.findByTenantIdAndStatus(tenantId, DatasetStatus.FROZEN))
+                    .thenReturn(List.of(ds1, ds2));
+
+            List<GoldenDatasetDto> dtos = service.listByTenant(tenantId);
+
+            assertThat(dtos).hasSize(2);
+            assertThat(dtos.get(0).name()).isEqualTo("办公楼金样-1");
+            assertThat(dtos.get(1).name()).isEqualTo("办公楼金样-2");
+        }
+
+        @Test
+        @DisplayName("租户下无 FROZEN 数据集时应返回空列表")
+        void shouldReturnEmptyListWhenNoFrozenDataset() {
+            when(datasetRepository.findByTenantIdAndStatus(tenantId, DatasetStatus.FROZEN))
+                    .thenReturn(List.of());
+
+            List<GoldenDatasetDto> dtos = service.listByTenant(tenantId);
+
+            assertThat(dtos).isEmpty();
+        }
     }
 }

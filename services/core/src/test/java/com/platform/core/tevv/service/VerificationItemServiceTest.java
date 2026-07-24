@@ -11,6 +11,7 @@ import com.platform.core.tevv.repository.VerificationItemRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -119,5 +120,144 @@ class VerificationItemServiceTest {
         verify(itemRepository).save(argThat(i ->
                 i.getStatus() == VerificationStatus.WAIVED && "低风险项，暂不验证".equals(i.getWaiverReason())
         ));
+    }
+
+    @Test
+    @DisplayName("应该在验证项不存在时抛业务异常")
+    void shouldThrowWhenItemNotFound() {
+        UUID itemId = UUID.randomUUID();
+        when(itemRepository.findById(itemId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.updateStatus(tenantId, itemId, VerificationStatus.PASSED, userId, null))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.VERIFICATION_ITEM_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("应该在跨租户访问验证项时抛业务异常")
+    void shouldRejectCrossTenantItemAccess() {
+        VerificationItem item = new VerificationItem();
+        item.setId(UUID.randomUUID());
+        item.setTenantId(UUID.randomUUID()); // 不同租户
+        item.setStatus(VerificationStatus.PENDING);
+
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+
+        UUID otherTenantId = tenantId;
+        assertThatThrownBy(() -> service.updateStatus(otherTenantId, item.getId(), VerificationStatus.PASSED, userId, null))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.VERIFICATION_ITEM_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("应该在 Gate 编号为 0 时抛异常")
+    void shouldRejectZeroGateNumber() {
+        CreateVerificationItemRequest request = new CreateVerificationItemRequest(
+                datasetId, "G0-01", "零门号", null, (short) 0, VerificationType.MANUAL, null
+        );
+
+        assertThatThrownBy(() -> service.create(tenantId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_GATE_NUMBER));
+    }
+
+    @Test
+    @DisplayName("应该在 Gate 编号为 null 时抛异常")
+    void shouldRejectNullGateNumber() {
+        CreateVerificationItemRequest request = new CreateVerificationItemRequest(
+                datasetId, "G0-01", "空门号", null, null, VerificationType.MANUAL, null
+        );
+
+        assertThatThrownBy(() -> service.create(tenantId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_GATE_NUMBER));
+    }
+
+    @Test
+    @DisplayName("应该成功按数据集查询验证项列表")
+    void shouldListByDataset() {
+        VerificationItem item1 = new VerificationItem();
+        item1.setId(UUID.randomUUID());
+        item1.setDatasetId(datasetId);
+        item1.setItemCode("G1-01");
+
+        VerificationItem item2 = new VerificationItem();
+        item2.setId(UUID.randomUUID());
+        item2.setDatasetId(datasetId);
+        item2.setItemCode("G1-02");
+
+        when(itemRepository.findByTenantIdAndDatasetId(tenantId, datasetId)).thenReturn(List.of(item1, item2));
+
+        List<VerificationItemDto> dtos = service.listByDataset(tenantId, datasetId);
+
+        assertThat(dtos).hasSize(2);
+        assertThat(dtos.get(0).itemCode()).isEqualTo("G1-01");
+        assertThat(dtos.get(1).itemCode()).isEqualTo("G1-02");
+    }
+
+    @Test
+    @DisplayName("应该正确统计数据集内指定状态的验证项数量")
+    void shouldCountByStatus() {
+        when(itemRepository.countByTenantIdAndDatasetIdAndStatus(tenantId, datasetId, VerificationStatus.PASSED))
+                .thenReturn(5L);
+
+        long count = service.countByStatus(tenantId, datasetId, VerificationStatus.PASSED);
+
+        assertThat(count).isEqualTo(5L);
+        verify(itemRepository).countByTenantIdAndDatasetIdAndStatus(tenantId, datasetId, VerificationStatus.PASSED);
+    }
+
+    @Test
+    @DisplayName("应该在 riskLevel 为 null 时默认为 MEDIUM")
+    void shouldDefaultRiskLevelToMediumWhenNull() {
+        when(itemRepository.save(any())).thenAnswer(inv -> {
+            VerificationItem item = inv.getArgument(0);
+            item.setId(UUID.randomUUID());
+            return item;
+        });
+
+        CreateVerificationItemRequest request = new CreateVerificationItemRequest(
+                datasetId, "G1-01", "默认风险等级", null, (short) 1, VerificationType.AUTOMATED, null
+        );
+
+        VerificationItemDto dto = service.create(tenantId, request, userId);
+
+        assertThat(dto.riskLevel()).isEqualTo("MEDIUM");
+    }
+
+    @Test
+    @DisplayName("应该成功更新为 FAILED 状态")
+    void shouldUpdateStatusToFailed() {
+        VerificationItem item = new VerificationItem();
+        item.setId(UUID.randomUUID());
+        item.setTenantId(tenantId);
+        item.setStatus(VerificationStatus.PENDING);
+
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        when(itemRepository.save(any())).thenReturn(item);
+
+        service.updateStatus(tenantId, item.getId(), VerificationStatus.FAILED, userId, null);
+
+        verify(itemRepository).save(argThat(i -> i.getStatus() == VerificationStatus.FAILED));
+    }
+
+    @Test
+    @DisplayName("应该成功更新为 IN_PROGRESS 状态")
+    void shouldUpdateStatusToInProgress() {
+        VerificationItem item = new VerificationItem();
+        item.setId(UUID.randomUUID());
+        item.setTenantId(tenantId);
+        item.setStatus(VerificationStatus.PENDING);
+
+        when(itemRepository.findById(item.getId())).thenReturn(Optional.of(item));
+        when(itemRepository.save(any())).thenReturn(item);
+
+        service.updateStatus(tenantId, item.getId(), VerificationStatus.IN_PROGRESS, userId, null);
+
+        verify(itemRepository).save(argThat(i -> i.getStatus() == VerificationStatus.IN_PROGRESS));
     }
 }
