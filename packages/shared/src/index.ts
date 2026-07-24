@@ -69,3 +69,6 @@ export * from "./contracts/solutions.contract";
 
 // ── AI 生成记录契约（审计追溯） ──
 export * from "./contracts/ai-generation-record.contract";
+
+// ── 合规规则引擎契约 ──
+export * from "./contracts/compliance.contract";

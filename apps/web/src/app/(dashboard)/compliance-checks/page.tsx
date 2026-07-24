@@ -1,154 +1,165 @@
 "use client";
 
-import { Card, Table, Tag, Button, Space, Typography, Modal, Form, Select, Spin, Alert, message, Descriptions, Statistic, Row, Col } from "antd";
-import { PlusOutlined, PlayCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Table,
+  Tag,
+  Button,
+  Space,
+  Typography,
+  Modal,
+  Form,
+  Select,
+  Spin,
+  Alert,
+  App,
+  Descriptions,
+  Statistic,
+  Row,
+  Col,
+} from "antd";
+import {
+  PlusOutlined,
+  PlayCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiPost } from "@/lib/api-client";
+import type {
+  ComplianceCheckRunDto,
+  CheckResultDto,
+  CreateCheckRunRequest,
+} from "@design-platform/shared";
+import {
+  CHECK_RUN_STATUS_LABEL,
+  CHECK_RUN_STATUS_TAG_COLOR,
+  OUTCOME_LABEL,
+  OUTCOME_TAG_COLOR,
+} from "@design-platform/shared";
+import {
+  useComplianceCheckRuns,
+  useComplianceCheckRun,
+  useCheckResults,
+  useCreateComplianceCheckRun,
+  useExecuteComplianceCheckRun,
+} from "@/hooks/use-compliance";
 
 const { Title, Text } = Typography;
 
 /** 检查结果状态 */
-type CheckOutcome = "PASS" | "FAIL" | "NOT_APPLICABLE" | "INDETERMINATE" | "ERROR" | "MANUAL_REVIEW";
-
-/** 检查运行 DTO */
-interface ComplianceCheckRunDto {
-  id: string;
-  tenantId: string;
-  projectId?: string;
-  ruleSetId: string;
-  status: string;
-  outcomeSummary?: string;
-  executions?: RuleExecutionDto[];
-  startedAt?: string;
-  completedAt?: string;
-  createdAt: string;
-  updatedAt?: string;
-  rowVersion: number;
-}
-
-/** 规则执行记录 */
-interface RuleExecutionDto {
-  id: string;
-  ruleId: string;
-  ruleCode: string;
-  status: string;
-  outcome: string;
-  durationMs?: number;
-  errorMessage?: string;
-}
-
-/** 检查结果 DTO */
-interface CheckResultDto {
-  id: string;
-  executionId: string;
-  objectId?: string;
-  objectType?: string;
-  outcome: CheckOutcome;
-  measuredValue?: string;
-  threshold?: string;
-  explanation?: string;
-  evidenceJson?: string;
-  createdAt: string;
-}
-
-/** 创建检查运行请求 */
-interface CreateCheckRunRequest {
-  ruleSetId: string;
-  projectId?: string;
-}
+type CheckOutcome = CheckResultDto["outcome"];
 
 /** 状态配置 */
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon?: React.ReactNode }> = {
-  PENDING: { label: "待执行", color: "default" },
-  RUNNING: { label: "执行中", color: "processing" },
-  COMPLETED: { label: "已完成", color: "success", icon: <CheckCircleOutlined /> },
-  FAILED: { label: "失败", color: "error", icon: <CloseCircleOutlined /> },
-  CANCELLED: { label: "已取消", color: "default" },
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; icon?: React.ReactNode }
+> = {
+  PENDING: {
+    label: CHECK_RUN_STATUS_LABEL.PENDING ?? "PENDING",
+    color: CHECK_RUN_STATUS_TAG_COLOR.PENDING ?? "default",
+  },
+  RUNNING: {
+    label: CHECK_RUN_STATUS_LABEL.RUNNING ?? "RUNNING",
+    color: CHECK_RUN_STATUS_TAG_COLOR.RUNNING ?? "default",
+    icon: <PlayCircleOutlined />,
+  },
+  COMPLETED: {
+    label: CHECK_RUN_STATUS_LABEL.COMPLETED ?? "COMPLETED",
+    color: CHECK_RUN_STATUS_TAG_COLOR.COMPLETED ?? "default",
+    icon: <CheckCircleOutlined />,
+  },
+  FAILED: {
+    label: CHECK_RUN_STATUS_LABEL.FAILED ?? "FAILED",
+    color: CHECK_RUN_STATUS_TAG_COLOR.FAILED ?? "default",
+    icon: <CloseCircleOutlined />,
+  },
+  CANCELLED: {
+    label: CHECK_RUN_STATUS_LABEL.CANCELLED ?? "CANCELLED",
+    color: CHECK_RUN_STATUS_TAG_COLOR.CANCELLED ?? "default",
+  },
 };
 
 /** 结果状态配置 */
-const OUTCOME_CONFIG: Record<CheckOutcome, { label: string; color: string; icon?: React.ReactNode }> = {
-  PASS: { label: "通过", color: "success", icon: <CheckCircleOutlined /> },
-  FAIL: { label: "未通过", color: "error", icon: <CloseCircleOutlined /> },
-  NOT_APPLICABLE: { label: "不适用", color: "default" },
-  INDETERMINATE: { label: "不确定", color: "warning", icon: <ExclamationCircleOutlined /> },
-  ERROR: { label: "错误", color: "error" },
-  MANUAL_REVIEW: { label: "待人工复核", color: "warning", icon: <ExclamationCircleOutlined /> },
+const OUTCOME_CONFIG: Record<
+  CheckOutcome,
+  { label: string; color: string; icon?: React.ReactNode }
+> = {
+  PASS: {
+    label: OUTCOME_LABEL.PASS ?? "PASS",
+    color: OUTCOME_TAG_COLOR.PASS ?? "default",
+    icon: <CheckCircleOutlined />,
+  },
+  FAIL: {
+    label: OUTCOME_LABEL.FAIL ?? "FAIL",
+    color: OUTCOME_TAG_COLOR.FAIL ?? "default",
+    icon: <CloseCircleOutlined />,
+  },
+  NOT_APPLICABLE: {
+    label: OUTCOME_LABEL.NOT_APPLICABLE ?? "NOT_APPLICABLE",
+    color: OUTCOME_TAG_COLOR.NOT_APPLICABLE ?? "default",
+  },
+  INDETERMINATE: {
+    label: OUTCOME_LABEL.INDETERMINATE ?? "INDETERMINATE",
+    color: OUTCOME_TAG_COLOR.INDETERMINATE ?? "default",
+    icon: <ExclamationCircleOutlined />,
+  },
+  ERROR: {
+    label: OUTCOME_LABEL.ERROR ?? "ERROR",
+    color: OUTCOME_TAG_COLOR.ERROR ?? "default",
+  },
+  MANUAL_REVIEW: {
+    label: OUTCOME_LABEL.MANUAL_REVIEW ?? "MANUAL_REVIEW",
+    color: OUTCOME_TAG_COLOR.MANUAL_REVIEW ?? "default",
+    icon: <ExclamationCircleOutlined />,
+  },
 };
 
 /** 结果过滤选项 */
-const OUTCOME_OPTIONS = Object.entries(OUTCOME_CONFIG).map(([value, { label }]) => ({ value, label }));
+const OUTCOME_OPTIONS = Object.entries(OUTCOME_CONFIG).map(
+  ([value, { label }]) => ({ value, label }),
+);
 
-/** 查询检查运行列表 */
-function useCheckRuns(params: { page: number; pageSize: number; projectId?: string }) {
-  const query = new URLSearchParams({ page: String(params.page), pageSize: String(params.pageSize) });
-  if (params.projectId) query.set("projectId", params.projectId);
-  return useQuery<{ items: ComplianceCheckRunDto[]; total: number }>({
-    queryKey: ["compliance-checks", params],
-    queryFn: () => apiGet(`/api/v1/compliance-checks?${query.toString()}`),
-  });
-}
-
-/** 查询单个检查运行详情 */
-function useCheckRun(id?: string) {
-  return useQuery<ComplianceCheckRunDto>({
-    queryKey: ["compliance-check", id],
-    queryFn: () => apiGet(`/api/v1/compliance-checks/${id}`),
-    enabled: !!id,
-  });
-}
-
-/** 查询检查结果 */
-function useCheckResults(executionId?: string, outcome?: string) {
-  return useQuery<{ items: CheckResultDto[]; total: number }>({
-    queryKey: ["check-results", executionId, outcome],
-    queryFn: () => {
-      const query = new URLSearchParams({ page: "1", pageSize: "50" });
-      if (outcome) query.set("outcome", outcome);
-      return apiGet(`/api/v1/compliance-checks/executions/${executionId}/results?${query.toString()}`);
-    },
-    enabled: !!executionId,
-  });
-}
-
-/** 创建检查运行 */
-function useCreateCheckRun() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateCheckRunRequest) => apiPost("/api/v1/compliance-checks", data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["compliance-checks"] }),
-  });
-}
-
-/** 执行检查 */
-function useExecuteCheckRun() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => apiPost(`/api/v1/compliance-checks/${id}/execute`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["compliance-checks"] }),
-  });
+/** 创建检查运行表单值（Select tags 模式产生 string[]） */
+interface CheckRunFormValues {
+  ruleSetId: string[];
+  projectId?: string[];
 }
 
 export default function ComplianceChecksPage() {
+  const { message } = App.useApp();
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>();
   const [outcomeFilter, setOutcomeFilter] = useState<string | undefined>();
-  const [form] = Form.useForm<CreateCheckRunRequest>();
+  const [form] = Form.useForm<CheckRunFormValues>();
 
-  const { data, isLoading, error } = useCheckRuns({ page, pageSize });
-  const createMutation = useCreateCheckRun();
-  const executeMutation = useExecuteCheckRun();
+  const { data, isLoading, error } = useComplianceCheckRuns({ page, pageSize });
+  const createMutation = useCreateComplianceCheckRun();
+  const executeMutation = useExecuteComplianceCheckRun();
 
-  const { data: selectedRun } = useCheckRun(selectedRunId);
+  const { data: selectedRun } = useComplianceCheckRun(selectedRunId);
   const firstExecutionId = selectedRun?.executions?.[0]?.id;
-  const { data: resultsData, isLoading: resultsLoading } = useCheckResults(firstExecutionId, outcomeFilter);
+  const { data: resultsData, isLoading: resultsLoading } = useCheckResults(
+    firstExecutionId,
+    { page: 1, pageSize: 50, outcome: outcomeFilter },
+  );
 
-  const handleCreate = (values: CreateCheckRunRequest) => {
-    createMutation.mutate(values, {
+  const handleCreate = (values: CheckRunFormValues) => {
+    const ruleSetId = values.ruleSetId?.[0];
+    if (!ruleSetId) {
+      message.error("请输入规则集 ID");
+      return;
+    }
+    const payload: CreateCheckRunRequest = {
+      ruleSetId,
+      projectId: values.projectId?.[0],
+    };
+    createMutation.mutate(payload, {
       onSuccess: () => {
         message.success("检查运行已创建，可点击执行启动检查");
         setCreateModalVisible(false);
@@ -178,7 +189,8 @@ export default function ComplianceChecksPage() {
       dataIndex: "ruleSetId",
       key: "ruleSetId",
       width: 120,
-      render: (id: string) => <Text code>{id.slice(0, 8)}...</Text>,
+      render: (id?: string) =>
+        id ? <Text code>{id.slice(0, 8)}...</Text> : "-",
     },
     {
       title: "状态",
@@ -186,8 +198,15 @@ export default function ComplianceChecksPage() {
       key: "status",
       width: 100,
       render: (status: string) => {
-        const config = STATUS_CONFIG[status] ?? { label: status, color: "default" };
-        return <Tag color={config.color} icon={config.icon}>{config.label}</Tag>;
+        const config = STATUS_CONFIG[status] ?? {
+          label: status,
+          color: "default",
+        };
+        return (
+          <Tag color={config.color} icon={config.icon}>
+            {config.label}
+          </Tag>
+        );
       },
     },
     {
@@ -215,7 +234,10 @@ export default function ComplianceChecksPage() {
               type="primary"
               size="small"
               icon={<PlayCircleOutlined />}
-              loading={executeMutation.isPending && executeMutation.variables === record.id}
+              loading={
+                executeMutation.isPending &&
+                executeMutation.variables === record.id
+              }
               onClick={() => handleExecute(record.id)}
             >
               执行
@@ -238,18 +260,33 @@ export default function ComplianceChecksPage() {
   ];
 
   if (error) {
-    return <Alert type="error" message="加载失败" description={(error as Error).message} />;
+    return (
+      <Alert
+        type="error"
+        message="加载失败"
+        description={(error as Error).message}
+      />
+    );
   }
 
   // 计算结果统计
   const results = resultsData?.items ?? [];
   const passCount = results.filter((r) => r.outcome === "PASS").length;
   const failCount = results.filter((r) => r.outcome === "FAIL").length;
-  const reviewCount = results.filter((r) => r.outcome === "MANUAL_REVIEW").length;
+  const reviewCount = results.filter(
+    (r) => r.outcome === "MANUAL_REVIEW",
+  ).length;
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
         <Title level={4}>合规检查运行</Title>
         <Button
           type="primary"
@@ -270,7 +307,10 @@ export default function ComplianceChecksPage() {
               current: page,
               pageSize,
               total: data?.total ?? 0,
-              onChange: (p, s) => { setPage(p); setPageSize(s); },
+              onChange: (p, s) => {
+                setPage(p);
+                setPageSize(s);
+              },
               showSizeChanger: true,
               showTotal: (total) => `共 ${total} 个检查运行`,
             }}
@@ -283,7 +323,10 @@ export default function ComplianceChecksPage() {
       <Modal
         title="创建合规检查运行"
         open={createModalVisible}
-        onCancel={() => { setCreateModalVisible(false); form.resetFields(); }}
+        onCancel={() => {
+          setCreateModalVisible(false);
+          form.resetFields();
+        }}
         footer={null}
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
@@ -295,7 +338,6 @@ export default function ComplianceChecksPage() {
             <Select
               showSearch
               placeholder="选择或输入规则集 ID"
-              // 实际项目中应从 API 加载规则集列表，此处简化为手动输入
               notFoundContent="请输入规则集 UUID"
               filterOption={false}
               mode="tags"
@@ -315,7 +357,11 @@ export default function ComplianceChecksPage() {
           <Form.Item>
             <Space>
               <Button onClick={() => setCreateModalVisible(false)}>取消</Button>
-              <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={createMutation.isPending}
+              >
                 创建
               </Button>
             </Space>
@@ -327,55 +373,170 @@ export default function ComplianceChecksPage() {
       <Modal
         title="检查运行详情"
         open={detailModalVisible}
-        onCancel={() => { setDetailModalVisible(false); setSelectedRunId(undefined); }}
+        onCancel={() => {
+          setDetailModalVisible(false);
+          setSelectedRunId(undefined);
+        }}
         footer={null}
         width={900}
       >
         {selectedRun && (
           <>
-            <Descriptions bordered column={2} size="small" style={{ marginBottom: 16 }}>
+            <Descriptions
+              bordered
+              column={2}
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
               <Descriptions.Item label="检查运行 ID" span={2}>
                 <Text code>{selectedRun.id}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="规则集 ID">
-                <Text code>{selectedRun.ruleSetId}</Text>
+                <Text code>{selectedRun.ruleSetId ?? "-"}</Text>
               </Descriptions.Item>
               <Descriptions.Item label="项目 ID">
-                {selectedRun.projectId ? <Text code>{selectedRun.projectId}</Text> : "-"}
+                {selectedRun.projectId ? (
+                  <Text code>{selectedRun.projectId}</Text>
+                ) : (
+                  "-"
+                )}
               </Descriptions.Item>
               <Descriptions.Item label="状态">
                 {(() => {
-                  const config = STATUS_CONFIG[selectedRun.status] ?? { label: selectedRun.status, color: "default" };
-                  return <Tag color={config.color} icon={config.icon}>{config.label}</Tag>;
+                  const config = STATUS_CONFIG[selectedRun.status] ?? {
+                    label: selectedRun.status,
+                    color: "default",
+                  };
+                  return (
+                    <Tag color={config.color} icon={config.icon}>
+                      {config.label}
+                    </Tag>
+                  );
                 })()}
               </Descriptions.Item>
               <Descriptions.Item label="结果摘要">
                 {selectedRun.outcomeSummary || "-"}
               </Descriptions.Item>
               <Descriptions.Item label="开始时间">
-                {selectedRun.startedAt ? new Date(selectedRun.startedAt).toLocaleString("zh-CN") : "-"}
+                {selectedRun.startedAt
+                  ? new Date(selectedRun.startedAt).toLocaleString("zh-CN")
+                  : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="完成时间">
-                {selectedRun.completedAt ? new Date(selectedRun.completedAt).toLocaleString("zh-CN") : "-"}
+                {selectedRun.completedAt
+                  ? new Date(selectedRun.completedAt).toLocaleString("zh-CN")
+                  : "-"}
               </Descriptions.Item>
             </Descriptions>
 
             {selectedRun.executions && selectedRun.executions.length > 0 && (
-              <Card size="small" title="规则执行记录" style={{ marginBottom: 16 }}>
-                {selectedRun.executions.map((exec) => {
-                  const config = OUTCOME_CONFIG[exec.outcome as CheckOutcome] ?? { label: exec.outcome, color: "default" };
-                  return (
-                    <Tag
-                      key={exec.id}
-                      color={config.color}
-                      icon={config.icon}
-                      style={{ marginBottom: 4 }}
-                    >
-                      {exec.ruleCode}: {config.label}
-                      {exec.durationMs ? ` (${exec.durationMs}ms)` : ""}
-                    </Tag>
-                  );
-                })}
+              <Card
+                size="small"
+                title="规则执行记录"
+                style={{ marginBottom: 16 }}
+              >
+                <Table
+                  size="small"
+                  pagination={false}
+                  rowKey="id"
+                  dataSource={selectedRun.executions}
+                  columns={[
+                    {
+                      title: "规则修订",
+                      dataIndex: "revisionId",
+                      key: "revisionId",
+                      width: 120,
+                      render: (id: string) => (
+                        <Text code>{id?.slice(0, 8) ?? "-"}...</Text>
+                      ),
+                    },
+                    {
+                      title: "状态",
+                      dataIndex: "status",
+                      key: "status",
+                      width: 100,
+                      render: (status: string) => {
+                        const config = STATUS_CONFIG[status] ?? {
+                          label: status,
+                          color: "default",
+                        };
+                        return (
+                          <Tag color={config.color} icon={config.icon}>
+                            {config.label}
+                          </Tag>
+                        );
+                      },
+                    },
+                    {
+                      title: "适用",
+                      dataIndex: "applicabilityCount",
+                      key: "applicabilityCount",
+                      width: 70,
+                      align: "center" as const,
+                    },
+                    {
+                      title: "通过",
+                      dataIndex: "passCount",
+                      key: "passCount",
+                      width: 70,
+                      align: "center" as const,
+                      render: (v: number) => (
+                        <Text style={{ color: "#52c41a" }}>{v}</Text>
+                      ),
+                    },
+                    {
+                      title: "未通过",
+                      dataIndex: "failCount",
+                      key: "failCount",
+                      width: 70,
+                      align: "center" as const,
+                      render: (v: number) => (
+                        <Text style={{ color: "#ff4d4f" }}>{v}</Text>
+                      ),
+                    },
+                    {
+                      title: "不适用",
+                      dataIndex: "notApplicableCount",
+                      key: "notApplicableCount",
+                      width: 70,
+                      align: "center" as const,
+                    },
+                    {
+                      title: "待复核",
+                      dataIndex: "manualReviewCount",
+                      key: "manualReviewCount",
+                      width: 70,
+                      align: "center" as const,
+                      render: (v: number) =>
+                        v > 0 ? (
+                          <Text style={{ color: "#faad14" }}>{v}</Text>
+                        ) : (
+                          v
+                        ),
+                    },
+                    {
+                      title: "异常",
+                      dataIndex: "errorCount",
+                      key: "errorCount",
+                      width: 70,
+                      align: "center" as const,
+                      render: (v: number) =>
+                        v > 0 ? (
+                          <Text style={{ color: "#ff4d4f" }}>{v}</Text>
+                        ) : (
+                          v
+                        ),
+                    },
+                    {
+                      title: "耗时",
+                      dataIndex: "durationMs",
+                      key: "durationMs",
+                      width: 80,
+                      render: (ms?: number | null) =>
+                        ms != null ? `${ms}ms` : "-",
+                    },
+                  ]}
+                />
               </Card>
             )}
 
@@ -389,17 +550,29 @@ export default function ComplianceChecksPage() {
                 </Col>
                 <Col span={6}>
                   <Card size="small">
-                    <Statistic title="通过" value={passCount} valueStyle={{ color: "#52c41a" }} />
+                    <Statistic
+                      title="通过"
+                      value={passCount}
+                      valueStyle={{ color: "#52c41a" }}
+                    />
                   </Card>
                 </Col>
                 <Col span={6}>
                   <Card size="small">
-                    <Statistic title="未通过" value={failCount} valueStyle={{ color: "#ff4d4f" }} />
+                    <Statistic
+                      title="未通过"
+                      value={failCount}
+                      valueStyle={{ color: "#ff4d4f" }}
+                    />
                   </Card>
                 </Col>
                 <Col span={6}>
                   <Card size="small">
-                    <Statistic title="待人工复核" value={reviewCount} valueStyle={{ color: "#faad14" }} />
+                    <Statistic
+                      title="待人工复核"
+                      value={reviewCount}
+                      valueStyle={{ color: "#faad14" }}
+                    />
                   </Card>
                 </Col>
               </Row>
@@ -419,7 +592,7 @@ export default function ComplianceChecksPage() {
                 />
               </Space>
             </div>
-            <Table
+            <Table<CheckResultDto>
               size="small"
               loading={resultsLoading}
               columns={[
@@ -429,14 +602,41 @@ export default function ComplianceChecksPage() {
                   key: "outcome",
                   width: 120,
                   render: (outcome: CheckOutcome) => {
-                    const config = OUTCOME_CONFIG[outcome] ?? { label: outcome, color: "default" };
-                    return <Tag color={config.color} icon={config.icon}>{config.label}</Tag>;
+                    const config = OUTCOME_CONFIG[outcome] ?? {
+                      label: outcome,
+                      color: "default",
+                    };
+                    return (
+                      <Tag color={config.color} icon={config.icon}>
+                        {config.label}
+                      </Tag>
+                    );
                   },
                 },
-                { title: "对象类型", dataIndex: "objectType", key: "objectType", width: 100 },
-                { title: "测量值", dataIndex: "measuredValue", key: "measuredValue", ellipsis: true },
-                { title: "阈值", dataIndex: "threshold", key: "threshold", ellipsis: true },
-                { title: "说明", dataIndex: "explanation", key: "explanation", ellipsis: true },
+                {
+                  title: "对象类型",
+                  dataIndex: "objectType",
+                  key: "objectType",
+                  width: 100,
+                },
+                {
+                  title: "测量值",
+                  dataIndex: "measuredValue",
+                  key: "measuredValue",
+                  ellipsis: true,
+                },
+                {
+                  title: "阈值",
+                  dataIndex: "threshold",
+                  key: "threshold",
+                  ellipsis: true,
+                },
+                {
+                  title: "说明",
+                  dataIndex: "explanation",
+                  key: "explanation",
+                  ellipsis: true,
+                },
               ]}
               dataSource={results}
               rowKey="id"
