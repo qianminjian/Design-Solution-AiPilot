@@ -1,5 +1,8 @@
 """配置管理 - 基于 Pydantic Settings 从环境变量加载"""
 
+from typing import Any
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
@@ -51,8 +54,34 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "platform-data"
     s3_region: str = "us-east-1"
 
-    # CORS
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    # CORS - 接受字符串格式（逗号分隔或 JSON 数组），通过属性解析为列表
+    cors_origins: str = "http://localhost:3000"
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def normalize_cors_origins(cls, value: Any) -> str:
+        """规范化 cors_origins 为字符串存储"""
+        if value is None:
+            return "http://localhost:3000"
+        if isinstance(value, list):
+            # 列表输入时重新序列化为逗号分隔字符串
+            return ",".join(str(item) for item in value)
+        return str(value)
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """解析 cors_origins 字符串为列表（支持逗号分隔与 JSON 数组格式）"""
+        import json
+
+        stripped = self.cors_origins.strip()
+        if stripped.startswith("["):
+            try:
+                parsed = json.loads(stripped)
+                if isinstance(parsed, list):
+                    return [str(item) for item in parsed]
+            except json.JSONDecodeError:
+                pass
+        return [item.strip() for item in stripped.split(",") if item.strip()]
 
     @property
     def database_url(self) -> str:

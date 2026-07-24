@@ -59,7 +59,7 @@ app = FastAPI(
 # CORS 先注册（内层），TraceId 后注册（外层），确保 traceId 贯穿所有请求
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
