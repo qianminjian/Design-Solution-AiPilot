@@ -50,6 +50,7 @@ describe("AiReviewPanel", () => {
 
   it("应该渲染刷新按钮", () => {
     render(<AiReviewPanel projectId="project-1" />);
-    expect(screen.getByText("刷新")).toBeDefined();
+    // 按钮文本可能被渲染为"刷 新"（带空格）
+    expect(screen.getByRole("button", { name: /刷\s*新/ })).toBeDefined();
   });
 });
