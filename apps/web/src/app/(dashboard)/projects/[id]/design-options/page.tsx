@@ -16,31 +16,23 @@ import {
   Modal,
   Form,
   Input,
-  Rate,
-  List,
-  Avatar,
-  Badge,
   Row,
   Col,
+  Badge,
 } from "antd";
 import {
   ArrowLeftOutlined,
   PlusOutlined,
-  MessageOutlined,
   FileTextOutlined,
 } from "@ant-design/icons";
 import type {
   DesignOptionDto,
   DesignOptionStatus,
   DesignDiscipline,
-  DesignFeedbackDto,
 } from "@design-platform/shared";
 import {
   useDesignOptions,
   useCreateDesignOption,
-  useDesignOption,
-  useDesignFeedback,
-  useSubmitDesignFeedback,
 } from "@/hooks/use-design-options";
 import { ApiError } from "@/lib/api-client";
 
@@ -109,12 +101,6 @@ export default function ProjectDesignOptionsPage({
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [createForm] = Form.useForm();
 
-  // 详情抽屉
-  const [detailOption, setDetailOption] = useState<DesignOptionDto | null>(
-    null,
-  );
-  const [detailOpen, setDetailOpen] = useState(false);
-
   const { data, isLoading, isError, error } = useDesignOptions(projectId, {
     page,
     pageSize,
@@ -148,8 +134,7 @@ export default function ProjectDesignOptionsPage({
   };
 
   const openDetail = (option: DesignOptionDto) => {
-    setDetailOption(option);
-    setDetailOpen(true);
+    router.push(`/projects/${projectId}/design-options/${option.id}`);
   };
 
   // 加载态
@@ -382,176 +367,6 @@ export default function ProjectDesignOptionsPage({
           </Form.Item>
         </Form>
       </Modal>
-
-      {/* 设计选项详情抽屉 */}
-      {detailOption && (
-        <DesignOptionDetailDrawer
-          optionId={detailOption.id}
-          open={detailOpen}
-          onClose={() => setDetailOpen(false)}
-        />
-      )}
     </Space>
-  );
-}
-
-/**
- * 设计选项详情抽屉
- * - 方案基本信息
- * - 反馈列表 + 提交反馈
- */
-function DesignOptionDetailDrawer({
-  optionId,
-  open,
-  onClose,
-}: {
-  optionId: string;
-  open: boolean;
-  onClose: () => void;
-}) {
-  const { message } = App.useApp();
-  const [feedbackForm] = Form.useForm();
-
-  const { data: option, isLoading: optionLoading } = useDesignOption(
-    open ? optionId : null,
-  );
-  const { data: feedbacks, isLoading: feedbackLoading } = useDesignFeedback(
-    open ? optionId : null,
-  );
-  const submitMutation = useSubmitDesignFeedback();
-
-  const handleSubmitFeedback = async () => {
-    try {
-      const values = await feedbackForm.validateFields();
-      await submitMutation.mutateAsync({
-        optionId,
-        comment: values.comment,
-        rating: values.rating,
-      });
-      message.success("反馈提交成功");
-      feedbackForm.resetFields();
-    } catch (err) {
-      const tip =
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : "提交失败";
-      message.error(tip);
-    }
-  };
-
-  return (
-    <Modal
-      title="设计选项详情"
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      width={720}
-      destroyOnClose
-    >
-      <Spin spinning={optionLoading}>
-        {option && (
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            {/* 基本信息 */}
-            <div>
-              <Space align="center">
-                <Title level={4} style={{ margin: 0 }}>
-                  {option.title}
-                </Title>
-                <Tag color={STATUS_TAG_COLOR[option.status]}>
-                  {STATUS_LABEL[option.status]}
-                </Tag>
-                <Tag>{DISCIPLINE_LABEL[option.discipline]}</Tag>
-              </Space>
-              <Paragraph style={{ marginTop: 12 }}>
-                {option.description || "暂无描述"}
-              </Paragraph>
-              <Text type="secondary">
-                创建于 {new Date(option.createdAt).toLocaleString()}
-              </Text>
-            </div>
-
-            {/* 反馈列表 */}
-            <div>
-              <Title level={5} style={{ marginBottom: 12 }}>
-                <MessageOutlined style={{ marginRight: 6 }} />
-                设计反馈
-              </Title>
-              <Spin spinning={feedbackLoading}>
-                {feedbacks && feedbacks.length > 0 ? (
-                  <List
-                    dataSource={feedbacks}
-                    renderItem={(item: DesignFeedbackDto) => (
-                      <List.Item key={item.id}>
-                        <List.Item.Meta
-                          avatar={
-                            <Avatar style={{ backgroundColor: "#1677ff" }}>
-                              {item.authorId.slice(0, 2).toUpperCase()}
-                            </Avatar>
-                          }
-                          title={
-                            <Space>
-                              <Text strong>评审意见</Text>
-                              {item.rating && (
-                                <Rate
-                                  disabled
-                                  value={item.rating}
-                                  style={{ fontSize: 14 }}
-                                />
-                              )}
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                {new Date(item.createdAt).toLocaleString()}
-                              </Text>
-                            </Space>
-                          }
-                          description={item.comment}
-                        />
-                      </List.Item>
-                    )}
-                  />
-                ) : (
-                  <Empty description="暂无反馈" style={{ padding: "24px 0" }} />
-                )}
-              </Spin>
-            </div>
-
-            {/* 提交反馈表单 */}
-            <Card
-              size="small"
-              title="提交反馈"
-              bordered={false}
-              style={{ background: "#fafafa" }}
-            >
-              <Form form={feedbackForm} layout="vertical">
-                <Form.Item
-                  name="comment"
-                  label="反馈意见"
-                  rules={[{ required: true, message: "请输入反馈意见" }]}
-                >
-                  <TextArea
-                    rows={3}
-                    placeholder="请输入您的评审意见和建议"
-                    maxLength={4096}
-                  />
-                </Form.Item>
-                <Form.Item name="rating" label="评分（可选）">
-                  <Rate />
-                </Form.Item>
-                <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
-                  <Button
-                    type="primary"
-                    onClick={handleSubmitFeedback}
-                    loading={submitMutation.isPending}
-                  >
-                    提交反馈
-                  </Button>
-                </Form.Item>
-              </Form>
-            </Card>
-          </Space>
-        )}
-      </Spin>
-    </Modal>
   );
 }
