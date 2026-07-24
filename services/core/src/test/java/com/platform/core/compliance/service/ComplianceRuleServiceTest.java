@@ -75,7 +75,7 @@ class ComplianceRuleServiceTest {
         // Arrange
         CreateRuleRequest request = new CreateRuleRequest(
                 "FIRE-SAFETY-001", "消防疏散检查", "fire-safety",
-                "安全部", "检查消防疏散通道是否符合规范", Map.of());
+                UUID.randomUUID(), "检查消防疏散通道是否符合规范", Map.of());
         when(ruleRepository.existsByTenantIdAndRuleCode(tenantId, "FIRE-SAFETY-001")).thenReturn(false);
         when(ruleRepository.save(any())).thenReturn(buildRule());
 
@@ -92,7 +92,7 @@ class ComplianceRuleServiceTest {
         // Arrange
         CreateRuleRequest request = new CreateRuleRequest(
                 "FIRE-SAFETY-001", "消防疏散检查", "fire-safety",
-                "安全部", "描述", Map.of());
+                UUID.randomUUID(), "描述", Map.of());
         when(ruleRepository.existsByTenantIdAndRuleCode(tenantId, "FIRE-SAFETY-001")).thenReturn(true);
 
         // Act & Assert
@@ -124,7 +124,7 @@ class ComplianceRuleServiceTest {
         when(ruleRepository.save(any())).thenReturn(rule);
 
         UpdateRuleRequest request = new UpdateRuleRequest(
-                "新名称", "新分类", "新负责人", "新描述", Map.of(), "ACTIVE");
+                "新名称", "新分类", UUID.randomUUID(), "新描述", Map.of(), "ACTIVE");
 
         // Act
         ComplianceRuleDto dto = service.updateRule(tenantId, ruleId, request);
@@ -171,7 +171,11 @@ class ComplianceRuleServiceTest {
         when(revisionRepository.save(any())).thenReturn(buildRevision());
 
         CreateRuleRevisionRequest request = new CreateRuleRevisionRequest(
-                "{\"condition\": \"exit_width >= 1.2\"}", Map.of("param", "value"), Map.of(), "v1");
+                "{\"condition\": \"exit_width >= 1.2\"}",
+                Map.of("param", "value"),
+                Map.of(),
+                "default-engine",
+                "初始化版本");
 
         // Act
         RuleRevisionDto dto = service.createRevision(tenantId, ruleId, request);
@@ -219,7 +223,7 @@ class ComplianceRuleServiceTest {
         rule.setRuleCode("FIRE-SAFETY-001");
         rule.setName("消防疏散检查");
         rule.setCategory("fire-safety");
-        rule.setOwner("安全部");
+        rule.setOwner(UUID.randomUUID());
         rule.setStatus("CANDIDATE");
         rule.setCreatedAt(Instant.now());
         rule.setUpdatedAt(Instant.now());
