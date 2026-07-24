@@ -66,3 +66,6 @@ export * from "./contracts/design.contract";
 
 // ── Solutions 契约（方案生成） ──
 export * from "./contracts/solutions.contract";
+
+// ── AI 生成记录契约（审计追溯） ──
+export * from "./contracts/ai-generation-record.contract";

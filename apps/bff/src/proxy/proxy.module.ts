@@ -8,6 +8,7 @@ import { AiCapabilityProxyController } from "./ai/ai-capability-proxy.controller
 import { AiPromptProxyController } from "./ai/ai-prompt-proxy.controller";
 import { AiProxyService } from "./ai/ai-proxy.service";
 import { SolutionsProxyController } from "./ai/solutions-proxy.controller";
+import { AiGenerationRecordProxyController } from "./ai/ai-generation-record-proxy.controller";
 import { GoldenDatasetProxyController } from "./tevv/tevv-proxy.controller";
 import { VerificationItemProxyController } from "./tevv/verification-item-proxy.controller";
 import { WorkflowProxyController } from "./workflow/workflow-proxy.controller";
@@ -20,9 +21,9 @@ import { DesignOptionProxyController } from "./design/design-option-proxy.contro
  * - 测试时通过 overrideProvider(ProxyService) / overrideProvider(AiProxyService) 替换
  * - controllers 数组顺序确保路由优先匹配：
  *   AuthProxyController → AiCapabilityProxyController → AiPromptProxyController →
- *   SolutionsProxyController → GoldenDatasetProxyController →
- *   VerificationItemProxyController → DesignOptionProxyController →
- *   WorkflowProxyController → ProxyController
+ *   SolutionsProxyController → AiGenerationRecordProxyController →
+ *   GoldenDatasetProxyController → VerificationItemProxyController →
+ *   DesignOptionProxyController → WorkflowProxyController → ProxyController
  *   （NestJS 基于 Express，按声明顺序匹配路由）
  */
 @Module({
@@ -37,6 +38,7 @@ import { DesignOptionProxyController } from "./design/design-option-proxy.contro
     AiCapabilityProxyController,
     AiPromptProxyController,
     SolutionsProxyController,
+    AiGenerationRecordProxyController,
     GoldenDatasetProxyController,
     VerificationItemProxyController,
     DesignOptionProxyController,
