@@ -1,142 +1,55 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type {
+  RagQueryResponse,
+  RagQueryRequest,
+  ComplianceFinding,
+  GateSummary,
+  BcfIssue,
+  BcfIssueStatus,
+  BcfIssuePriority,
+  FindingSeverity,
+  FindingStatus,
+  ComplianceCheckRun,
+  ComplianceCheckResult,
+  UpdateBcfIssueStatusRequest,
+  AssignBcfIssueRequest,
+} from "@design-platform/shared";
+import {
+  ragQueryResponseSchema,
+  ragQueryRequestSchema,
+  complianceFindingSchema,
+  gateSummarySchema,
+  bcfIssueSchema,
+  updateBcfIssueStatusRequestSchema,
+  assignBcfIssueRequestSchema,
+  complianceCheckRunViewSchema,
+} from "@design-platform/shared";
+import { z } from "zod";
 import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
 
 // ── 查询键常量 ──
 
 const REVIEW_QUERY_KEY = ["review"] as const;
 
-// ── 合规检查相关类型 ──
+// ── 类型再导出（向后兼容组件层导入） ──
 
-export interface ComplianceCheckResult {
-  id: string;
-  ruleName: string;
-  ruleCode: string;
-  applicableObjects: number;
-  passCount: number;
-  failCount: number;
-  naCount: number;
-  uncertainCount: number;
-  status: "passed" | "failed" | "partial" | "running";
-  lastRunAt: string;
-}
-
-export interface ComplianceCheckRun {
-  id: string;
-  projectId: string;
-  status: "completed" | "running" | "failed";
-  totalRules: number;
-  passedRules: number;
-  failedRules: number;
-  startedAt: string;
-  completedAt: string | null;
-  results: ComplianceCheckResult[];
-}
-
-// ── RAG 问答相关类型 ──
-
-export interface RagSource {
-  id: string;
-  title: string;
-  url: string;
-  snippet: string;
-}
-
-export interface RagQueryResponse {
-  id: string;
-  question: string;
-  answer: string;
-  sources: RagSource[];
-  confidence: number;
-  isAiAssisted: true;
-  requiresHumanReview: boolean;
-  latencyMs: number;
-}
-
-export interface RagQueryRequest {
-  projectId: string;
-  question: string;
-}
-
-// ── 合规发现相关类型 ──
-
-export type FindingSeverity = "critical" | "high" | "medium" | "low";
-
-export type FindingStatus = "pending" | "approved" | "rejected" | "resolved";
-
-export interface ComplianceFinding {
-  id: string;
-  reviewId: string;
-  projectId: string;
-  ruleName: string;
-  ruleCode: string;
-  objectName: string;
-  objectId: string;
-  severity: FindingSeverity;
-  status: FindingStatus;
-  confidence: number;
-  description: string;
-  codeReference: string;
-  suggestedFix: string;
-  assignedTo: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// ── 门禁决策概览类型 ──
-
-export interface GateSummary {
-  stageName: string;
-  stageCode: string;
-  gateCode: string;
-  gateName: string;
-  passRate: number;
-  pendingItems: number;
-  totalFindings: number;
-  criticalFindings: number;
-  status: "pass" | "fail" | "pending";
-}
-
-// ── BCF 协调问题相关类型 ──
-
-/** BCF 问题状态 */
-export type BcfIssueStatus = "open" | "in_progress" | "resolved" | "closed";
-
-/** BCF 问题优先级 */
-export type BcfIssuePriority = "critical" | "high" | "medium" | "low";
-
-/** BCF 协调问题 DTO */
-export interface BcfIssue {
-  id: string;
-  projectId: string;
-  /** 问题序号（项目内递增） */
-  issueIndex: number;
-  title: string;
-  description: string;
-  status: BcfIssueStatus;
-  priority: BcfIssuePriority;
-  /** 问题类型（如 clash、code_review、design_review） */
-  issueType: string;
-  /** BCF 视点快照（base64 图片） */
-  snapshot: string | null;
-  /** 关联构件 GUID 列表 */
-  relatedElements: string[];
-  assignedTo: string | null;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/** 更新 BCF 问题状态请求 */
-export interface UpdateBcfIssueStatusRequest {
-  status: BcfIssueStatus;
-}
-
-/** 指派 BCF 问题请求 */
-export interface AssignBcfIssueRequest {
-  assignee: string;
-}
+export type {
+  RagQueryResponse,
+  RagQueryRequest,
+  ComplianceFinding,
+  GateSummary,
+  BcfIssue,
+  BcfIssueStatus,
+  BcfIssuePriority,
+  FindingSeverity,
+  FindingStatus,
+  ComplianceCheckRun,
+  ComplianceCheckResult,
+  UpdateBcfIssueStatusRequest,
+  AssignBcfIssueRequest,
+};
 
 // ── API 路径 ──
 
@@ -149,8 +62,7 @@ const ReviewApiPaths = {
     `/api/v1/projects/${projectId}/review/gate-summary`,
   bcfIssues: (projectId: string) =>
     `/api/v1/projects/${projectId}/coordination/issues`,
-  bcfIssue: (issueId: string) =>
-    `/api/v1/coordination/issues/${issueId}`,
+  bcfIssue: (issueId: string) => `/api/v1/coordination/issues/${issueId}`,
   bcfIssueStatus: (issueId: string) =>
     `/api/v1/coordination/issues/${issueId}/status`,
   bcfIssueAssign: (issueId: string) =>
@@ -162,6 +74,9 @@ const ReviewApiPaths = {
 /**
  * 获取项目合规检查运行结果
  * 对应 GET /api/v1/projects/{projectId}/compliance-check
+ *
+ * 契约验证：软验证模式
+ *  - 详情数据结构错误不阻断展示，console.warn 记录便于排查
  */
 export function useComplianceCheck(projectId: string | null | undefined) {
   return useQuery<ComplianceCheckRun>({
@@ -170,6 +85,12 @@ export function useComplianceCheck(projectId: string | null | undefined) {
     queryFn: () =>
       apiGet<ComplianceCheckRun>(
         ReviewApiPaths.complianceCheck(projectId as string),
+        {
+          validate: {
+            schema: complianceCheckRunViewSchema,
+            context: "useReview.complianceCheck",
+          },
+        },
       ),
   });
 }
@@ -177,13 +98,31 @@ export function useComplianceCheck(projectId: string | null | undefined) {
 /**
  * RAG 检索问答
  * 对应 POST /api/v1/capabilities/rag-query
+ *
+ * 契约验证：软验证模式
+ *  - 强制 isAiAssisted=true 与 requiresHumanReview 字段存在（security.md §12 AI 安全红线）
+ *  - 验证失败仍透传数据，console.warn 记录便于排查
  */
 export function useRagQuery() {
   const queryClient = useQueryClient();
 
   return useMutation<RagQueryResponse, Error, RagQueryRequest>({
-    mutationFn: (payload) =>
-      apiPost<RagQueryResponse>(ReviewApiPaths.ragQuery, payload),
+    mutationFn: (payload) => {
+      // 请求体软验证（防御性校验，避免缺失关键字段）
+      const parsed = ragQueryRequestSchema.safeParse(payload);
+      if (!parsed.success) {
+        console.warn(
+          "[useReview.ragQuery] 请求体校验失败",
+          parsed.error.flatten(),
+        );
+      }
+      return apiPost<RagQueryResponse>(ReviewApiPaths.ragQuery, payload, {
+        validate: {
+          schema: ragQueryResponseSchema,
+          context: "useReview.ragQuery",
+        },
+      });
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...REVIEW_QUERY_KEY, "rag"],
@@ -195,41 +134,63 @@ export function useRagQuery() {
 /**
  * 获取项目合规发现列表
  * 对应 GET /api/v1/projects/{projectId}/findings
+ *
+ * 契约验证：软验证模式
  */
 export function useFindings(projectId: string | null | undefined) {
   return useQuery<ComplianceFinding[]>({
     queryKey: [...REVIEW_QUERY_KEY, "findings", projectId] as const,
     enabled: typeof projectId === "string" && projectId.length > 0,
     queryFn: () =>
-      apiGet<ComplianceFinding[]>(ReviewApiPaths.findings(projectId as string)),
+      apiGet<ComplianceFinding[]>(
+        ReviewApiPaths.findings(projectId as string),
+        {
+          validate: {
+            schema: z.array(complianceFindingSchema),
+            context: "useReview.findings",
+          },
+        },
+      ),
   });
 }
 
 /**
  * 获取门禁决策概览
  * 对应 GET /api/v1/projects/{projectId}/review/gate-summary
+ *
+ * 契约验证：软验证模式
  */
 export function useGateSummary(projectId: string | null | undefined) {
   return useQuery<GateSummary>({
     queryKey: [...REVIEW_QUERY_KEY, "gate-summary", projectId] as const,
     enabled: typeof projectId === "string" && projectId.length > 0,
     queryFn: () =>
-      apiGet<GateSummary>(ReviewApiPaths.gateSummary(projectId as string)),
+      apiGet<GateSummary>(ReviewApiPaths.gateSummary(projectId as string), {
+        validate: {
+          schema: gateSummarySchema,
+          context: "useReview.gateSummary",
+        },
+      }),
   });
 }
 
 /**
  * 获取项目 BCF 协调问题列表
  * 对应 GET /api/v1/projects/{projectId}/coordination/issues
+ *
+ * 契约验证：软验证模式
  */
 export function useBcfIssues(projectId: string | null | undefined) {
   return useQuery<BcfIssue[]>({
     queryKey: [...REVIEW_QUERY_KEY, "bcf-issues", projectId] as const,
     enabled: typeof projectId === "string" && projectId.length > 0,
     queryFn: () =>
-      apiGet<BcfIssue[]>(
-        ReviewApiPaths.bcfIssues(projectId as string),
-      ),
+      apiGet<BcfIssue[]>(ReviewApiPaths.bcfIssues(projectId as string), {
+        validate: {
+          schema: z.array(bcfIssueSchema),
+          context: "useReview.bcfIssues",
+        },
+      }),
   });
 }
 
@@ -241,11 +202,18 @@ export function useUpdateBcfIssueStatus() {
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, { issueId: string; status: BcfIssueStatus }>({
-    mutationFn: ({ issueId, status }) =>
-      apiPatch<void>(
-        ReviewApiPaths.bcfIssueStatus(issueId),
-        { status } satisfies UpdateBcfIssueStatusRequest,
-      ),
+    mutationFn: ({ issueId, status }) => {
+      const body: UpdateBcfIssueStatusRequest = { status };
+      // 请求体软验证
+      const parsed = updateBcfIssueStatusRequestSchema.safeParse(body);
+      if (!parsed.success) {
+        console.warn(
+          "[useReview.updateBcfIssueStatus] 请求体校验失败",
+          parsed.error.flatten(),
+        );
+      }
+      return apiPatch<void>(ReviewApiPaths.bcfIssueStatus(issueId), body);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...REVIEW_QUERY_KEY, "bcf-issues"],
@@ -262,11 +230,18 @@ export function useAssignBcfIssue() {
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, { issueId: string; assignee: string }>({
-    mutationFn: ({ issueId, assignee }) =>
-      apiPatch<void>(
-        ReviewApiPaths.bcfIssueAssign(issueId),
-        { assignee } satisfies AssignBcfIssueRequest,
-      ),
+    mutationFn: ({ issueId, assignee }) => {
+      const body: AssignBcfIssueRequest = { assignee };
+      // 请求体软验证
+      const parsed = assignBcfIssueRequestSchema.safeParse(body);
+      if (!parsed.success) {
+        console.warn(
+          "[useReview.assignBcfIssue] 请求体校验失败",
+          parsed.error.flatten(),
+        );
+      }
+      return apiPatch<void>(ReviewApiPaths.bcfIssueAssign(issueId), body);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...REVIEW_QUERY_KEY, "bcf-issues"],

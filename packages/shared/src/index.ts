@@ -88,3 +88,5 @@ export * from "./schemas/design.schema";
 export * from "./schemas/solutions.schema";
 export * from "./schemas/ai-generation-record.schema";
 export * from "./schemas/compliance.schema";
+export * from "./schemas/review.schema";
+export * from "./schemas/monitoring.schema";
