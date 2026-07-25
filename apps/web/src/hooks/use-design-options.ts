@@ -8,8 +8,27 @@ import type {
   DesignDiscipline,
   OffsetPageResponse,
 } from "@design-platform/shared";
-import { DesignApiPaths } from "@design-platform/shared";
+import {
+  DesignApiPaths,
+  designOptionDtoSchema,
+  designFeedbackDtoSchema,
+} from "@design-platform/shared";
+import { z } from "zod";
 import { apiGet, apiPost } from "@/lib/api-client";
+
+/**
+ * 偏移分页响应 schema 工厂
+ * 复用 shared 包的 OffsetPageResponse 类型
+ */
+function offsetPageResponseSchema<T>(itemSchema: z.ZodType<T>) {
+  return z.object({
+    items: z.array(itemSchema),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
+    hasMore: z.boolean(),
+  });
+}
 
 /** 设计选项查询键前缀 */
 const DESIGN_OPTIONS_QUERY_KEY = ["design-options"] as const;
@@ -71,6 +90,12 @@ export function useDesignOptions(
       }
       return apiGet<OffsetPageResponse<DesignOptionDto>>(
         `/api/v1/design-options?${searchParams.toString()}`,
+        {
+          validate: {
+            schema: offsetPageResponseSchema(designOptionDtoSchema),
+            context: "useDesignOptions.list",
+          },
+        },
       );
     },
     placeholderData: (prev) => prev,
@@ -80,13 +105,21 @@ export function useDesignOptions(
 /**
  * 获取设计选项详情
  * 对应契约：GET /api/v1/design-options/{optionId}
+ *
+ * 契约验证：软验证模式
+ *  - 详情数据结构错误不阻断展示，console.warn 记录便于排查
  */
 export function useDesignOption(optionId: string | null | undefined) {
   return useQuery<DesignOptionDto>({
     queryKey: [...DESIGN_OPTIONS_QUERY_KEY, "detail", optionId] as const,
     enabled: typeof optionId === "string" && optionId.length > 0,
     queryFn: () =>
-      apiGet<DesignOptionDto>(DesignApiPaths.optionDetail(optionId as string)),
+      apiGet<DesignOptionDto>(DesignApiPaths.optionDetail(optionId as string), {
+        validate: {
+          schema: designOptionDtoSchema,
+          context: "useDesignOptions.detail",
+        },
+      }),
   });
 }
 
@@ -108,10 +141,19 @@ export function useCreateDesignOption(projectId: string | null | undefined) {
     }
   >({
     mutationFn: (payload) =>
-      apiPost<DesignOptionDto>(DesignApiPaths.createOption, {
-        projectId: projectId as string,
-        ...payload,
-      }),
+      apiPost<DesignOptionDto>(
+        DesignApiPaths.createOption,
+        {
+          projectId: projectId as string,
+          ...payload,
+        },
+        {
+          validate: {
+            schema: designOptionDtoSchema,
+            context: "useDesignOptions.create",
+          },
+        },
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...DESIGN_OPTIONS_QUERY_KEY, "list", projectId],
@@ -123,6 +165,8 @@ export function useCreateDesignOption(projectId: string | null | undefined) {
 /**
  * 查询设计选项反馈列表
  * 对应契约：GET /api/v1/design-options/{optionId}/feedback
+ *
+ * 契约验证：软验证模式
  */
 export function useDesignFeedback(optionId: string | null | undefined) {
   return useQuery<DesignFeedbackDto[]>({
@@ -131,6 +175,12 @@ export function useDesignFeedback(optionId: string | null | undefined) {
     queryFn: () =>
       apiGet<DesignFeedbackDto[]>(
         DesignApiPaths.listFeedback(optionId as string),
+        {
+          validate: {
+            schema: z.array(designFeedbackDtoSchema),
+            context: "useDesignOptions.feedback",
+          },
+        },
       ),
   });
 }
@@ -148,10 +198,19 @@ export function useSubmitDesignFeedback() {
     { optionId: string; comment: string; rating?: number }
   >({
     mutationFn: ({ optionId, comment, rating }) =>
-      apiPost<DesignFeedbackDto>(DesignApiPaths.submitFeedback(optionId), {
-        comment,
-        rating,
-      }),
+      apiPost<DesignFeedbackDto>(
+        DesignApiPaths.submitFeedback(optionId),
+        {
+          comment,
+          rating,
+        },
+        {
+          validate: {
+            schema: designFeedbackDtoSchema,
+            context: "useDesignOptions.submitFeedback",
+          },
+        },
+      ),
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({
         queryKey: [...DESIGN_OPTIONS_QUERY_KEY, "feedback", variables.optionId],

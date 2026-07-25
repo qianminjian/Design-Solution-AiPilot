@@ -1,8 +1,15 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { GateDecisionDto, DecideGateRequest } from "@design-platform/shared";
-import { WorkflowApiPaths } from "@design-platform/shared";
+import type {
+  GateDecisionDto,
+  DecideGateRequest,
+} from "@design-platform/shared";
+import {
+  WorkflowApiPaths,
+  gateDecisionDtoSchema,
+} from "@design-platform/shared";
+import { z } from "zod";
 import { apiGet, apiPost } from "@/lib/api-client";
 
 /** 门禁决策列表查询键前缀 */
@@ -11,13 +18,24 @@ const GATES_QUERY_KEY = ["gates"] as const;
 /**
  * 列出阶段关联的门禁决策
  * 对应契约：workflow.gate.list（GET /api/v1/stages/{stageId}/gates）
+ *
+ * 契约验证：软验证模式
+ *  - 列表数据结构错误不阻断展示，console.warn 记录便于排查
  */
 export function useGates(stageId: string | null | undefined) {
   return useQuery<GateDecisionDto[]>({
     queryKey: [...GATES_QUERY_KEY, "list", stageId] as const,
     enabled: typeof stageId === "string" && stageId.length > 0,
     queryFn: () =>
-      apiGet<GateDecisionDto[]>(WorkflowApiPaths.stageGates(stageId as string)),
+      apiGet<GateDecisionDto[]>(
+        WorkflowApiPaths.stageGates(stageId as string),
+        {
+          validate: {
+            schema: z.array(gateDecisionDtoSchema),
+            context: "useGates.list",
+          },
+        },
+      ),
   });
 }
 
@@ -28,12 +46,13 @@ export function useGates(stageId: string | null | undefined) {
 export function useDecideGate() {
   const queryClient = useQueryClient();
 
-  return useMutation<void, Error, { gateId: string; payload: DecideGateRequest }>({
+  return useMutation<
+    void,
+    Error,
+    { gateId: string; payload: DecideGateRequest }
+  >({
     mutationFn: ({ gateId, payload }) =>
-      apiPost<void>(
-        WorkflowApiPaths.gateDecision(gateId),
-        payload,
-      ),
+      apiPost<void>(WorkflowApiPaths.gateDecision(gateId), payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...GATES_QUERY_KEY],

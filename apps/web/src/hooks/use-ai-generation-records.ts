@@ -6,7 +6,11 @@ import type {
   CreateAiGenerationRecordRequest,
   SubmitReviewRequest,
 } from "@design-platform/shared";
-import { AiGenerationRecordApiPaths } from "@design-platform/shared";
+import {
+  AiGenerationRecordApiPaths,
+  aiGenerationRecordDtoSchema,
+} from "@design-platform/shared";
+import { z } from "zod";
 import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
 
 /** AI 生成记录查询键前缀 */
@@ -15,6 +19,9 @@ const AI_GEN_RECORD_QUERY_KEY = ["ai-generation-records"] as const;
 /**
  * 查询 AI 生成记录详情
  * 对应契约：GET /api/v1/ai-generation-records/{id}
+ *
+ * 契约验证：软验证模式
+ *  - 审计追溯记录结构错误不阻断展示，console.warn 记录便于排查
  */
 export function useAiGenerationRecord(id: string | null | undefined) {
   return useQuery<AiGenerationRecordDto>({
@@ -23,6 +30,12 @@ export function useAiGenerationRecord(id: string | null | undefined) {
     queryFn: () =>
       apiGet<AiGenerationRecordDto>(
         AiGenerationRecordApiPaths.detail(id as string),
+        {
+          validate: {
+            schema: aiGenerationRecordDtoSchema,
+            context: "useAiGenerationRecord.detail",
+          },
+        },
       ),
   });
 }
@@ -30,6 +43,8 @@ export function useAiGenerationRecord(id: string | null | undefined) {
 /**
  * 按设计选项反查 AI 生成记录（审计追溯：设计选项 → AI 来源）
  * 对应契约：GET /api/v1/ai-generation-records?designOptionId=xxx
+ *
+ * 契约验证：软验证模式
  */
 export function useAiGenerationRecordsByDesignOption(
   designOptionId: string | null | undefined,
@@ -46,6 +61,12 @@ export function useAiGenerationRecordsByDesignOption(
         `${AiGenerationRecordApiPaths.list}?designOptionId=${encodeURIComponent(
           designOptionId as string,
         )}`,
+        {
+          validate: {
+            schema: z.array(aiGenerationRecordDtoSchema),
+            context: "useAiGenerationRecords.byDesignOption",
+          },
+        },
       ),
   });
 }
@@ -53,6 +74,8 @@ export function useAiGenerationRecordsByDesignOption(
 /**
  * 按项目查询 AI 生成记录（按时间倒序）
  * 对应契约：GET /api/v1/ai-generation-records?projectId=xxx
+ *
+ * 契约验证：软验证模式
  */
 export function useAiGenerationRecordsByProject(
   projectId: string | null | undefined,
@@ -65,6 +88,12 @@ export function useAiGenerationRecordsByProject(
         `${AiGenerationRecordApiPaths.list}?projectId=${encodeURIComponent(
           projectId as string,
         )}`,
+        {
+          validate: {
+            schema: z.array(aiGenerationRecordDtoSchema),
+            context: "useAiGenerationRecords.byProject",
+          },
+        },
       ),
   });
 }
@@ -75,6 +104,8 @@ export function useAiGenerationRecordsByProject(
  *
  * AI 安全红线（security.md §12）：
  * requiresHumanReview=true 的记录必须经人工复核才能采纳。
+ *
+ * 契约验证：软验证模式
  */
 export function usePendingAiReviews(projectId: string | null | undefined) {
   return useQuery<AiGenerationRecordDto[]>({
@@ -87,6 +118,12 @@ export function usePendingAiReviews(projectId: string | null | undefined) {
     queryFn: () =>
       apiGet<AiGenerationRecordDto[]>(
         AiGenerationRecordApiPaths.pendingReviews(projectId as string),
+        {
+          validate: {
+            schema: z.array(aiGenerationRecordDtoSchema),
+            context: "usePendingAiReviews.list",
+          },
+        },
       ),
   });
 }
@@ -117,6 +154,12 @@ export function useSubmitAiReview() {
       apiPatch<AiGenerationRecordDto>(
         AiGenerationRecordApiPaths.submitReview(id),
         payload,
+        {
+          validate: {
+            schema: aiGenerationRecordDtoSchema,
+            context: "useSubmitAiReview",
+          },
+        },
       ),
     onSuccess: () => {
       // 复核完成后刷新待复核列表与详情
@@ -142,5 +185,11 @@ export async function createAiGenerationRecord(
   return apiPost<AiGenerationRecordDto>(
     AiGenerationRecordApiPaths.create,
     payload,
+    {
+      validate: {
+        schema: aiGenerationRecordDtoSchema,
+        context: "createAiGenerationRecord",
+      },
+    },
   );
 }

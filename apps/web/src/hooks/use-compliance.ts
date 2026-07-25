@@ -13,8 +13,30 @@ import type {
   IdsImportResponse,
   OffsetPageResponse,
 } from "@design-platform/shared";
-import { ComplianceApiPaths } from "@design-platform/shared";
+import {
+  ComplianceApiPaths,
+  complianceRuleDtoSchema,
+  complianceCheckRunDtoSchema,
+  checkResultDtoSchema,
+  ruleRevisionDtoSchema,
+  idsImportResponseSchema,
+} from "@design-platform/shared";
+import { z } from "zod";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api-client";
+
+/**
+ * 偏移分页响应 schema 工厂
+ * 复用 shared 包的 OffsetPageResponse 类型
+ */
+function offsetPageResponseSchema<T>(itemSchema: z.ZodType<T>) {
+  return z.object({
+    items: z.array(itemSchema),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
+    hasMore: z.boolean(),
+  });
+}
 
 /** 合规规则查询键前缀 */
 const COMPLIANCE_QUERY_KEY = ["compliance"] as const;
@@ -46,6 +68,12 @@ export function useComplianceRules(
       sp.set("order", params.order ?? "desc");
       return apiGet<OffsetPageResponse<ComplianceRuleDto>>(
         `${ComplianceApiPaths.rules}?${sp.toString()}`,
+        {
+          validate: {
+            schema: offsetPageResponseSchema(complianceRuleDtoSchema),
+            context: "useComplianceRules.list",
+          },
+        },
       );
     },
     placeholderData: (prev) => prev,
@@ -60,7 +88,12 @@ export function useComplianceRule(id: string | null | undefined) {
     queryKey: [...COMPLIANCE_QUERY_KEY, "rules", "detail", id] as const,
     enabled: typeof id === "string" && id.length > 0,
     queryFn: () =>
-      apiGet<ComplianceRuleDto>(ComplianceApiPaths.ruleDetail(id as string)),
+      apiGet<ComplianceRuleDto>(ComplianceApiPaths.ruleDetail(id as string), {
+        validate: {
+          schema: complianceRuleDtoSchema,
+          context: "useComplianceRule.detail",
+        },
+      }),
   });
 }
 
@@ -152,6 +185,12 @@ export function useRuleRevisions(
       sp.set("order", params.order ?? "desc");
       return apiGet<OffsetPageResponse<RuleRevisionDto>>(
         `${ComplianceApiPaths.ruleRevisions(ruleId as string)}?${sp.toString()}`,
+        {
+          validate: {
+            schema: offsetPageResponseSchema(ruleRevisionDtoSchema),
+            context: "useRuleRevisions.list",
+          },
+        },
       );
     },
   });
@@ -205,7 +244,12 @@ export function useImportIds() {
   const queryClient = useQueryClient();
   return useMutation<IdsImportResponse, Error, IdsImportRequest>({
     mutationFn: (payload) =>
-      apiPost<IdsImportResponse>(ComplianceApiPaths.importIds, payload),
+      apiPost<IdsImportResponse>(ComplianceApiPaths.importIds, payload, {
+        validate: {
+          schema: idsImportResponseSchema,
+          context: "useImportIds",
+        },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...COMPLIANCE_QUERY_KEY, "rules", "list"],
@@ -239,6 +283,12 @@ export function useComplianceCheckRuns(
       sp.set("order", params.order ?? "desc");
       return apiGet<OffsetPageResponse<ComplianceCheckRunDto>>(
         `${ComplianceApiPaths.checkRuns}?${sp.toString()}`,
+        {
+          validate: {
+            schema: offsetPageResponseSchema(complianceCheckRunDtoSchema),
+            context: "useComplianceCheckRuns.list",
+          },
+        },
       );
     },
     placeholderData: (prev) => prev,
@@ -255,6 +305,12 @@ export function useComplianceCheckRun(id: string | null | undefined) {
     queryFn: () =>
       apiGet<ComplianceCheckRunDto>(
         ComplianceApiPaths.checkRunDetail(id as string),
+        {
+          validate: {
+            schema: complianceCheckRunDtoSchema,
+            context: "useComplianceCheckRun.detail",
+          },
+        },
       ),
   });
 }
@@ -323,6 +379,12 @@ export function useCheckResults(
       if (params.outcome) sp.set("outcome", params.outcome);
       return apiGet<OffsetPageResponse<CheckResultDto>>(
         `${ComplianceApiPaths.checkResults(executionId as string)}?${sp.toString()}`,
+        {
+          validate: {
+            schema: offsetPageResponseSchema(checkResultDtoSchema),
+            context: "useCheckResults.list",
+          },
+        },
       );
     },
     placeholderData: (prev) => prev,
