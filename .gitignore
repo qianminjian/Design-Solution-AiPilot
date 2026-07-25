@@ -75,6 +75,7 @@ ENV/
 
 # ── 向量数据库运行时数据（ChromaDB 等）──
 services/ai/data/
+data/
 
 # ── Docker ──
 docker-compose.override.yml

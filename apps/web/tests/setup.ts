@@ -38,6 +38,8 @@ vi.mock("antd", async () => {
           success: vi.fn(),
           error: vi.fn(),
           warning: vi.fn(),
+          info: vi.fn(),
+          loading: vi.fn(),
         },
         modal: {
           confirm: vi.fn(),
@@ -45,6 +47,8 @@ vi.mock("antd", async () => {
         notification: {
           success: vi.fn(),
           error: vi.fn(),
+          info: vi.fn(),
+          warning: vi.fn(),
         },
       })),
     },
