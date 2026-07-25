@@ -49,6 +49,66 @@ export interface ValidateOptions {
   strict?: boolean;
 }
 
+// ── 本地失败计数器（V1 可观测性） ──
+//
+// 设计目的：
+//  - 在 Sentry/APM 接入前，先建立本地可观测基线
+//  - 开发期可通过 window.__schemaValidationFailures 排查契约漂移频率
+//  - V2 接入 Sentry 后改为 captureMessage 上报，采样率 10%
+//
+// 数据结构：Map<context, Map<schemaName, count>>
+//  - context：调用上下文（如 "useReview.ragQuery"）
+//  - schemaName：schema 名称（如 "ragQueryResponseSchema"）
+//  - count：累计失败次数
+type FailureCounter = Map<string, Map<string, number>>;
+
+interface SchemaValidationFailureGlobal {
+  __schemaValidationFailures?: FailureCounter;
+}
+
+/** 安全获取全局失败计数器（SSR 安全） */
+function getFailureCounter(): FailureCounter | null {
+  if (typeof window === "undefined") return null;
+  const globalObj = window as unknown as SchemaValidationFailureGlobal;
+  if (!globalObj.__schemaValidationFailures) {
+    globalObj.__schemaValidationFailures = new Map();
+  }
+  return globalObj.__schemaValidationFailures ?? null;
+}
+
+/** 递增失败计数器 */
+function incrementFailureCounter(context: string, schemaName: string): void {
+  const counter = getFailureCounter();
+  if (!counter) return;
+  const contextMap = counter.get(context) ?? new Map<string, number>();
+  contextMap.set(schemaName, (contextMap.get(schemaName) ?? 0) + 1);
+  counter.set(context, contextMap);
+}
+
+/**
+ * 读取累计的失败计数快照（开发期排查用）
+ *
+ * 返回浅拷贝，避免外部直接修改内部状态
+ */
+export function readSchemaValidationFailures(): Record<
+  string,
+  Record<string, number>
+> {
+  const counter = getFailureCounter();
+  if (!counter) return {};
+  const snapshot: Record<string, Record<string, number>> = {};
+  for (const [context, schemaMap] of counter.entries()) {
+    snapshot[context] = Object.fromEntries(schemaMap.entries());
+  }
+  return snapshot;
+}
+
+/** 重置失败计数器（仅测试用） */
+export function resetSchemaValidationFailures(): void {
+  const counter = getFailureCounter();
+  counter?.clear();
+}
+
 /**
  * 软验证：验证失败记录 console.warn，原数据透传
  *
@@ -75,6 +135,9 @@ export function validateResponse<T>(
     `[ResponseValidationError] context=${options.context} issues=${JSON.stringify(error.issues)}`,
   );
 
+  // 递增本地失败计数器（V1 可观测性）
+  incrementFailureCounter(options.context, schema.constructor.name);
+
   // 返回原数据（类型断言为 T，因为前端 schema 通常比运行时数据更严格）
   return data as T;
 }
@@ -98,5 +161,8 @@ export function validateResponseStrict<T>(
   if (result.success) {
     return result.data;
   }
+
+  // 严格模式同样递增计数器，便于事后排查
+  incrementFailureCounter(options.context, schema.constructor.name);
   throw new ResponseValidationError(options.context, result.error);
 }

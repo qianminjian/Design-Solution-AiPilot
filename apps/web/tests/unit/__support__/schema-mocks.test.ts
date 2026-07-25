@@ -25,6 +25,12 @@ import {
   ruleRevisionDtoSchema,
   aiGenerationRecordDtoSchema,
   goldenDatasetDtoSchema,
+  updateRuleRequestSchema,
+  ragQueryResponseSchema,
+  complianceFindingSchema,
+  gateSummarySchema,
+  bcfIssueSchema,
+  healthCheckResultSchema,
 } from "@design-platform/shared";
 
 describe("schema-mocks", () => {
@@ -369,6 +375,66 @@ describe("schema-mocks", () => {
       expect(mock.riskLevel).toBe("high");
       expect(mock.reviewStatus).toBe("PENDING");
       const result = aiGenerationRecordDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 updateRuleRequestSchema 生成有效 mock（全可选字段）", () => {
+      const mock = generateMockFromSchema(updateRuleRequestSchema, {
+        name: "更新后的规则名",
+      });
+      expect(mock.name).toBe("更新后的规则名");
+      const result = updateRuleRequestSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 ragQueryResponseSchema 生成有效 mock，强制 isAiAssisted=true", () => {
+      const mock = generateMockFromSchema(ragQueryResponseSchema);
+      expect(mock.isAiAssisted).toBe(true);
+      expect(mock.requiresHumanReview).toBe(false);
+      const result = ragQueryResponseSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该支持覆盖 ragQueryResponseSchema 的 requiresHumanReview 字段", () => {
+      const mock = generateMockFromSchema(ragQueryResponseSchema, {
+        requiresHumanReview: true,
+      });
+      expect(mock.requiresHumanReview).toBe(true);
+      const result = ragQueryResponseSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 complianceFindingSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(complianceFindingSchema);
+      const result = complianceFindingSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 gateSummarySchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(gateSummarySchema);
+      const result = gateSummarySchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 bcfIssueSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(bcfIssueSchema);
+      const result = bcfIssueSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 healthCheckResultSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(healthCheckResultSchema);
+      expect(mock.status === "UP" || mock.status === "DOWN").toBe(true);
+      const result = healthCheckResultSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该支持覆盖 healthCheckResultSchema 的 status 字段为 DOWN", () => {
+      const mock = generateMockFromSchema(healthCheckResultSchema, {
+        status: "DOWN",
+      });
+      expect(mock.status).toBe("DOWN");
+      const result = healthCheckResultSchema.safeParse(mock);
       expect(result.success).toBe(true);
     });
   });

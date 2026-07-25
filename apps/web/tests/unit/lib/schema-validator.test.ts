@@ -4,6 +4,8 @@ import {
   ResponseValidationError,
   validateResponse,
   validateResponseStrict,
+  readSchemaValidationFailures,
+  resetSchemaValidationFailures,
 } from "@/lib/schema-validator";
 
 /**
@@ -33,10 +35,12 @@ describe("schema-validator", () => {
 
   beforeEach(() => {
     consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    resetSchemaValidationFailures();
   });
 
   afterEach(() => {
     consoleWarnSpy.mockRestore();
+    resetSchemaValidationFailures();
   });
 
   describe("validateResponse (软验证)", () => {
@@ -171,6 +175,63 @@ describe("schema-validator", () => {
         const e = error as ResponseValidationError;
         expect(e.name).toBe("ResponseValidationError");
       }
+    });
+  });
+
+  describe("本地失败计数器（V1 可观测性）", () => {
+    it("初始状态应该返回空快照", () => {
+      expect(readSchemaValidationFailures()).toEqual({});
+    });
+
+    it("软验证失败应该递增对应 context 计数器", () => {
+      const invalid = { id: "bad", email: "bad", age: -1 };
+      validateResponse(invalid, userSchema, { context: "useReview.test1" });
+      validateResponse(invalid, userSchema, { context: "useReview.test1" });
+      validateResponse(invalid, userSchema, { context: "useReview.test2" });
+
+      const snapshot = readSchemaValidationFailures();
+      // useReview.test1 两次失败
+      const ctx1 = snapshot["useReview.test1"];
+      expect(ctx1).toBeDefined();
+      const schemaName = Object.keys(ctx1 ?? {})[0];
+      expect(schemaName).toBeDefined();
+      expect(ctx1?.[schemaName as string]).toBe(2);
+      // useReview.test2 一次失败
+      const ctx2 = snapshot["useReview.test2"];
+      expect(ctx2?.[schemaName as string]).toBe(1);
+    });
+
+    it("严格验证失败应该递增对应 context 计数器", () => {
+      const invalid = { id: "bad" };
+      try {
+        validateResponseStrict(invalid, userSchema, {
+          context: "useAuth.strict.counter",
+        });
+      } catch {
+        // 预期抛错
+      }
+      const snapshot = readSchemaValidationFailures();
+      const ctx = snapshot["useAuth.strict.counter"];
+      expect(ctx).toBeDefined();
+      const schemaName = Object.keys(ctx ?? {})[0];
+      expect(schemaName).toBeDefined();
+      expect(ctx?.[schemaName as string]).toBe(1);
+    });
+
+    it("软验证通过不应该递增计数器", () => {
+      validateResponse(validUser, userSchema, { context: "pass.test" });
+      expect(readSchemaValidationFailures()).toEqual({});
+    });
+
+    it("resetSchemaValidationFailures 应该清空所有计数", () => {
+      const invalid = { id: "bad" };
+      validateResponse(invalid, userSchema, { context: "reset.test" });
+      expect(
+        Object.keys(readSchemaValidationFailures()).length,
+      ).toBeGreaterThan(0);
+
+      resetSchemaValidationFailures();
+      expect(readSchemaValidationFailures()).toEqual({});
     });
   });
 });
