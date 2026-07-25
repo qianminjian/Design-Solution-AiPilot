@@ -101,11 +101,18 @@ describe("Design 设计选项代理集成测试", () => {
         {
           code: 0,
           data: {
-            id: "opt-3",
+            id: "550e8400-e29b-41d4-a716-446655440003",
+            tenantId: "550e8400-e29b-41d4-a716-446655440001",
+            projectId: "550e8400-e29b-41d4-a716-446655440002",
             title: "方案 C-庭院式",
+            description: "围绕内部庭院组织功能",
             status: "DRAFT",
             discipline: "ARCHITECTURE",
-            projectId: "proj-1",
+            metadata: {},
+            createdBy: "550e8400-e29b-41d4-a716-446655440004",
+            createdAt: "2026-07-25T10:00:00.000Z",
+            updatedAt: "2026-07-25T10:00:00.000Z",
+            rowVersion: 0,
           },
           message: "created",
           traceId: "design-trace-002",
@@ -117,7 +124,7 @@ describe("Design 设计选项代理集成测试", () => {
     const response = await request(app.getHttpServer())
       .post("/api/v1/design-options")
       .send({
-        projectId: "proj-1",
+        projectId: "550e8400-e29b-41d4-a716-446655440002",
         title: "方案 C-庭院式",
         description: "围绕内部庭院组织功能",
         discipline: "ARCHITECTURE",
@@ -129,8 +136,54 @@ describe("Design 设计选项代理集成测试", () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("code", 0);
-    expect(response.body.data).toHaveProperty("id", "opt-3");
+    expect(response.body.data).toHaveProperty(
+      "id",
+      "550e8400-e29b-41d4-a716-446655440003",
+    );
     expect(response.body.data).toHaveProperty("status", "DRAFT");
+  });
+
+  it("POST /api/v1/design-options 响应缺失 status 应返回 502（契约验证阻断）", async () => {
+    // 模拟 Core Service 漂移：缺失 status 字段
+    mockForward.mockResolvedValue(
+      buildProxyResult(
+        {
+          code: 0,
+          data: {
+            id: "550e8400-e29b-41d4-a716-446655440003",
+            tenantId: "550e8400-e29b-41d4-a716-446655440001",
+            projectId: "550e8400-e29b-41d4-a716-446655440002",
+            title: "方案 C-庭院式",
+            // 缺失 status 字段
+            discipline: "ARCHITECTURE",
+            metadata: {},
+            createdBy: "550e8400-e29b-41d4-a716-446655440004",
+            createdAt: "2026-07-25T10:00:00.000Z",
+            updatedAt: "2026-07-25T10:00:00.000Z",
+            rowVersion: 0,
+          },
+          message: "created",
+          traceId: "design-trace-002",
+        },
+        201,
+      ),
+    );
+
+    const response = await request(app.getHttpServer())
+      .post("/api/v1/design-options")
+      .send({
+        projectId: "550e8400-e29b-41d4-a716-446655440002",
+        title: "方案 C-庭院式",
+        discipline: "ARCHITECTURE",
+      })
+      .set("Authorization", "Bearer test-token")
+      .set("Content-Type", "application/json");
+
+    expect(response.status).toBe(502);
+    expect(response.body).toHaveProperty(
+      "errorCode",
+      "CONTRACT_VALIDATION_FAILED",
+    );
   });
 
   it("应该成功转发 GET /api/v1/design-options/:id 查询详情", async () => {
@@ -138,13 +191,15 @@ describe("Design 设计选项代理集成测试", () => {
       buildProxyResult({
         code: 0,
         data: {
-          id: "opt-1",
+          id: "550e8400-e29b-41d4-a716-446655440010",
+          tenantId: "550e8400-e29b-41d4-a716-446655440001",
+          projectId: "550e8400-e29b-41d4-a716-446655440002",
           title: "方案 A-围合式中庭",
           description: "围绕中央采光中庭布置核心筒",
           status: "CANDIDATE",
           discipline: "ARCHITECTURE",
-          projectId: "proj-1",
-          createdBy: "user-001",
+          metadata: {},
+          createdBy: "550e8400-e29b-41d4-a716-446655440004",
           createdAt: "2026-07-23T10:00:00Z",
           updatedAt: "2026-07-23T10:30:00Z",
           rowVersion: 2,
@@ -155,7 +210,7 @@ describe("Design 设计选项代理集成测试", () => {
     );
 
     const response = await request(app.getHttpServer())
-      .get("/api/v1/design-options/opt-1")
+      .get("/api/v1/design-options/550e8400-e29b-41d4-a716-446655440010")
       .set("Authorization", "Bearer test-token")
       .set("x-tenant-id", "tenant-001");
 

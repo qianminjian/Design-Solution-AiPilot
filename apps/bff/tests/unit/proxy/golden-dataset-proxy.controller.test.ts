@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import type { Request } from "express";
 import { HttpHeader } from "@design-platform/shared";
-import { DesignOptionProxyController } from "../../../src/proxy/design/design-option-proxy.controller";
+import { GoldenDatasetProxyController } from "../../../src/proxy/tevv/tevv-proxy.controller";
 import type { ProxyService } from "../../../src/proxy/proxy.service";
 import { SchemaValidator } from "../../../src/proxy/schema-validator.service";
 import type { ProxyResult } from "../../../src/interceptors/proxy.interceptor";
@@ -10,7 +10,6 @@ function createProxyServiceMock(): ProxyService {
   return { forward: vi.fn() } as unknown as ProxyService;
 }
 
-/** 构造真实 SchemaValidator（无依赖服务，直接实例化） */
 function createSchemaValidator(): SchemaValidator {
   return new SchemaValidator();
 }
@@ -18,9 +17,9 @@ function createSchemaValidator(): SchemaValidator {
 function createRequest(overrides: Partial<Request> = {}): Request {
   return {
     method: "GET",
-    originalUrl: "/v1/design-options",
-    url: "/v1/design-options",
-    path: "/design-options",
+    originalUrl: "/v1/golden-datasets",
+    url: "/v1/golden-datasets",
+    path: "/golden-datasets",
     query: {},
     body: undefined,
     traceId: "test-trace-id-123",
@@ -34,34 +33,32 @@ function createProxyResult<T>(data: T, status = 200): ProxyResult {
   return { status, data, headers: {} };
 }
 
-/** 合法的设计选项 fixture（符合 designOptionDtoSchema） */
-const validDesignOption = {
+/** 合法的金样数据集 fixture（符合 goldenDatasetDtoSchema） */
+const validGoldenDataset = {
   id: "550e8400-e29b-41d4-a716-446655440000",
-  tenantId: "550e8400-e29b-41d4-a716-446655440001",
-  projectId: "550e8400-e29b-41d4-a716-446655440002",
-  title: "概念方案 A",
-  description: "建筑专业功能布局选项",
+  name: "办公楼金样 v1",
+  description: "建筑专业金样数据集",
+  category: "ARCHITECTURE" as const,
+  buildingType: "office",
+  version: 1,
+  fileCount: 12,
   status: "DRAFT" as const,
-  discipline: "ARCHITECTURE" as const,
-  metadata: {},
-  createdBy: "550e8400-e29b-41d4-a716-446655440003",
+  storageKey: "golden/dataset-001",
   createdAt: "2026-07-25T10:00:00.000Z",
-  updatedAt: "2026-07-25T10:00:00.000Z",
-  rowVersion: 0,
 };
 
-describe("DesignOptionProxyController", () => {
+describe("GoldenDatasetProxyController", () => {
   it("GET 列表应该走通配符透传（不走严格验证）", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
     const request = createRequest({
       method: "GET",
-      originalUrl: "/v1/design-options?projectId=ds-001",
-      query: { projectId: "ds-001" },
+      originalUrl: "/v1/golden-datasets?category=ARCHITECTURE",
+      query: { category: "ARCHITECTURE" },
     });
     vi.mocked(proxyService.forward).mockResolvedValue(
       createProxyResult({ items: [], total: 0 }),
@@ -72,24 +69,24 @@ describe("DesignOptionProxyController", () => {
     expect(proxyService.forward).toHaveBeenCalledWith(
       expect.objectContaining({
         method: "GET",
-        path: "/v1/design-options?projectId=ds-001",
-        query: { projectId: "ds-001" },
+        path: "/v1/golden-datasets?category=ARCHITECTURE",
+        query: { category: "ARCHITECTURE" },
       }),
     );
   });
 
-  it("POST 创建应该转发 body 与授权头并通过严格 schema 验证", async () => {
+  it("POST 创建应该转发 body 并通过严格 schema 验证", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
     const requestBody = {
-      projectId: "550e8400-e29b-41d4-a716-446655440002",
-      title: "概念方案 A",
-      description: "建筑专业功能布局选项",
-      discipline: "ARCHITECTURE",
+      name: "办公楼金样 v1",
+      category: "ARCHITECTURE",
+      buildingType: "office",
+      storageKey: "golden/dataset-001",
     };
     const headerMock = vi.fn((name: string) => {
       const map: Record<string, string> = {
@@ -102,12 +99,11 @@ describe("DesignOptionProxyController", () => {
     });
     const request = createRequest({
       method: "POST",
-      originalUrl: "/v1/design-options",
       body: requestBody,
       header: headerMock,
     });
     vi.mocked(proxyService.forward).mockResolvedValue(
-      createProxyResult({ ...validDesignOption }, 201),
+      createProxyResult({ ...validGoldenDataset }, 201),
     );
 
     const result = await controller.create(request);
@@ -116,33 +112,27 @@ describe("DesignOptionProxyController", () => {
       expect.objectContaining({
         method: "POST",
         body: requestBody,
-        path: "/v1/design-options",
       }),
     );
     const callArgs = vi.mocked(proxyService.forward).mock.calls[0][0];
     expect(callArgs.headers).toMatchObject({
       [HttpHeader.AUTHORIZATION]: "Bearer token-xyz",
       [HttpHeader.X_TENANT_ID]: "tenant-001",
-      "x-user-id": "user-001",
     });
     expect(result.status).toBe(201);
     expect(result.data).toMatchObject({ status: "DRAFT" });
   });
 
-  it("POST 创建响应缺失 status 应抛 502（契约验证阻断）", async () => {
+  it("POST 创建响应缺失 status 应抛 502", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
-    const request = createRequest({
-      method: "POST",
-      body: {},
-    });
-    // 缺失 status 字段（前端依赖此字段判断选项生命周期）
+    const request = createRequest({ method: "POST", body: {} });
     const brokenResponse = {
-      ...validDesignOption,
+      ...validGoldenDataset,
       status: undefined,
     };
     vi.mocked(proxyService.forward).mockResolvedValue(
@@ -157,21 +147,17 @@ describe("DesignOptionProxyController", () => {
     });
   });
 
-  it("POST 创建响应 discipline 为非枚举值应抛 502", async () => {
+  it("POST 创建响应 category 为非枚举值应抛 502", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
-    const request = createRequest({
-      method: "POST",
-      body: {},
-    });
-    // discipline 必须为 ARCHITECTURE/STRUCTURE/MEP/LANDSCAPE/INTERIOR
+    const request = createRequest({ method: "POST", body: {} });
     const brokenResponse = {
-      ...validDesignOption,
-      discipline: "INVALID",
+      ...validGoldenDataset,
+      category: "INVALID",
     };
     vi.mocked(proxyService.forward).mockResolvedValue(
       createProxyResult(brokenResponse, 201),
@@ -182,15 +168,15 @@ describe("DesignOptionProxyController", () => {
     });
   });
 
-  it("POST 创建响应缺失 rowVersion 应抛 502（乐观锁不变量）", async () => {
+  it("POST 创建响应缺失 version 应抛 502", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
     const request = createRequest({ method: "POST", body: {} });
-    const brokenResponse = { ...validDesignOption, rowVersion: undefined };
+    const brokenResponse = { ...validGoldenDataset, version: undefined };
     vi.mocked(proxyService.forward).mockResolvedValue(
       createProxyResult(brokenResponse, 201),
     );
@@ -203,17 +189,16 @@ describe("DesignOptionProxyController", () => {
   it("GET /:id 详情应该透传路径参数并通过严格 schema 验证", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
     const request = createRequest({
       method: "GET",
-      originalUrl: "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
-      query: {},
+      originalUrl: "/v1/golden-datasets/550e8400-e29b-41d4-a716-446655440000",
     });
     vi.mocked(proxyService.forward).mockResolvedValue(
-      createProxyResult({ ...validDesignOption }),
+      createProxyResult({ ...validGoldenDataset }),
     );
 
     const result = await controller.getById(
@@ -222,107 +207,119 @@ describe("DesignOptionProxyController", () => {
     );
 
     const callArgs = vi.mocked(proxyService.forward).mock.calls[0][0];
-    expect(callArgs.path).toBe(
-      "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
-    );
     expect(callArgs.method).toBe("GET");
     expect(callArgs.body).toBeUndefined();
     expect(result.status).toBe(200);
     expect(result.data).toMatchObject({ status: "DRAFT" });
   });
 
-  it("GET /:id 响应缺失 discipline 字段应抛 502", async () => {
+  it("POST /:id/freeze 冻结应该通过严格 schema 验证（含 frozenAt）", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
     const request = createRequest({
-      method: "GET",
-      originalUrl: "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
+      method: "POST",
+      originalUrl:
+        "/v1/golden-datasets/550e8400-e29b-41d4-a716-446655440000/freeze",
     });
-    const brokenResponse = {
-      ...validDesignOption,
-      discipline: undefined,
+    // 冻结后的响应：status 升级为 FROZEN，含 frozenAt
+    const frozenDataset = {
+      ...validGoldenDataset,
+      status: "FROZEN",
+      frozenAt: "2026-07-25T11:00:00.000Z",
     };
     vi.mocked(proxyService.forward).mockResolvedValue(
-      createProxyResult(brokenResponse, 200),
+      createProxyResult(frozenDataset),
     );
 
-    await expect(
-      controller.getById(request, "550e8400-e29b-41d4-a716-446655440000"),
-    ).rejects.toMatchObject({
-      status: 502,
+    const result = await controller.freeze(
+      request,
+      "550e8400-e29b-41d4-a716-446655440000",
+    );
+
+    expect(result.status).toBe(200);
+    expect(result.data).toMatchObject({
+      status: "FROZEN",
+      frozenAt: "2026-07-25T11:00:00.000Z",
     });
   });
 
-  it("PATCH 更新应该走通配符透传（不走严格验证）", async () => {
+  it("POST /:id/freeze 响应缺失 version 字段应抛 502（契约验证阻断）", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
-    const requestBody = { status: "ACCEPTED", reviewComment: "通过审核" };
     const request = createRequest({
-      method: "PATCH",
-      originalUrl: "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
-      body: requestBody,
+      method: "POST",
+      originalUrl:
+        "/v1/golden-datasets/550e8400-e29b-41d4-a716-446655440000/freeze",
+    });
+    // 缺失 version 字段（违反 goldenDatasetDtoSchema）
+    const brokenResponse = {
+      ...validGoldenDataset,
+      status: "FROZEN",
+      frozenAt: "2026-07-25T11:00:00.000Z",
+      version: undefined,
+    };
+    vi.mocked(proxyService.forward).mockResolvedValue(
+      createProxyResult(brokenResponse),
+    );
+
+    await expect(
+      controller.freeze(request, "550e8400-e29b-41d4-a716-446655440000"),
+    ).rejects.toMatchObject({
+      status: 502,
+      response: {
+        errorCode: "CONTRACT_VALIDATION_FAILED",
+      },
+    });
+  });
+
+  it("DELETE 请求应该不携带 body", async () => {
+    const proxyService = createProxyServiceMock();
+    const schemaValidator = createSchemaValidator();
+    const controller = new GoldenDatasetProxyController(
+      proxyService,
+      schemaValidator,
+    );
+    const request = createRequest({
+      method: "DELETE",
+      originalUrl: "/v1/golden-datasets/550e8400-e29b-41d4-a716-446655440000",
+      body: { ignored: true },
     });
     vi.mocked(proxyService.forward).mockResolvedValue(
-      createProxyResult({ ...validDesignOption, status: "ACCEPTED" }),
+      createProxyResult(null, 204),
     );
 
     await controller.proxy(request);
 
     expect(proxyService.forward).toHaveBeenCalledWith(
       expect.objectContaining({
-        method: "PATCH",
-        body: requestBody,
-        path: "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
+        method: "DELETE",
+        body: undefined,
       }),
     );
   });
 
-  it("应该在请求头未携带 traceId 时使用 request.traceId 兜底", async () => {
+  it("非 2xx 状态码响应应直接透传", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
     const request = createRequest({
       method: "GET",
-      originalUrl: "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
-      header: vi.fn(() => undefined),
-      traceId: "fallback-trace-id",
+      originalUrl: "/v1/golden-datasets/550e8400-e29b-41d4-a716-446655440000",
     });
-    vi.mocked(proxyService.forward).mockResolvedValue(
-      createProxyResult({ ...validDesignOption }),
-    );
-
-    await controller.getById(request, "550e8400-e29b-41d4-a716-446655440000");
-
-    const callArgs = vi.mocked(proxyService.forward).mock.calls[0][0];
-    expect(callArgs.headers[HttpHeader.X_TRACE_ID]).toBe("fallback-trace-id");
-  });
-
-  it("非 2xx 状态码响应应直接透传，不触发 schema 验证", async () => {
-    const proxyService = createProxyServiceMock();
-    const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
-      proxyService,
-      schemaValidator,
-    );
-    const request = createRequest({
-      method: "GET",
-      originalUrl: "/v1/design-options/550e8400-e29b-41d4-a716-446655440000",
-    });
-    // 模拟 404 错误响应
     const errorResponse = {
-      errorCode: "DESIGN_OPTION_NOT_FOUND",
-      message: "设计选项不存在",
+      errorCode: "DATASET_NOT_FOUND",
+      message: "数据集不存在",
     };
     vi.mocked(proxyService.forward).mockResolvedValue(
       createProxyResult(errorResponse, 404),
@@ -336,21 +333,17 @@ describe("DesignOptionProxyController", () => {
     expect(result.data).toEqual(errorResponse);
   });
 
-  it("应该兼容 ApiResponse<T> 包装格式（Java Core Service）", async () => {
+  it("应该兼容 ApiResponse<T> 包装格式", async () => {
     const proxyService = createProxyServiceMock();
     const schemaValidator = createSchemaValidator();
-    const controller = new DesignOptionProxyController(
+    const controller = new GoldenDatasetProxyController(
       proxyService,
       schemaValidator,
     );
-    const request = createRequest({
-      method: "POST",
-      body: {},
-    });
-    // Java Core Service 返回 ApiResponse<T> 包装格式
+    const request = createRequest({ method: "POST", body: {} });
     const wrappedResponse = {
       code: 0,
-      data: { ...validDesignOption },
+      data: { ...validGoldenDataset },
       message: "created",
       traceId: "trace-001",
     };
@@ -361,7 +354,6 @@ describe("DesignOptionProxyController", () => {
     const result = await controller.create(request);
 
     expect(result.status).toBe(201);
-    // 验证后仍是 ApiResponse 包装格式
     const data = result.data as { code: number; data: unknown };
     expect(data.code).toBe(0);
     expect(data.data).toMatchObject({ status: "DRAFT" });

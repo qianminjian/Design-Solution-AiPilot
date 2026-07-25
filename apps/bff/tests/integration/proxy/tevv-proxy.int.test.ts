@@ -83,10 +83,14 @@ describe("TEVV 金样数据集代理集成测试", () => {
         {
           code: 0,
           data: {
-            id: "ds-3",
+            id: "550e8400-e29b-41d4-a716-446655440003",
             name: "新建数据集",
             category: "MEP",
+            buildingType: "office",
+            version: 1,
+            fileCount: 0,
             status: "DRAFT",
+            createdAt: "2026-07-25T10:00:00.000Z",
           },
           message: "created",
           traceId: "tevv-trace-002",
@@ -100,7 +104,7 @@ describe("TEVV 金样数据集代理集成测试", () => {
       .send({
         name: "新建数据集",
         category: "MEP",
-        buildingType: "OFFICE_MEDIUM",
+        buildingType: "office",
         storageKey: "golden/test",
       })
       .set("Authorization", "Bearer test-token")
@@ -110,7 +114,10 @@ describe("TEVV 金样数据集代理集成测试", () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("code", 0);
-    expect(response.body.data).toHaveProperty("id", "ds-3");
+    expect(response.body.data).toHaveProperty(
+      "id",
+      "550e8400-e29b-41d4-a716-446655440003",
+    );
     expect(response.body.data).toHaveProperty("status", "DRAFT");
   });
 
@@ -119,10 +126,16 @@ describe("TEVV 金样数据集代理集成测试", () => {
       buildProxyResult({
         code: 0,
         data: {
-          id: "ds-1",
+          id: "550e8400-e29b-41d4-a716-446655440010",
           name: "办公楼金样 v1",
+          category: "ARCHITECTURE",
+          buildingType: "office",
+          version: 1,
+          fileCount: 12,
           status: "FROZEN",
+          storageKey: "golden/dataset-001",
           frozenAt: "2026-07-23T09:00:00Z",
+          createdAt: "2026-07-22T10:00:00.000Z",
         },
         message: "success",
         traceId: "tevv-trace-003",
@@ -130,7 +143,9 @@ describe("TEVV 金样数据集代理集成测试", () => {
     );
 
     const response = await request(app.getHttpServer())
-      .post("/api/v1/golden-datasets/ds-1/freeze")
+      .post(
+        "/api/v1/golden-datasets/550e8400-e29b-41d4-a716-446655440010/freeze",
+      )
       .set("Authorization", "Bearer test-token")
       .set("x-tenant-id", "tenant-001")
       .set("x-user-id", "user-001");
@@ -138,6 +153,47 @@ describe("TEVV 金样数据集代理集成测试", () => {
     expect(response.status).toBe(200);
     expect(response.body.data).toHaveProperty("status", "FROZEN");
     expect(response.body.data).toHaveProperty("frozenAt");
+  });
+
+  it("POST /api/v1/golden-datasets 响应缺失 version 应返回 502（契约验证阻断）", async () => {
+    // 模拟 Core Service 漂移：缺失 version 字段
+    mockForward.mockResolvedValue(
+      buildProxyResult(
+        {
+          code: 0,
+          data: {
+            id: "550e8400-e29b-41d4-a716-446655440003",
+            name: "新建数据集",
+            category: "MEP",
+            buildingType: "office",
+            // 缺失 version 字段
+            fileCount: 0,
+            status: "DRAFT",
+            createdAt: "2026-07-25T10:00:00.000Z",
+          },
+          message: "created",
+          traceId: "tevv-trace-002",
+        },
+        201,
+      ),
+    );
+
+    const response = await request(app.getHttpServer())
+      .post("/api/v1/golden-datasets")
+      .send({
+        name: "新建数据集",
+        category: "MEP",
+        buildingType: "office",
+        storageKey: "golden/test",
+      })
+      .set("Authorization", "Bearer test-token")
+      .set("Content-Type", "application/json");
+
+    expect(response.status).toBe(502);
+    expect(response.body).toHaveProperty(
+      "errorCode",
+      "CONTRACT_VALIDATION_FAILED",
+    );
   });
 });
 
