@@ -218,11 +218,14 @@ describe("TEVV 验证项代理集成测试", () => {
         {
           code: 0,
           data: {
-            id: "vi-3",
+            id: "550e8400-e29b-41d4-a716-446655440003",
+            datasetId: "550e8400-e29b-41d4-a716-446655440001",
             gateCode: "GATE-P2",
             verificationType: "MANUAL",
             riskLevel: "MEDIUM",
             status: "PENDING",
+            description: "验证项描述",
+            createdAt: "2026-07-25T10:00:00.000Z",
           },
           message: "created",
           traceId: "tevv-trace-011",
@@ -234,7 +237,7 @@ describe("TEVV 验证项代理集成测试", () => {
     const response = await request(app.getHttpServer())
       .post("/api/v1/verification-items")
       .send({
-        datasetId: "ds-1",
+        datasetId: "550e8400-e29b-41d4-a716-446655440001",
         gateCode: "GATE-P2",
         verificationType: "MANUAL",
         riskLevel: "MEDIUM",
@@ -246,8 +249,54 @@ describe("TEVV 验证项代理集成测试", () => {
       .set("Content-Type", "application/json");
 
     expect(response.status).toBe(201);
-    expect(response.body.data).toHaveProperty("id", "vi-3");
+    expect(response.body.data).toHaveProperty(
+      "id",
+      "550e8400-e29b-41d4-a716-446655440003",
+    );
     expect(response.body.data).toHaveProperty("status", "PENDING");
+    expect(response.body.data).toHaveProperty("riskLevel", "MEDIUM");
+  });
+
+  it("POST /api/v1/verification-items 响应缺失 riskLevel 应返回 502（AI 安全红线阻断）", async () => {
+    // 模拟 Core Service 漂移：缺失 riskLevel 字段
+    mockForward.mockResolvedValue(
+      buildProxyResult(
+        {
+          code: 0,
+          data: {
+            id: "550e8400-e29b-41d4-a716-446655440003",
+            datasetId: "550e8400-e29b-41d4-a716-446655440001",
+            gateCode: "GATE-P2",
+            verificationType: "MANUAL",
+            // 缺失 riskLevel 字段
+            status: "PENDING",
+            description: "验证项描述",
+            createdAt: "2026-07-25T10:00:00.000Z",
+          },
+          message: "created",
+          traceId: "tevv-trace-011",
+        },
+        201,
+      ),
+    );
+
+    const response = await request(app.getHttpServer())
+      .post("/api/v1/verification-items")
+      .send({
+        datasetId: "550e8400-e29b-41d4-a716-446655440001",
+        gateCode: "GATE-P2",
+        verificationType: "MANUAL",
+        riskLevel: "MEDIUM",
+        description: "验证项描述",
+      })
+      .set("Authorization", "Bearer test-token")
+      .set("Content-Type", "application/json");
+
+    expect(response.status).toBe(502);
+    expect(response.body).toHaveProperty(
+      "errorCode",
+      "CONTRACT_VALIDATION_FAILED",
+    );
   });
 
   it("应该成功转发 PATCH /api/v1/verification-items/:id/status 更新状态", async () => {
