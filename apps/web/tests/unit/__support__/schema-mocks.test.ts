@@ -13,6 +13,18 @@ import {
   promptTemplateDtoSchema,
   decideGateRequestSchema,
   createProjectRequestSchema,
+  designOptionDtoSchema,
+  designFeedbackDtoSchema,
+  documentDtoSchema,
+  documentVersionDtoSchema,
+  stageInstanceDtoSchema,
+  gateDecisionDtoSchema,
+  complianceRuleDtoSchema,
+  complianceCheckRunDtoSchema,
+  checkResultDtoSchema,
+  ruleRevisionDtoSchema,
+  aiGenerationRecordDtoSchema,
+  goldenDatasetDtoSchema,
 } from "@design-platform/shared";
 
 describe("schema-mocks", () => {
@@ -259,6 +271,104 @@ describe("schema-mocks", () => {
       expect(mock.riskLevel).toBe("high");
       expect(mock.isAiAssisted).toBe(true); // 保留默认值
       const result = generateSolutionResponseSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe("hooks schema 集成测试", () => {
+    it("应该为 designOptionDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(designOptionDtoSchema);
+      const result = designOptionDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 designFeedbackDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(designFeedbackDtoSchema);
+      const result = designFeedbackDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 documentDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(documentDtoSchema);
+      const result = documentDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 documentVersionDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(documentVersionDtoSchema);
+      const result = documentVersionDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 stageInstanceDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(stageInstanceDtoSchema);
+      const result = stageInstanceDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 gateDecisionDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(gateDecisionDtoSchema);
+      const result = gateDecisionDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 complianceRuleDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(complianceRuleDtoSchema);
+      const result = complianceRuleDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 complianceCheckRunDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(complianceCheckRunDtoSchema);
+      const result = complianceCheckRunDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 checkResultDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(checkResultDtoSchema);
+      const result = checkResultDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 ruleRevisionDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(ruleRevisionDtoSchema);
+      const result = ruleRevisionDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 aiGenerationRecordDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(aiGenerationRecordDtoSchema);
+      const result = aiGenerationRecordDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该为 goldenDatasetDtoSchema 生成有效 mock", () => {
+      const mock = generateMockFromSchema(goldenDatasetDtoSchema);
+      const result = goldenDatasetDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该支持覆盖 designOptionDtoSchema 关键字段", () => {
+      const mock = generateMockFromSchema(designOptionDtoSchema, {
+        title: "方案 C-庭院式",
+        status: "CANDIDATE",
+        discipline: "ARCHITECTURE",
+      });
+      expect(mock.title).toBe("方案 C-庭院式");
+      expect(mock.status).toBe("CANDIDATE");
+      expect(mock.discipline).toBe("ARCHITECTURE");
+      const result = designOptionDtoSchema.safeParse(mock);
+      expect(result.success).toBe(true);
+    });
+
+    it("应该支持覆盖 aiGenerationRecordDtoSchema 风险等级字段", () => {
+      const mock = generateMockFromSchema(aiGenerationRecordDtoSchema, {
+        riskLevel: "high",
+        reviewStatus: "PENDING",
+      });
+      expect(mock.riskLevel).toBe("high");
+      expect(mock.reviewStatus).toBe("PENDING");
+      const result = aiGenerationRecordDtoSchema.safeParse(mock);
       expect(result.success).toBe(true);
     });
   });
