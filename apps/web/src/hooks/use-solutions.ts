@@ -10,8 +10,13 @@ import {
   HttpHeader,
   SolutionsApiPaths,
   generateSolutionResponseSchema,
+  promptTemplateDtoSchema,
 } from "@design-platform/shared";
-import { validateResponseStrict } from "@/lib/schema-validator";
+import { z } from "zod";
+import {
+  validateResponse,
+  validateResponseStrict,
+} from "@/lib/schema-validator";
 
 /** API 基础路径：优先使用 NEXT_PUBLIC_BFF_URL，未配置则走同源 /api */
 const API_BASE_URL = process.env.NEXT_PUBLIC_BFF_URL ?? "";
@@ -238,6 +243,9 @@ export function getTemplateLabel(templateName: string): string {
  *
  * 用于页面下拉选择，复用 apiGet（遵循 ApiResponse 包装格式，由 BFF 透传 AI Service 响应）
  * 注意：prompts 端点响应格式为 PromptTemplateDto[]，不走 ApiResponse 包装
+ *
+ * 契约验证：软验证模式
+ *  - 模板列表结构错误不阻断下拉选择，console.warn 记录便于排查
  */
 export async function fetchPromptTemplates(): Promise<PromptTemplateDto[]> {
   const headers = new Headers({
@@ -257,5 +265,9 @@ export async function fetchPromptTemplates(): Promise<PromptTemplateDto[]> {
     throw new Error(`获取 Prompt 模板失败：${response.status}`);
   }
 
-  return (await response.json()) as PromptTemplateDto[];
+  const payload: unknown = await response.json();
+  // 软验证：模板列表结构错误不阻断展示，console.warn 记录便于排查
+  return validateResponse(payload, z.array(promptTemplateDtoSchema), {
+    context: "fetchPromptTemplates",
+  });
 }

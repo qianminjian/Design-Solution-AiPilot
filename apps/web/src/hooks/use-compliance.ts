@@ -11,6 +11,7 @@ import type {
   CreateRuleRevisionRequest,
   IdsImportRequest,
   IdsImportResponse,
+  UpdateRuleRequest,
   OffsetPageResponse,
 } from "@design-platform/shared";
 import {
@@ -20,9 +21,13 @@ import {
   checkResultDtoSchema,
   ruleRevisionDtoSchema,
   idsImportResponseSchema,
+  updateRuleRequestSchema,
 } from "@design-platform/shared";
 import { z } from "zod";
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api-client";
+
+// 类型再导出（向后兼容组件层导入）
+export type { UpdateRuleRequest };
 
 /**
  * 偏移分页响应 schema 工厂
@@ -99,12 +104,20 @@ export function useComplianceRule(id: string | null | undefined) {
 
 /**
  * 创建规则
+ *
+ * 契约验证：软验证模式
+ *  - 创建响应结构错误不阻断，但会记录日志
  */
 export function useCreateComplianceRule() {
   const queryClient = useQueryClient();
   return useMutation<ComplianceRuleDto, Error, CreateRuleRequest>({
     mutationFn: (payload) =>
-      apiPost<ComplianceRuleDto>(ComplianceApiPaths.rules, payload),
+      apiPost<ComplianceRuleDto>(ComplianceApiPaths.rules, payload, {
+        validate: {
+          schema: complianceRuleDtoSchema,
+          context: "useCreateComplianceRule",
+        },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...COMPLIANCE_QUERY_KEY, "rules", "list"],
@@ -128,15 +141,11 @@ export function useDeleteComplianceRule() {
   });
 }
 
-/** 更新规则请求（局部类型，与后端 PATCH 对齐） */
-export interface UpdateRuleRequest {
-  name?: string;
-  description?: string;
-  owner?: string;
-}
-
 /**
  * 更新规则（局部字段）
+ *
+ * 契约验证：软验证模式
+ *  - 更新响应结构错误不阻断，console.warn 记录便于排查
  */
 export function useUpdateComplianceRule() {
   const queryClient = useQueryClient();
@@ -145,8 +154,26 @@ export function useUpdateComplianceRule() {
     Error,
     { id: string; data: UpdateRuleRequest }
   >({
-    mutationFn: ({ id, data }) =>
-      apiPatch<ComplianceRuleDto>(ComplianceApiPaths.ruleDetail(id), data),
+    mutationFn: ({ id, data }) => {
+      // 请求体软验证
+      const parsed = updateRuleRequestSchema.safeParse(data);
+      if (!parsed.success) {
+        console.warn(
+          "[useUpdateComplianceRule] 请求体校验失败",
+          parsed.error.flatten(),
+        );
+      }
+      return apiPatch<ComplianceRuleDto>(
+        ComplianceApiPaths.ruleDetail(id),
+        data,
+        {
+          validate: {
+            schema: complianceRuleDtoSchema,
+            context: "useUpdateComplianceRule",
+          },
+        },
+      );
+    },
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({
         queryKey: [...COMPLIANCE_QUERY_KEY, "rules", "list"],
@@ -198,6 +225,8 @@ export function useRuleRevisions(
 
 /**
  * 创建规则修订
+ *
+ * 契约验证：软验证模式
  */
 export function useCreateRuleRevision(ruleId: string) {
   const queryClient = useQueryClient();
@@ -206,6 +235,12 @@ export function useCreateRuleRevision(ruleId: string) {
       apiPost<RuleRevisionDto>(
         ComplianceApiPaths.ruleRevisions(ruleId),
         payload,
+        {
+          validate: {
+            schema: ruleRevisionDtoSchema,
+            context: "useCreateRuleRevision",
+          },
+        },
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -217,6 +252,8 @@ export function useCreateRuleRevision(ruleId: string) {
 
 /**
  * 激活规则修订
+ *
+ * 契约验证：软验证模式
  */
 export function useActivateRuleRevision() {
   const queryClient = useQueryClient();
@@ -225,6 +262,12 @@ export function useActivateRuleRevision() {
       apiPost<RuleRevisionDto>(
         ComplianceApiPaths.activateRevision(revisionId),
         {},
+        {
+          validate: {
+            schema: ruleRevisionDtoSchema,
+            context: "useActivateRuleRevision",
+          },
+        },
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -317,12 +360,19 @@ export function useComplianceCheckRun(id: string | null | undefined) {
 
 /**
  * 创建检查运行
+ *
+ * 契约验证：软验证模式
  */
 export function useCreateComplianceCheckRun() {
   const queryClient = useQueryClient();
   return useMutation<ComplianceCheckRunDto, Error, CreateCheckRunRequest>({
     mutationFn: (payload) =>
-      apiPost<ComplianceCheckRunDto>(ComplianceApiPaths.checkRuns, payload),
+      apiPost<ComplianceCheckRunDto>(ComplianceApiPaths.checkRuns, payload, {
+        validate: {
+          schema: complianceCheckRunDtoSchema,
+          context: "useCreateComplianceCheckRun",
+        },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...COMPLIANCE_QUERY_KEY, "check-runs", "list"],
@@ -333,6 +383,8 @@ export function useCreateComplianceCheckRun() {
 
 /**
  * 执行检查运行
+ *
+ * 契约验证：软验证模式
  */
 export function useExecuteComplianceCheckRun() {
   const queryClient = useQueryClient();
@@ -341,6 +393,12 @@ export function useExecuteComplianceCheckRun() {
       apiPost<ComplianceCheckRunDto>(
         ComplianceApiPaths.executeCheckRun(id),
         {},
+        {
+          validate: {
+            schema: complianceCheckRunDtoSchema,
+            context: "useExecuteComplianceCheckRun",
+          },
+        },
       ),
     onSuccess: (_, id) => {
       void queryClient.invalidateQueries({

@@ -1,7 +1,27 @@
 "use client";
 
-import { Card, Table, Tag, Button, Space, Typography, Modal, Form, Input, Select, Spin, Alert, Breadcrumb } from "antd";
-import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Table,
+  Tag,
+  Button,
+  Space,
+  Typography,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Spin,
+  Alert,
+  Breadcrumb,
+} from "antd";
+import {
+  PlusOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  ExclamationCircleOutlined,
+  QuestionCircleOutlined,
+} from "@ant-design/icons";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,11 +68,22 @@ const TYPE_LABELS: Record<VerificationType, string> = {
 };
 
 /** 状态标签配置 */
-const STATUS_CONFIG: Record<VerificationStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  PENDING: { label: "待验证", color: "default", icon: <QuestionCircleOutlined /> },
+const STATUS_CONFIG: Record<
+  VerificationStatus,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  PENDING: {
+    label: "待验证",
+    color: "default",
+    icon: <QuestionCircleOutlined />,
+  },
   PASSED: { label: "通过", color: "success", icon: <CheckCircleOutlined /> },
   FAILED: { label: "未通过", color: "error", icon: <CloseCircleOutlined /> },
-  WAIVED: { label: "豁免", color: "warning", icon: <ExclamationCircleOutlined /> },
+  WAIVED: {
+    label: "豁免",
+    color: "warning",
+    icon: <ExclamationCircleOutlined />,
+  },
 };
 
 /** 风险等级配置 */
@@ -62,6 +93,32 @@ const RISK_CONFIG: Record<RiskLevel, { label: string; color: string }> = {
   HIGH: { label: "高", color: "red" },
   CRITICAL: { label: "严重", color: "magenta" },
 };
+
+/** 风险等级兜底配置（BFF 已严格验证，但前端防御性兜底，避免后端返回未知枚举值导致渲染崩） */
+const RISK_FALLBACK: { label: string; color: string } = {
+  label: "未评估",
+  color: "default",
+};
+
+/** 安全访问风险等级配置 */
+function getRiskConfig(level: RiskLevel | undefined | null) {
+  return level && RISK_CONFIG[level] ? RISK_CONFIG[level] : RISK_FALLBACK;
+}
+
+/** 状态兜底配置 */
+const STATUS_FALLBACK: { label: string; color: string; icon: React.ReactNode } =
+  {
+    label: "未知",
+    color: "default",
+    icon: <QuestionCircleOutlined />,
+  };
+
+/** 安全访问状态配置 */
+function getStatusConfig(status: VerificationStatus | undefined | null) {
+  return status && STATUS_CONFIG[status]
+    ? STATUS_CONFIG[status]
+    : STATUS_FALLBACK;
+}
 
 /** 验证类型选项 */
 const TYPE_OPTIONS: { value: VerificationType; label: string }[] = [
@@ -103,10 +160,17 @@ function useVerificationItems(datasetId: string) {
 function useCreateVerificationItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ datasetId, data }: { datasetId: string; data: CreateVerificationItemRequest }) =>
-      apiPost(`/api/v1/verification-items`, { ...data, datasetId }),
+    mutationFn: ({
+      datasetId,
+      data,
+    }: {
+      datasetId: string;
+      data: CreateVerificationItemRequest;
+    }) => apiPost(`/api/v1/verification-items`, { ...data, datasetId }),
     onSuccess: (_, variables) =>
-      queryClient.invalidateQueries({ queryKey: ["verification-items", variables.datasetId] }),
+      queryClient.invalidateQueries({
+        queryKey: ["verification-items", variables.datasetId],
+      }),
   });
 }
 
@@ -116,9 +180,21 @@ function useCreateVerificationItem() {
 function useUpdateStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ itemId, status, waiverReason }: { itemId: string; status: VerificationStatus; waiverReason?: string }) =>
-      apiPatch(`/api/v1/verification-items/${itemId}/status?status=${status}${waiverReason ? `&waiverReason=${encodeURIComponent(waiverReason)}` : ""}`, {}),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["verification-items"] }),
+    mutationFn: ({
+      itemId,
+      status,
+      waiverReason,
+    }: {
+      itemId: string;
+      status: VerificationStatus;
+      waiverReason?: string;
+    }) =>
+      apiPatch(
+        `/api/v1/verification-items/${itemId}/status?status=${status}${waiverReason ? `&waiverReason=${encodeURIComponent(waiverReason)}` : ""}`,
+        {},
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["verification-items"] }),
   });
 }
 
@@ -129,7 +205,9 @@ export default function VerificationItemsPage() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [waiveModalVisible, setWaiveModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<VerificationItemDto | null>(null);
+  const [selectedItem, setSelectedItem] = useState<VerificationItemDto | null>(
+    null,
+  );
   const [form] = Form.useForm<CreateVerificationItemRequest>();
   const [waiveForm] = Form.useForm<{ reason: string }>();
 
@@ -145,7 +223,7 @@ export default function VerificationItemsPage() {
           setModalVisible(false);
           form.resetFields();
         },
-      }
+      },
     );
   };
 
@@ -161,12 +239,18 @@ export default function VerificationItemsPage() {
   const handleWaive = (values: { reason: string }) => {
     if (selectedItem) {
       updateStatusMutation.mutate(
-        { itemId: selectedItem.id, status: "WAIVED", waiverReason: values.reason },
-        { onSuccess: () => {
-          setWaiveModalVisible(false);
-          setSelectedItem(null);
-          waiveForm.resetFields();
-        }}
+        {
+          itemId: selectedItem.id,
+          status: "WAIVED",
+          waiverReason: values.reason,
+        },
+        {
+          onSuccess: () => {
+            setWaiveModalVisible(false);
+            setSelectedItem(null);
+            waiveForm.resetFields();
+          },
+        },
       );
     }
   };
@@ -176,7 +260,13 @@ export default function VerificationItemsPage() {
   }
 
   if (error) {
-    return <Alert type="error" message="加载失败" description={(error as Error).message} />;
+    return (
+      <Alert
+        type="error"
+        message="加载失败"
+        description={(error as Error).message}
+      />
+    );
   }
 
   const columns = [
@@ -191,15 +281,17 @@ export default function VerificationItemsPage() {
       dataIndex: "verificationType",
       key: "verificationType",
       width: 100,
-      render: (type: VerificationType) => <Tag>{TYPE_LABELS[type]}</Tag>,
+      render: (type: VerificationType) => (
+        <Tag>{TYPE_LABELS[type] ?? "未知"}</Tag>
+      ),
     },
     {
       title: "风险等级",
       dataIndex: "riskLevel",
       key: "riskLevel",
       width: 80,
-      render: (level: RiskLevel) => {
-        const config = RISK_CONFIG[level];
+      render: (level: RiskLevel | undefined | null) => {
+        const config = getRiskConfig(level);
         return <Tag color={config.color}>{config.label}</Tag>;
       },
     },
@@ -214,8 +306,8 @@ export default function VerificationItemsPage() {
       dataIndex: "status",
       key: "status",
       width: 100,
-      render: (status: VerificationStatus) => {
-        const config = STATUS_CONFIG[status];
+      render: (status: VerificationStatus | undefined | null) => {
+        const config = getStatusConfig(status);
         return (
           <Tag color={config.color} icon={config.icon}>
             {config.label}
@@ -228,7 +320,8 @@ export default function VerificationItemsPage() {
       dataIndex: "verifiedAt",
       key: "verifiedAt",
       width: 150,
-      render: (date?: string) => date ? new Date(date).toLocaleString("zh-CN") : "-",
+      render: (date?: string) =>
+        date ? new Date(date).toLocaleString("zh-CN") : "-",
     },
     {
       title: "操作",
@@ -276,13 +369,23 @@ export default function VerificationItemsPage() {
     <div>
       <Breadcrumb
         items={[
-          { title: "金样数据集", onClick: () => router.push("/golden-datasets") },
+          {
+            title: "金样数据集",
+            onClick: () => router.push("/golden-datasets"),
+          },
           { title: `验证项管理 (${datasetId.slice(0, 8)}...)` },
         ]}
         style={{ marginBottom: 16 }}
       />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 16,
+        }}
+      >
         <Title level={4}>验证项管理</Title>
         <Button
           type="primary"
@@ -354,7 +457,11 @@ export default function VerificationItemsPage() {
           <Form.Item>
             <Space>
               <Button onClick={() => setModalVisible(false)}>取消</Button>
-              <Button type="primary" htmlType="submit" loading={createMutation.isPending}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={createMutation.isPending}
+              >
                 创建
               </Button>
             </Space>
@@ -383,7 +490,11 @@ export default function VerificationItemsPage() {
           <Form.Item>
             <Space>
               <Button onClick={() => setWaiveModalVisible(false)}>取消</Button>
-              <Button type="primary" htmlType="submit" loading={updateStatusMutation.isPending}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={updateStatusMutation.isPending}
+              >
                 确认豁免
               </Button>
             </Space>

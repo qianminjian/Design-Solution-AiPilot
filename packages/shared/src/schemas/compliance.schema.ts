@@ -184,3 +184,15 @@ export const idsImportResponseSchema = z.object({
   failedCount: z.number().int().nonnegative(),
   errors: z.array(z.string()),
 });
+
+/** 更新规则请求 schema（部分字段更新） */
+export const updateRuleRequestSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  owner: z.string().optional(),
+});
+
+// ── 推断类型导出（前端/BFF 共享类型契约） ──
+
+/** 更新规则请求 */
+export type UpdateRuleRequest = z.infer<typeof updateRuleRequestSchema>;
