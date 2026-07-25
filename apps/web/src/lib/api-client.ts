@@ -2,6 +2,8 @@
 
 import type { ApiResponse, ApiErrorResponse } from "@design-platform/shared";
 import { HttpHeader } from "@design-platform/shared";
+import type { ZodType } from "zod";
+import { validateResponse, validateResponseStrict } from "./schema-validator";
 
 /**
  * API 调用错误
@@ -63,21 +65,43 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
 }
 
 /**
+ * 带 schema 验证的请求选项
+ *
+ * 验证策略：
+ *  - validate.schema 提供 + validate.strict=true  → 严格模式，失败抛 ResponseValidationError
+ *  - validate.schema 提供 + validate.strict 未设置 → 软验证，console.warn 后透传原数据
+ *  - validate.schema 未提供 → 不验证（向后兼容）
+ */
+export interface ValidatedRequestOptions extends RequestOptions {
+  /** schema 验证配置 */
+  validate?: {
+    /** zod schema 实例 */
+    schema: ZodType;
+    /** 调用上下文（用于日志关联，如 "useAuth.login"） */
+    context: string;
+    /** 严格模式：验证失败抛错；默认 false 软验证 */
+    strict?: boolean;
+  };
+}
+
+/**
  * 统一 fetch 封装
  * - 自动添加 x-trace-id Header（D35 traceId 全链路传播约定）
  * - 自动添加 Authorization Header（从 cookie 读取 access token）
  * - 双层状态码校验：HTTP 状态 + 业务 code
  * - 错误时抛出 ApiError，携带 errorCode 供上层处理
+ * - 可选 schema 验证：响应 data 通过 zod schema 校验
  */
 export async function apiRequest<T>(
   path: string,
-  options: RequestOptions = {},
+  options: ValidatedRequestOptions = {},
 ): Promise<T> {
   const {
     body,
     traceId,
     skipJsonContentType = false,
     headers: customHeaders,
+    validate,
     ...restInit
   } = options;
 
@@ -154,11 +178,27 @@ export async function apiRequest<T>(
     });
   }
 
-  return successPayload.data;
+  // 可选 schema 验证：对响应 data 进行契约校验
+  const data = successPayload.data;
+  if (validate) {
+    if (validate.strict) {
+      return validateResponseStrict(data, validate.schema as ZodType<T>, {
+        context: validate.context,
+      }) as T;
+    }
+    return validateResponse(data, validate.schema as ZodType<T>, {
+      context: validate.context,
+    }) as T;
+  }
+
+  return data;
 }
 
 /** GET 便捷方法 */
-export function apiGet<T>(path: string, options?: RequestOptions): Promise<T> {
+export function apiGet<T>(
+  path: string,
+  options?: ValidatedRequestOptions,
+): Promise<T> {
   return apiRequest<T>(path, { ...options, method: "GET" });
 }
 
@@ -166,7 +206,7 @@ export function apiGet<T>(path: string, options?: RequestOptions): Promise<T> {
 export function apiPost<T>(
   path: string,
   body?: unknown,
-  options?: RequestOptions,
+  options?: ValidatedRequestOptions,
 ): Promise<T> {
   return apiRequest<T>(path, { ...options, method: "POST", body });
 }
@@ -175,7 +215,7 @@ export function apiPost<T>(
 export function apiPut<T>(
   path: string,
   body?: unknown,
-  options?: RequestOptions,
+  options?: ValidatedRequestOptions,
 ): Promise<T> {
   return apiRequest<T>(path, { ...options, method: "PUT", body });
 }
@@ -184,7 +224,7 @@ export function apiPut<T>(
 export function apiPatch<T>(
   path: string,
   body?: unknown,
-  options?: RequestOptions,
+  options?: ValidatedRequestOptions,
 ): Promise<T> {
   return apiRequest<T>(path, { ...options, method: "PATCH", body });
 }
@@ -192,7 +232,7 @@ export function apiPatch<T>(
 /** DELETE 便捷方法 */
 export function apiDelete<T>(
   path: string,
-  options?: RequestOptions,
+  options?: ValidatedRequestOptions,
 ): Promise<T> {
   return apiRequest<T>(path, { ...options, method: "DELETE" });
 }

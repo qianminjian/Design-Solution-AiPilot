@@ -6,7 +6,12 @@ import type {
   GenerateSolutionResponse,
   PromptTemplateDto,
 } from "@design-platform/shared";
-import { HttpHeader, SolutionsApiPaths } from "@design-platform/shared";
+import {
+  HttpHeader,
+  SolutionsApiPaths,
+  generateSolutionResponseSchema,
+} from "@design-platform/shared";
+import { validateResponseStrict } from "@/lib/schema-validator";
 
 /** API 基础路径：优先使用 NEXT_PUBLIC_BFF_URL，未配置则走同源 /api */
 const API_BASE_URL = process.env.NEXT_PUBLIC_BFF_URL ?? "";
@@ -35,6 +40,11 @@ function generateRequestId(): string {
  *
  * AI Service 响应不遵循 ApiResponse 包装格式（直接返回业务对象），
  * 因此不使用 apiPost，而是专用 fetch 仅校验 HTTP 状态码。
+ *
+ * 契约验证（security.md §12 AI 安全红线）：严格模式
+ *  - 强制 isAiAssisted=true 与 requiresHumanReview 字段
+ *  - 防止未标记 AI 内容进入业务流程
+ *  - 验证失败抛 ResponseValidationError，触发人工复核流程
  */
 async function callGenerateSolution(
   request: GenerateSolutionRequest,
@@ -66,7 +76,11 @@ async function callGenerateSolution(
     throw new Error(errorDetail);
   }
 
-  return payload as GenerateSolutionResponse;
+  // 严格验证：AI 响应必须符合 generateSolutionResponseSchema
+  // 强制 isAiAssisted=true 与 requiresHumanReview 字段存在
+  return validateResponseStrict(payload, generateSolutionResponseSchema, {
+    context: "useGenerateSolution",
+  }) as GenerateSolutionResponse;
 }
 
 /**

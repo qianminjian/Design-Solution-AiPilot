@@ -2,7 +2,6 @@ package com.platform.core.compliance;
 
 import com.platform.core.testsupport.AbstractIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -14,18 +13,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * 规则集 API 集成测试
+ *
+ * <p>每个测试方法独立创建租户与规则集，确保与其他测试隔离，不依赖 @Order 共享状态。
+ */
 class RuleSetApiIT extends AbstractIntegrationTest {
 
-    private UUID testTenantId;
-    private String accessToken;
+    /**
+     * 创建测试租户、用户并登录获取 access token，返回上下文对象。
+     */
+    private TestContext createContext(String suffix) {
+        UUID tenantId = createTestTenant("rule-set-" + suffix + "-" + UUID.randomUUID());
+        String email = "rule-set-" + suffix + "+" + UUID.randomUUID() + "@test.com";
+        createTestPrincipal(tenantId, email);
+        String accessToken = loginAndGetAccessToken(tenantId, email);
+        return new TestContext(tenantId, accessToken);
+    }
 
     @Test
-    @Order(1)
     @DisplayName("应该能创建规则集")
     void shouldCreateRuleSet() throws Exception {
-        testTenantId = createTestTenant("rule-set-test");
-        UUID principalId = createTestPrincipal(testTenantId, "rule-set@test.com");
-        accessToken = loginAndGetAccessToken(testTenantId, "rule-set@test.com");
+        TestContext ctx = createContext("create");
 
         String body = """
                 {
@@ -38,7 +47,7 @@ class RuleSetApiIT extends AbstractIntegrationTest {
 
         ResponseEntity<String> resp = restTemplate.exchange(
                 "/api/v1/rule-sets", HttpMethod.POST,
-                new HttpEntity<>(body, withAccessToken(testTenantId, accessToken)), String.class);
+                new HttpEntity<>(body, withAccessToken(ctx.tenantId(), ctx.accessToken())), String.class);
 
         assertEquals(201, resp.getStatusCode().value());
         assertNotNull(resp.getBody());
@@ -50,12 +59,14 @@ class RuleSetApiIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @Order(2)
     @DisplayName("应该能查询规则集列表")
     void shouldListRuleSets() throws Exception {
+        TestContext ctx = createContext("list");
+        createRuleSet(ctx, "列表查询规则集");
+
         ResponseEntity<String> resp = restTemplate.exchange(
                 "/api/v1/rule-sets?page=1&pageSize=10", HttpMethod.GET,
-                new HttpEntity<>(withAccessToken(testTenantId, accessToken)), String.class);
+                new HttpEntity<>(withAccessToken(ctx.tenantId(), ctx.accessToken())), String.class);
 
         assertEquals(200, resp.getStatusCode().value());
         assertNotNull(resp.getBody());
@@ -64,12 +75,14 @@ class RuleSetApiIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @Order(3)
     @DisplayName("应该能按阶段筛选规则集")
     void shouldFilterRuleSetsByStage() throws Exception {
+        TestContext ctx = createContext("filter");
+        createRuleSet(ctx, "阶段筛选规则集");
+
         ResponseEntity<String> resp = restTemplate.exchange(
                 "/api/v1/rule-sets?stageCode=SD", HttpMethod.GET,
-                new HttpEntity<>(withAccessToken(testTenantId, accessToken)), String.class);
+                new HttpEntity<>(withAccessToken(ctx.tenantId(), ctx.accessToken())), String.class);
 
         assertEquals(200, resp.getStatusCode().value());
         assertNotNull(resp.getBody());
@@ -77,12 +90,14 @@ class RuleSetApiIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @Order(4)
     @DisplayName("应该拒绝重复的规则集名称")
     void shouldRejectDuplicateRuleSetName() throws Exception {
+        TestContext ctx = createContext("dup");
+        createRuleSet(ctx, "重复名称规则集");
+
         String body = """
                 {
-                    "name": "方案设计合规检查规则集",
+                    "name": "重复名称规则集",
                     "description": "重复名称",
                     "stageCode": "SD"
                 }
@@ -90,9 +105,20 @@ class RuleSetApiIT extends AbstractIntegrationTest {
 
         ResponseEntity<String> resp = restTemplate.exchange(
                 "/api/v1/rule-sets", HttpMethod.POST,
-                new HttpEntity<>(body, withAccessToken(testTenantId, accessToken)), String.class);
+                new HttpEntity<>(body, withAccessToken(ctx.tenantId(), ctx.accessToken())), String.class);
 
         assertEquals(422, resp.getStatusCode().value());
         assertEquals(4245, extractCode(resp.getBody()));
     }
+
+    private void createRuleSet(TestContext ctx, String name) {
+        String body = """
+                {"name":"%s","description":"测试","stageCode":"SD","rules":[]}
+                """.formatted(name);
+        restTemplate.exchange(
+                "/api/v1/rule-sets", HttpMethod.POST,
+                new HttpEntity<>(body, withAccessToken(ctx.tenantId(), ctx.accessToken())), String.class);
+    }
+
+    private record TestContext(UUID tenantId, String accessToken) {}
 }

@@ -25,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>覆盖 workflow 域阶段端点：
  * <ul>
- *   <li>GET  /api/v1/projects/{projectId}/stages - 列出项目阶段</li>
- *   <li>POST /api/v1/stages/{stageId}/transition - 阶段状态流转</li>
+ *   <li>GET  /api/v1/workflow/stages?projectId={projectId} - 列出项目阶段</li>
+ *   <li>POST /api/v1/workflow/stages/{stageId}:transition - 阶段状态流转</li>
  * </ul>
  *
  * <p>状态机校验遵循 D05.4.1（NOT_STARTED → ACTIVE 合法，NOT_STARTED → APPROVED 非法）。
@@ -61,7 +61,7 @@ class StageApiIT extends AbstractIntegrationTest {
 
         // Act（执行）
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/projects/" + projectId + "/stages", HttpMethod.GET,
+                "/api/v1/workflow/stages?projectId=" + projectId, HttpMethod.GET,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)), String.class);
 
         // Assert（断言）
@@ -105,7 +105,7 @@ class StageApiIT extends AbstractIntegrationTest {
 
         // Act（执行）
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/stages/" + stageId + "/transition",
+                "/api/v1/workflow/stages/" + stageId + ":transition",
                 HttpMethod.POST,
                 new HttpEntity<>(transitionBody, withAccessToken(tenantId, accessToken)),
                 String.class);
@@ -146,7 +146,7 @@ class StageApiIT extends AbstractIntegrationTest {
 
         // Act（执行）
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/stages/" + stageId + "/transition",
+                "/api/v1/workflow/stages/" + stageId + ":transition",
                 HttpMethod.POST,
                 new HttpEntity<>(transitionBody, withAccessToken(tenantId, accessToken)),
                 String.class);
@@ -178,7 +178,7 @@ class StageApiIT extends AbstractIntegrationTest {
 
         // Act（执行）
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/projects/" + projectId + "/stages?status=ACTIVE", HttpMethod.GET,
+                "/api/v1/workflow/stages?projectId=" + projectId + "&status=ACTIVE", HttpMethod.GET,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)), String.class);
 
         // Assert（断言）

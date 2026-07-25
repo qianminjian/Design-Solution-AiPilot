@@ -9,6 +9,7 @@ import {
 import { AuthProxyController } from "../../../../src/proxy/auth/auth-proxy.controller";
 import type { ProxyService } from "../../../../src/proxy/proxy.service";
 import type { CookieService } from "../../../../src/proxy/auth/cookie.service";
+import { SchemaValidator } from "../../../../src/proxy/schema-validator.service";
 import type { ProxyResult } from "../../../../src/interceptors/proxy.interceptor";
 
 /** 构造 ProxyService mock */
@@ -25,6 +26,11 @@ function createCookieServiceMock(
     clearRefreshTokenCookie: vi.fn(),
     getRefreshTokenFromCookie: vi.fn().mockReturnValue(refreshToken),
   } as unknown as CookieService;
+}
+
+/** 构造真实 SchemaValidator（无依赖服务，直接实例化） */
+function createSchemaValidator(): SchemaValidator {
+  return new SchemaValidator();
 }
 
 /** 构造 Express Request mock */
@@ -55,14 +61,55 @@ function createProxyResult<T>(data: T, status = 200): ProxyResult {
   return { status, data, headers: {} };
 }
 
-/** 构造 controller + 两个 mock 服务的组合 */
+/** 合法的登录响应 fixture（符合 loginResponseSchema） */
+const validLoginResponse = {
+  principal: {
+    id: "550e8400-e29b-41d4-a716-446655440000",
+    tenantId: "550e8400-e29b-41d4-a716-446655440001",
+    email: "user@example.com",
+    displayName: "张三",
+    type: "user",
+    status: "active",
+    locale: "zh-CN",
+    timezone: "Asia/Shanghai",
+  },
+  accessToken: "access-token-xyz",
+  accessTokenExpiresIn: 900,
+  refreshTokenSet: true,
+  tenant: {
+    id: "550e8400-e29b-41d4-a716-446655440001",
+    name: "Acme Inc.",
+    code: "ACME",
+    region: "CN",
+    language: "zh",
+  },
+  roles: ["architect"],
+  permissions: ["project:read"],
+  refreshToken: "refresh-token-xyz",
+};
+
+/** 合法的 refresh 响应 fixture（符合 refreshTokenResponseSchema） */
+const validRefreshResponse = {
+  accessToken: "new-access-token",
+  accessTokenExpiresIn: 900,
+  refreshTokenSet: true,
+  refreshToken: "new-refresh-token",
+};
+
+/** 构造 controller + 三个 mock/real 服务的组合 */
 function createController(refreshToken: string | null = null) {
   const proxyService = createProxyServiceMock();
   const cookieService = createCookieServiceMock(refreshToken);
+  const schemaValidator = createSchemaValidator();
   return {
-    controller: new AuthProxyController(proxyService, cookieService),
+    controller: new AuthProxyController(
+      proxyService,
+      cookieService,
+      schemaValidator,
+    ),
     proxyService,
     cookieService,
+    schemaValidator,
   };
 }
 
@@ -80,15 +127,8 @@ describe("AuthProxyController", () => {
         email: "user@example.com",
         password: "Passw0rd!",
       };
-      // 下游返回带 refreshToken 的响应（结构简化，仅关注 refreshToken 字段）
-      const downstreamData = {
-        accessToken: "access-token-xyz",
-        accessTokenExpiresIn: 900,
-        refreshTokenSet: true,
-        refreshToken: "refresh-token-xyz",
-      };
       vi.mocked(proxyService.forward).mockResolvedValue(
-        createProxyResult(downstreamData),
+        createProxyResult({ ...validLoginResponse }),
       );
 
       // Act
@@ -124,12 +164,10 @@ describe("AuthProxyController", () => {
         email: "user@example.com",
         password: "Passw0rd!",
       };
+      const { refreshToken: _omit, ...responseWithoutRefresh } =
+        validLoginResponse;
       vi.mocked(proxyService.forward).mockResolvedValue(
-        createProxyResult({
-          accessToken: "access-token",
-          accessTokenExpiresIn: 900,
-          refreshTokenSet: false,
-        }),
+        createProxyResult(responseWithoutRefresh),
       );
 
       // Act
@@ -137,6 +175,31 @@ describe("AuthProxyController", () => {
 
       // Assert
       expect(cookieService.setRefreshTokenCookie).not.toHaveBeenCalled();
+    });
+
+    it("契约验证失败时应抛 BadGatewayException（502）— 防止前端拿到残缺的 token 字段", async () => {
+      // Arrange：缺少 accessToken 字段的响应
+      const { controller, proxyService } = createController();
+      const request = createRequest();
+      const response = createResponse();
+      const body: LoginRequest = {
+        email: "user@example.com",
+        password: "Passw0rd!",
+      };
+      const brokenData = { ...validLoginResponse, accessToken: "" };
+      vi.mocked(proxyService.forward).mockResolvedValue(
+        createProxyResult(brokenData),
+      );
+
+      // Act + Assert
+      await expect(
+        controller.login(request, body, response),
+      ).rejects.toMatchObject({
+        status: 502,
+        response: expect.objectContaining({
+          errorCode: "CONTRACT_VALIDATION_FAILED",
+        }),
+      });
     });
   });
 
@@ -148,14 +211,8 @@ describe("AuthProxyController", () => {
       const request = createRequest({ [HttpHeader.X_TENANT_ID]: "tenant-1" });
       const response = createResponse();
       const body = { allDevices: false };
-      const downstreamData = {
-        accessToken: "new-access-token",
-        accessTokenExpiresIn: 900,
-        refreshTokenSet: true,
-        refreshToken: "new-refresh-token",
-      };
       vi.mocked(proxyService.forward).mockResolvedValue(
-        createProxyResult(downstreamData),
+        createProxyResult({ ...validRefreshResponse }),
       );
 
       // Act
@@ -196,6 +253,25 @@ describe("AuthProxyController", () => {
         UnauthorizedException,
       );
       expect(proxyService.forward).not.toHaveBeenCalled();
+    });
+
+    it("契约验证失败时应抛 BadGatewayException — refresh 响应必须含 accessToken", async () => {
+      // Arrange：缺少 accessToken 字段
+      const { controller, proxyService } =
+        createController("old-refresh-token");
+      const request = createRequest();
+      const response = createResponse();
+      const brokenData = { accessTokenExpiresIn: 900, refreshTokenSet: true };
+      vi.mocked(proxyService.forward).mockResolvedValue(
+        createProxyResult(brokenData),
+      );
+
+      // Act + Assert
+      await expect(
+        controller.refresh(request, {}, response),
+      ).rejects.toMatchObject({
+        status: 502,
+      });
     });
   });
 

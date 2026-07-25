@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { ProxyController } from "./proxy.controller";
 import { ProxyService } from "./proxy.service";
+import { SchemaValidator } from "./schema-validator.service";
 import { AuthProxyController } from "./auth/auth-proxy.controller";
 import { CookieService } from "./auth/cookie.service";
 import { AiCapabilityProxyController } from "./ai/ai-capability-proxy.controller";
@@ -45,6 +46,7 @@ import { DesignOptionProxyController } from "./design/design-option-proxy.contro
     WorkflowProxyController,
     ProxyController,
   ],
-  providers: [ProxyService, CookieService, AiProxyService],
+  providers: [ProxyService, CookieService, AiProxyService, SchemaValidator],
+  exports: [SchemaValidator],
 })
 export class ProxyModule {}

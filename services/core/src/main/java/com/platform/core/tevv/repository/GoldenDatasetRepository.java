@@ -12,6 +12,10 @@ import java.util.UUID;
  */
 public interface GoldenDatasetRepository extends JpaRepository<GoldenDataset, UUID> {
 
+    /** 列出租户下所有数据集（不限状态） */
+    List<GoldenDataset> findByTenantId(UUID tenantId);
+
+    /** 按状态过滤数据集（保留用于按状态查询场景） */
     List<GoldenDataset> findByTenantIdAndStatus(UUID tenantId, DatasetStatus status);
 
     boolean existsByTenantIdAndNameAndVersion(UUID tenantId, String name, String version);

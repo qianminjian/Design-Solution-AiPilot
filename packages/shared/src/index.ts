@@ -72,3 +72,19 @@ export * from "./contracts/ai-generation-record.contract";
 
 // ── 合规规则引擎契约 ──
 export * from "./contracts/compliance.contract";
+
+// ── Zod Schema（契约测试基础设施，P1-2）──
+// V1 策略：用 zod 共享 schema 替代完整 Pact Broker，后续 V2 可基于
+// schema 自动生成 Pact 契约文件并接入 Pact Broker。
+// 用途：BFF 代理层验证响应、前端运行时验证、Core Service 单元测试
+export * from "./schemas/auth.schema";
+export * from "./schemas/iam.schema";
+export * from "./schemas/portfolio.schema";
+export * from "./schemas/workflow.schema";
+export * from "./schemas/cde.schema";
+export * from "./schemas/ai.schema";
+export * from "./schemas/tevv.schema";
+export * from "./schemas/design.schema";
+export * from "./schemas/solutions.schema";
+export * from "./schemas/ai-generation-record.schema";
+export * from "./schemas/compliance.schema";

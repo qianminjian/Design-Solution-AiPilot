@@ -49,10 +49,10 @@ public class GoldenDatasetService {
         return toDto(saved);
     }
 
-    /** 查询数据集列表 */
+    /** 查询数据集列表（含 DRAFT/FROZEN/DEPRECATED 所有状态） */
     @Transactional(readOnly = true)
     public List<GoldenDatasetDto> listByTenant(UUID tenantId) {
-        return datasetRepository.findByTenantIdAndStatus(tenantId, DatasetStatus.FROZEN).stream()
+        return datasetRepository.findByTenantId(tenantId).stream()
                 .map(this::toDto)
                 .toList();
     }

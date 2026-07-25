@@ -4,6 +4,7 @@ import { Test, type TestingModule } from "@nestjs/testing";
 import { INestApplication } from "@nestjs/common";
 import { AppModule } from "../../../src/app.module";
 import { ProxyService } from "../../../src/proxy/proxy.service";
+import { CookieService } from "../../../src/proxy/auth/cookie.service";
 import {
   ProxyResult,
   ProxyInterceptor,
@@ -22,15 +23,28 @@ import {
 describe("Gate 6 — 全链路端到端验证", () => {
   let app: INestApplication;
   let mockForward: vi.Mock;
+  let cookieServiceMock: {
+    setRefreshTokenCookie: ReturnType<typeof vi.fn>;
+    clearRefreshTokenCookie: ReturnType<typeof vi.fn>;
+    getRefreshTokenFromCookie: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     mockForward = vi.fn();
+    // CookieService mock：避免测试中依赖 ConfigService（isProduction 判定）
+    cookieServiceMock = {
+      setRefreshTokenCookie: vi.fn(),
+      clearRefreshTokenCookie: vi.fn(),
+      getRefreshTokenFromCookie: vi.fn().mockReturnValue(null),
+    };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(ProxyService)
       .useValue({ forward: mockForward })
+      .overrideProvider(CookieService)
+      .useValue(cookieServiceMock)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -92,17 +106,43 @@ describe("Gate 6 — 全链路端到端验证", () => {
   });
 
   it("IAM 域：POST /api/v1/auth/login 应透传 ApiResponse 格式", async () => {
-    mockForward.mockResolvedValue(
-      created({ accessToken: "jwt-token", refreshToken: "refresh-token" }),
-    );
+    // mock 数据必须符合 loginResponseSchema（权威源：auth.schema.ts）
+    const loginResponse = {
+      principal: {
+        id: "550e8400-e29b-41d4-a716-446655440001",
+        tenantId: "550e8400-e29b-41d4-a716-446655440002",
+        email: "admin@example.com",
+        displayName: "管理员",
+        type: "user",
+        status: "active",
+        locale: "zh-CN",
+        timezone: "Asia/Shanghai",
+      },
+      accessToken: "jwt-token-xyz",
+      accessTokenExpiresIn: 3600,
+      refreshTokenSet: true,
+      refreshToken: "refresh-token-xyz",
+      tenant: {
+        id: "550e8400-e29b-41d4-a716-446655440002",
+        name: "租户一",
+        code: "TENANT001",
+        region: "cn-east-1",
+        language: "zh-CN",
+      },
+      roles: ["admin"],
+      permissions: ["read:projects", "write:projects"],
+    };
+    mockForward.mockResolvedValue(created(loginResponse));
 
     const res = await request(app.getHttpServer())
       .post("/api/v1/auth/login")
-      .send({ username: "admin", password: "pass123" });
+      .send({ email: "admin@example.com", password: "pass12345" });
 
     expect(res.status).toBe(201);
     expect(res.body.code).toBe(0);
     expect(res.body.data).toHaveProperty("accessToken");
+    // refresh token 应被 BFF 剥离，不暴露给浏览器
+    expect(res.body.data).not.toHaveProperty("refreshToken");
   });
 
   it("CDE 域：GET /api/v1/documents 应透传 ApiResponse 格式", async () => {

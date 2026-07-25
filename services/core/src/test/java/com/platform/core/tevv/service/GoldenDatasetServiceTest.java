@@ -170,7 +170,7 @@ class GoldenDatasetServiceTest {
     class ListDataset {
 
         @Test
-        @DisplayName("应该成功查询租户下 FROZEN 状态数据集列表")
+        @DisplayName("应该成功查询租户下所有状态数据集列表")
         void shouldListFrozenDatasetsByTenant() {
             GoldenDataset ds1 = new GoldenDataset();
             ds1.setId(UUID.randomUUID());
@@ -180,9 +180,9 @@ class GoldenDatasetServiceTest {
             GoldenDataset ds2 = new GoldenDataset();
             ds2.setId(UUID.randomUUID());
             ds2.setName("办公楼金样-2");
-            ds2.setStatus(DatasetStatus.FROZEN);
+            ds2.setStatus(DatasetStatus.DRAFT);
 
-            when(datasetRepository.findByTenantIdAndStatus(tenantId, DatasetStatus.FROZEN))
+            when(datasetRepository.findByTenantId(tenantId))
                     .thenReturn(List.of(ds1, ds2));
 
             List<GoldenDatasetDto> dtos = service.listByTenant(tenantId);
@@ -193,9 +193,9 @@ class GoldenDatasetServiceTest {
         }
 
         @Test
-        @DisplayName("租户下无 FROZEN 数据集时应返回空列表")
+        @DisplayName("租户下无数据集时应返回空列表")
         void shouldReturnEmptyListWhenNoFrozenDataset() {
-            when(datasetRepository.findByTenantIdAndStatus(tenantId, DatasetStatus.FROZEN))
+            when(datasetRepository.findByTenantId(tenantId))
                     .thenReturn(List.of());
 
             List<GoldenDatasetDto> dtos = service.listByTenant(tenantId);

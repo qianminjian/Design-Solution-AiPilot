@@ -9,6 +9,7 @@ import com.platform.core.ai.dto.SubmitReviewRequest;
 import com.platform.core.ai.repository.AiGenerationRecordRepository;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,7 +69,7 @@ public class AiGenerationRecordService {
     @Transactional(readOnly = true)
     public AiGenerationRecordDto get(UUID tenantId, UUID id) {
         AiGenerationRecord record = repository.findByIdAndTenantId(id, tenantId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "AI 生成记录不存在"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, HttpStatus.NOT_FOUND, "AI 生成记录不存在"));
         return toDto(record);
     }
 

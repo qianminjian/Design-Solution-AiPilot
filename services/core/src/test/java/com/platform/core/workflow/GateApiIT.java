@@ -56,7 +56,7 @@ class GateApiIT extends AbstractIntegrationTest {
                 """;
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/gates/" + gateId + "/decision",
+                "/api/v1/workflow/gates/" + gateId + ":decide",
                 HttpMethod.POST,
                 new HttpEntity<>(decideBody, withAccessToken(tenantId, accessToken)),
                 String.class);
@@ -90,7 +90,7 @@ class GateApiIT extends AbstractIntegrationTest {
                 """.formatted(draftBaselineId);
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/gates/" + gateId + "/decision",
+                "/api/v1/workflow/gates/" + gateId + ":decide",
                 HttpMethod.POST,
                 new HttpEntity<>(decideBody, withAccessToken(tenantId, accessToken)),
                 String.class);
@@ -115,7 +115,7 @@ class GateApiIT extends AbstractIntegrationTest {
         createGate(tenantId, projectId, stageId, "G0-REVIEW", "前期策划复核门");
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/stages/" + stageId + "/gates", HttpMethod.GET,
+                "/api/v1/workflow/gates?stageId=" + stageId, HttpMethod.GET,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)), String.class);
 
         JsonNode data = extractData(resp.getBody());
@@ -123,7 +123,8 @@ class GateApiIT extends AbstractIntegrationTest {
                 () -> assertEquals(HttpStatus.OK, resp.getStatusCode()),
                 () -> assertTrue(data.isArray()),
                 () -> assertEquals(2, data.size()),
-                () -> assertEquals("G0", data.get(0).path("gateCode").asText()),
+                () -> assertEquals("G0-REVIEW", data.get(0).path("gateCode").asText(),
+                        "按创建时间倒序：后创建的 G0-REVIEW 应在前"),
                 () -> assertEquals(stageId.toString(), data.get(0).path("stageId").asText())
         );
     }

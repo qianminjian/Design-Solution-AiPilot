@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -114,6 +115,7 @@ public class OrganizationService {
                 .filter(o -> tenantId.equals(o.getTenantId()))
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.ORGANIZATION_NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
                         "组织不存在: " + organizationId));
     }
 

@@ -12,6 +12,7 @@ import com.platform.core.iam.repository.OrganizationRepository;
 import com.platform.core.iam.repository.PrincipalRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -132,6 +133,7 @@ public class MembershipService {
                 .filter(m -> tenantId.equals(m.getTenantId()))
                 .orElseThrow(() -> new BusinessException(
                         ErrorCode.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
                         "成员关系不存在: " + membershipId));
     }
 

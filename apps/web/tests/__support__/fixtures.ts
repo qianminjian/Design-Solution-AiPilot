@@ -4,6 +4,14 @@ import type {
   LoginResponse,
   OffsetPageResponse,
   ProjectDto,
+  DocumentDto,
+  StageInstanceDto,
+  GateDecisionDto,
+  GenerateSolutionResponse,
+  SolutionCandidate,
+  GuardrailResult,
+  AiGenerationRecordDto,
+  AiReviewStatus,
 } from "@design-platform/shared";
 import { BIZ_CODE } from "@design-platform/shared";
 
@@ -209,4 +217,213 @@ export function createTypicalMockProjects(): ProjectDto[] {
       floorsMax: 15,
     }),
   ];
+}
+
+// ── 核心业务流程（上传→AI 生成→复核→发布）mock 工厂 ──
+
+/**
+ * 构造 mock 单个文档
+ * 对应契约：DocumentDto（CDE 域，PII: path 字段 L5）
+ */
+export function createMockDocument(
+  overrides: Partial<DocumentDto> = {},
+): DocumentDto {
+  const id = overrides.id ?? "doc-e2e-0001";
+  return {
+    id,
+    tenantId: TEST_ACCOUNT.tenantId,
+    projectId: overrides.projectId ?? "proj-e2e-0001",
+    name: overrides.name ?? "site-sketch-v1.dwg",
+    path: overrides.path ?? `sketches/${id}/site-sketch-v1.dwg`,
+    mimeType: overrides.mimeType ?? "application/acad",
+    sizeBytes: overrides.sizeBytes ?? 102400,
+    currentVersionId: overrides.currentVersionId ?? "ver-e2e-0001",
+    status: overrides.status ?? "DRAFT",
+    checksum: overrides.checksum ?? "sha256:abc123def456",
+    createdBy: TEST_ACCOUNT.userId,
+    createdAt: overrides.createdAt ?? "2026-07-22T00:00:00.000Z",
+    updatedAt: overrides.updatedAt ?? "2026-07-22T00:00:00.000Z",
+    version: overrides.version ?? 1,
+  };
+}
+
+/**
+ * 构造 mock 文档列表分页响应（核心业务流程-上传步骤）
+ */
+export function createMockDocumentsPage(
+  projectId: string,
+  count = 2,
+): OffsetPageResponse<DocumentDto> {
+  const items = Array.from({ length: count }, (_, i) =>
+    createMockDocument({
+      id: `doc-e2e-${String(i + 1).padStart(4, "0")}`,
+      projectId,
+      name: `site-sketch-v${i + 1}.dwg`,
+      status: i === 0 ? "PUBLISHED" : "DRAFT",
+    }),
+  );
+  return {
+    items,
+    total: count,
+    page: 1,
+    pageSize: 20,
+    hasMore: false,
+  };
+}
+
+/**
+ * 构造 mock 阶段实例（V0 裁剪：STG-P0~P7）
+ */
+export function createMockStage(
+  projectId: string,
+  overrides: Partial<StageInstanceDto> = {},
+): StageInstanceDto {
+  return {
+    id: overrides.id ?? "stage-e2e-p0",
+    tenantId: TEST_ACCOUNT.tenantId,
+    projectId,
+    stageCode: overrides.stageCode ?? "STG-P0",
+    stageName: overrides.stageName ?? "前期策划",
+    stageOrder: overrides.stageOrder ?? 0,
+    status: overrides.status ?? "active",
+    startedAt: overrides.startedAt ?? "2026-07-22T00:00:00.000Z",
+    completedAt: overrides.completedAt ?? null,
+    metadata: {},
+    createdAt: "2026-07-22T00:00:00.000Z",
+    updatedAt: "2026-07-22T00:00:00.000Z",
+    rowVersion: 1,
+  };
+}
+
+/**
+ * 构造 mock 门禁决策（PENDING → DECIDED 状态流转）
+ */
+export function createMockGate(
+  projectId: string,
+  stageId: string,
+  overrides: Partial<GateDecisionDto> = {},
+): GateDecisionDto {
+  return {
+    id: overrides.id ?? "gate-e2e-g0",
+    tenantId: TEST_ACCOUNT.tenantId,
+    projectId,
+    stageId,
+    gateCode: overrides.gateCode ?? "G0",
+    gateName: overrides.gateName ?? "前期策划门",
+    status: overrides.status ?? "pending",
+    decision: overrides.decision ?? null,
+    decidedAt: overrides.decidedAt ?? null,
+    decidedBy: overrides.decidedBy ?? null,
+    baselineId: overrides.baselineId ?? null,
+    comment: overrides.comment ?? null,
+    evidence: overrides.evidence ?? [],
+    metadata: {},
+    createdAt: "2026-07-22T00:00:00.000Z",
+    updatedAt: "2026-07-22T00:00:00.000Z",
+    rowVersion: 1,
+  };
+}
+
+/**
+ * 构造 mock 方案候选（AI 生成结果）
+ */
+export function createMockSolutionCandidate(
+  overrides: Partial<SolutionCandidate> = {},
+): SolutionCandidate {
+  return {
+    name: overrides.name ?? "候选 1：紧凑布局方案",
+    content:
+      overrides.content ??
+      "## 概念设计\n\n- 用地面积：2000 m²\n- 总建筑面积：12000 m²\n- 层数：10 层\n\n布局策略：核心筒居中，办公空间环绕。",
+    risks: overrides.risks ?? ["用地面积偏紧，需复核退线要求"],
+    feasibilityNotes:
+      overrides.feasibilityNotes ?? "结构可行，机电竖井可与服务核心整合",
+  };
+}
+
+/**
+ * 构造 mock Guardrails 校验结果
+ */
+export function createMockGuardrailResult(
+  overrides: Partial<GuardrailResult> = {},
+): GuardrailResult {
+  return {
+    passed: overrides.passed ?? true,
+    warnings: overrides.warnings ?? [],
+    escalatedReview: overrides.escalatedReview ?? false,
+  };
+}
+
+/**
+ * 构造 mock 方案生成响应（核心业务流程-AI 生成步骤）
+ *
+ * 强制 isAiAssisted=true，requiresHumanReview=true（按 security.md §12 进入人工复核）
+ */
+export function createMockGenerateSolutionResponse(
+  overrides: Partial<GenerateSolutionResponse> = {},
+): GenerateSolutionResponse {
+  return {
+    candidates: overrides.candidates ?? [createMockSolutionCandidate()],
+    rawContent:
+      overrides.rawContent ??
+      "RAW LLM OUTPUT: Concept design for office tower...",
+    model: overrides.model ?? "gpt-4o-2024-08-06",
+    usage: overrides.usage ?? {
+      promptTokens: 320,
+      completionTokens: 480,
+      totalTokens: 800,
+    },
+    riskLevel: overrides.riskLevel ?? "medium",
+    promptTemplateUsed: overrides.promptTemplateUsed ?? "concept-generation",
+    guardrail: overrides.guardrail ?? createMockGuardrailResult(),
+    isAiAssisted: true,
+    requiresHumanReview: overrides.requiresHumanReview ?? true,
+    latencyMs: overrides.latencyMs ?? 1840,
+  };
+}
+
+/**
+ * 构造 mock AI 生成记录（核心业务流程-复核步骤）
+ */
+export function createMockAiGenerationRecord(
+  projectId: string,
+  overrides: Partial<AiGenerationRecordDto> = {},
+): AiGenerationRecordDto {
+  return {
+    id: overrides.id ?? "ai-rec-e2e-0001",
+    tenantId: TEST_ACCOUNT.tenantId,
+    projectId,
+    designOptionId: overrides.designOptionId ?? null,
+    promptTemplate: overrides.promptTemplate ?? "concept-generation",
+    variables: overrides.variables ?? {},
+    renderedPrompt:
+      overrides.renderedPrompt ??
+      "Generate concept design for 10-floor office tower",
+    rawContent: overrides.rawContent ?? "RAW LLM OUTPUT...",
+    candidates: overrides.candidates ?? { items: [] },
+    model: overrides.model ?? "gpt-4o-2024-08-06",
+    tokenUsage: overrides.tokenUsage ?? {
+      promptTokens: 320,
+      completionTokens: 480,
+      totalTokens: 800,
+    },
+    riskLevel: overrides.riskLevel ?? "medium",
+    guardrailResult: overrides.guardrailResult ?? {
+      passed: true,
+      warnings: [],
+      escalatedReview: false,
+    },
+    requiresHumanReview: overrides.requiresHumanReview ?? true,
+    latencyMs: overrides.latencyMs ?? 1840,
+    traceId: overrides.traceId ?? "trace-e2e-0001",
+    reviewStatus: overrides.reviewStatus ?? ("PENDING" as AiReviewStatus),
+    reviewerId: overrides.reviewerId ?? null,
+    reviewComment: overrides.reviewComment ?? null,
+    reviewedAt: overrides.reviewedAt ?? null,
+    reviewDecision: overrides.reviewDecision ?? null,
+    createdBy: TEST_ACCOUNT.userId,
+    createdAt: overrides.createdAt ?? "2026-07-22T00:00:00.000Z",
+    updatedAt: overrides.updatedAt ?? "2026-07-22T00:00:00.000Z",
+    rowVersion: 1,
+  };
 }

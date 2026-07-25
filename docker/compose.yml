@@ -257,7 +257,12 @@ services:
     mem_limit: 256m
     memswap_limit: 256m
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      # alpine 镜像无 curl，使用 node 内置 http 模块检测端口与 HTTP 200
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "const h=require(''http'');const r=h.request({host:''localhost'',port:3000,timeout:3000},res=>{process.exit(res.statusCode<500?0:1)});r.on(''timeout'',()=>{r.destroy();process.exit(1)});r.on(''error'',()=>process.exit(1));r.end()"',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

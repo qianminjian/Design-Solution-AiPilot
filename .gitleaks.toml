@@ -1,0 +1,86 @@
+# gitleaks 配置 — 施工图全流程 AI 平台
+#
+# 权威源：.trae/rules/security.md §1 密钥管理、§13 CI 安全门禁
+#
+# 设计目标：
+#   1. 启用 gitleaks 内置规则（默认）
+#   2. 扩展项目特化规则（JWT/COOKIES/S3_KEY 等）
+#   3. 白名单允许测试 fixture 中的 mock token（避免误报）
+#   4. 扫描范围：全仓库 + Git 历史
+#
+# 用法：
+#   本地：gitleaks detect --config .gitleaks.toml --source . --verbose
+#   CI：通过 gitleaks/gitleaks-action@v2 自动加载本文件
+
+title = "施工图全流程 AI 平台 — gitleaks 配置"
+
+[extend]
+# 继承 gitleaks 内置默认规则
+useDefault = true
+
+# ── 全局白名单：跳过指定路径/文件 ──
+[allowlist]
+description = "全局白名单：跳过测试 fixture、构建产物、依赖目录"
+paths = [
+    '''node_modules/''',
+    '''dist/''',
+    '''build/''',
+    '''out/''',
+    '''target/''',
+    '''coverage/''',
+    '''test-results/''',
+    '''.next/''',
+    '''\.git/''',
+    # 测试 fixture 中的 mock token 是合法的
+    '''tests/__support__/''',
+    # 设计文档不扫描
+    '''design/''',
+    # .env.example 仅记录变量名，不含真实值
+    '''\.env\.example$''',
+]
+
+# ── 项目特化规则：扩展 gitleaks 默认规则未覆盖的字段 ──
+
+[[rules]]
+id = "jwt-secret-in-source"
+description = "JWT 密钥硬编码（security.md §2.2 要求从环境变量读取）"
+regex = '''JWT_SECRET\s*[:=]\s*['"]([A-Za-z0-9+/=]{32,})['"]'''
+tags = ["jwt", "secret", "security"]
+keywords = ["JWT_SECRET"]
+
+[[rules]]
+id = "db-password-in-source"
+description = "数据库密码硬编码（security.md §1 要求从环境变量读取）"
+regex = '''DB_PASSWORD\s*[:=]\s*['"]([^'"]{8,})['"]'''
+tags = ["db", "password", "security"]
+keywords = ["DB_PASSWORD"]
+
+[[rules]]
+id = "llm-api-key-in-source"
+description = "LLM API Key 硬编码（security.md §1 要求从环境变量读取）"
+regex = '''LLM_API_KEY\s*[:=]\s*['"]([A-Za-z0-9_\-]{32,})['"]'''
+tags = ["llm", "apikey", "security"]
+keywords = ["LLM_API_KEY"]
+
+[[rules]]
+id = "s3-secret-key-in-source"
+description = "S3 Secret Key 硬编码（security.md §1 要求从环境变量读取）"
+regex = '''S3_SECRET_KEY\s*[:=]\s*['"]([A-Za-z0-9+/=]{32,})['"]'''
+tags = ["s3", "secret", "security"]
+keywords = ["S3_SECRET_KEY"]
+
+[[rules]]
+id = "refresh-token-in-source"
+description = "JWT Refresh Token 硬编码（security.md §2.2 要求 HttpOnly Cookie 存储）"
+regex = '''REFRESH_TOKEN\s*[:=]\s*['"]([A-Za-z0-9+/=]{32,})['"]'''
+tags = ["jwt", "refresh", "security"]
+keywords = ["REFRESH_TOKEN"]
+
+# ── 白名单：测试中的 mock token（合法） ──
+[allowlist.regexes]
+# 测试用 mock JWT token（仅测试环境）
+mock-jwt = '''eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'''
+# 测试用 mock UUID
+mock-uuid = '''550e8400-e29b-41d4-a716-446655440000'''
+# 测试用 mock access token
+mock-access-token = '''MOCK_ACCESS_TOKEN_VALUE_[A-Z0-9_]*'''

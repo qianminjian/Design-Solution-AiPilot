@@ -1,0 +1,46 @@
+# trufflehog 排除路径配置 — 施工图全流程 AI 平台
+#
+# 权威源：.trae/rules/security.md §13 CI 安全门禁
+#
+# 用法：trufflehog --exclude-paths=.trufflehogignore ...
+#
+# 排除原则：
+#   1. 测试 fixture 中包含 mock token（合法，非真实密钥）
+#   2. 构建产物不扫描（由源码扫描覆盖）
+#   3. 依赖目录不扫描（由 npm audit / pip-audit / OWASP 覆盖）
+#   4. 设计文档不含密钥
+
+# ── 依赖与构建产物 ──
+node_modules/
+dist/
+build/
+out/
+target/
+.next/
+coverage/
+test-results/
+.pytest_cache/
+htmlcov/
+
+# ── 测试 fixture（含 mock token / mock UUID，合法） ──
+tests/__support__/
+apps/web/tests/__support__/
+apps/bff/tests/__support__/
+packages/shared/tests/__support__/
+
+# ── 设计文档（不含密钥） ──
+design/
+
+# ── Git 元数据 ──
+.git/
+
+# ── .env.example 仅记录变量名（不含真实值） ──
+.env.example
+
+# ── Trae 规则与 IDE 配置（不含密钥） ──
+.trae/
+.vscode/
+.idea/
+
+# ── CI 配置本身（不含密钥，secrets 由 GitHub Actions 注入） ──
+.github/

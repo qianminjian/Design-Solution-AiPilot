@@ -314,10 +314,16 @@ class WorkflowApiIT extends AbstractIntegrationTest {
 
     private UUID createGate(UUID tenantId, UUID stageId, String gateCode,
                             String status, String decision) {
+        // 从 stage 获取 projectId（gate_decision 表 project_id NOT NULL）
+        UUID projectId = stageRepository.findById(stageId)
+                .map(WorkflowStageInstance::getProjectId)
+                .orElseThrow(() -> new IllegalStateException("Stage 不存在: " + stageId));
         WorkflowGateDecision gate = new WorkflowGateDecision();
         gate.setTenantId(tenantId);
+        gate.setProjectId(projectId);
         gate.setStageId(stageId);
         gate.setGateCode(gateCode);
+        gate.setGateName(gateCode + "-NAME");
         gate.setStatus(status);
         gate.setDecision(decision);
         gate.setClassification(DataClassification.PROJECT_RECORD);
@@ -330,6 +336,7 @@ class WorkflowApiIT extends AbstractIntegrationTest {
         WorkflowProjectBaseline baseline = new WorkflowProjectBaseline();
         baseline.setTenantId(tenantId);
         baseline.setProjectId(projectId);
+        baseline.setName("基线-R" + revisionNo + "-" + UUID.randomUUID());
         baseline.setRevisionNo(revisionNo);
         baseline.setStatus(status);
         baseline.setClassification(DataClassification.PROJECT_RECORD);

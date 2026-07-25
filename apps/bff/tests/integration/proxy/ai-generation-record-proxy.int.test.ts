@@ -101,16 +101,34 @@ describe("AI 生成记录代理集成测试", () => {
         {
           code: 0,
           data: {
-            id: "rec-003",
-            projectId: "proj-001",
-            designOptionId: "opt-001",
-            provider: "openai",
+            id: "550e8400-e29b-41d4-a716-446655440003",
+            tenantId: "550e8400-e29b-41d4-a716-446655440001",
+            projectId: "550e8400-e29b-41d4-a716-446655440010",
+            designOptionId: "550e8400-e29b-41d4-a716-446655440011",
+            promptTemplate: "concept-generation",
+            variables: { siteDescription: "上海" },
+            renderedPrompt: "请生成概念方案...",
+            rawContent: "raw LLM output",
+            candidates: { optionA: "方案 A" },
             model: "gpt-4",
-            traceId: "trace-003",
-            status: "COMPLETED",
+            tokenUsage: {
+              promptTokens: 100,
+              completionTokens: 200,
+              totalTokens: 300,
+            },
+            riskLevel: "medium",
+            guardrailResult: {
+              passed: true,
+              warnings: [],
+              escalatedReview: false,
+            },
             requiresHumanReview: true,
-            isAiAssisted: true,
+            latencyMs: 1500,
+            traceId: "trace-003",
+            reviewStatus: "PENDING",
             createdAt: "2026-07-24T12:00:00Z",
+            updatedAt: "2026-07-24T12:00:00Z",
+            rowVersion: 0,
           },
           message: "created",
           traceId: "agg-trace-002",
@@ -122,8 +140,8 @@ describe("AI 生成记录代理集成测试", () => {
     const response = await request(app.getHttpServer())
       .post("/api/v1/ai-generation-records")
       .send({
-        projectId: "proj-001",
-        designOptionId: "opt-001",
+        projectId: "550e8400-e29b-41d4-a716-446655440010",
+        designOptionId: "550e8400-e29b-41d4-a716-446655440011",
         provider: "openai",
         model: "gpt-4",
         traceId: "trace-003",
@@ -136,9 +154,12 @@ describe("AI 生成记录代理集成测试", () => {
       .set("Content-Type", "application/json");
 
     expect(response.status).toBe(201);
-    expect(response.body.data).toHaveProperty("id", "rec-003");
+    expect(response.body.data).toHaveProperty(
+      "id",
+      "550e8400-e29b-41d4-a716-446655440003",
+    );
     expect(response.body.data).toHaveProperty("requiresHumanReview", true);
-    expect(response.body.data).toHaveProperty("isAiAssisted", true);
+    expect(response.body.data).toHaveProperty("reviewStatus", "PENDING");
   });
 
   it("应该成功转发 GET /api/v1/ai-generation-records/:id 单条查询", async () => {
@@ -146,16 +167,34 @@ describe("AI 生成记录代理集成测试", () => {
       buildProxyResult({
         code: 0,
         data: {
-          id: "rec-001",
-          projectId: "proj-001",
-          designOptionId: "opt-001",
-          provider: "openai",
+          id: "550e8400-e29b-41d4-a716-446655440001",
+          tenantId: "550e8400-e29b-41d4-a716-446655440001",
+          projectId: "550e8400-e29b-41d4-a716-446655440010",
+          designOptionId: "550e8400-e29b-41d4-a716-446655440011",
+          promptTemplate: "concept-generation",
+          variables: { siteDescription: "上海" },
+          renderedPrompt: "请生成概念方案...",
+          rawContent: "raw LLM output",
+          candidates: { optionA: "方案 A" },
           model: "gpt-4",
-          traceId: "trace-001",
-          status: "COMPLETED",
+          tokenUsage: {
+            promptTokens: 100,
+            completionTokens: 200,
+            totalTokens: 300,
+          },
+          riskLevel: "medium",
+          guardrailResult: {
+            passed: true,
+            warnings: [],
+            escalatedReview: false,
+          },
           requiresHumanReview: true,
-          isAiAssisted: true,
+          latencyMs: 1500,
+          traceId: "trace-001",
+          reviewStatus: "PENDING",
           createdAt: "2026-07-24T10:00:00Z",
+          updatedAt: "2026-07-24T10:00:00Z",
+          rowVersion: 0,
         },
         message: "success",
         traceId: "agg-trace-003",
@@ -163,13 +202,16 @@ describe("AI 生成记录代理集成测试", () => {
     );
 
     const response = await request(app.getHttpServer())
-      .get("/api/v1/ai-generation-records/rec-001")
+      .get("/api/v1/ai-generation-records/550e8400-e29b-41d4-a716-446655440001")
       .set("Authorization", "Bearer test-token")
       .set("x-tenant-id", "tenant-001");
 
     expect(response.status).toBe(200);
-    expect(response.body.data).toHaveProperty("id", "rec-001");
-    expect(response.body.data).toHaveProperty("provider", "openai");
+    expect(response.body.data).toHaveProperty(
+      "id",
+      "550e8400-e29b-41d4-a716-446655440001",
+    );
+    expect(response.body.data).toHaveProperty("model", "gpt-4");
   });
 
   it("应该成功转发 PATCH /api/v1/ai-generation-records/:id/review 提交复核", async () => {

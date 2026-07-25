@@ -41,7 +41,7 @@ class BaselineApiIT extends AbstractIntegrationTest {
         UUID baselineId = createBaseline(tenantId, projectId, "V1 基线草稿", WorkflowRevisionStatus.DRAFT, 1L);
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/baselines/" + baselineId + "/freeze",
+                "/api/v1/workflow/baselines/" + baselineId + ":freeze",
                 HttpMethod.POST,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)),
                 String.class);
@@ -69,7 +69,7 @@ class BaselineApiIT extends AbstractIntegrationTest {
         UUID baselineId = createBaseline(tenantId, projectId, "已冻结基线", WorkflowRevisionStatus.PUBLISHED, 1L);
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/baselines/" + baselineId + "/freeze",
+                "/api/v1/workflow/baselines/" + baselineId + ":freeze",
                 HttpMethod.POST,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)),
                 String.class);
@@ -92,7 +92,7 @@ class BaselineApiIT extends AbstractIntegrationTest {
         UUID baselineId = createBaseline(tenantId, projectId, "详情测试基线", WorkflowRevisionStatus.DRAFT, 1L);
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/baselines/" + baselineId, HttpMethod.GET,
+                "/api/v1/workflow/baselines/" + baselineId, HttpMethod.GET,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)), String.class);
 
         JsonNode data = extractData(resp.getBody());
@@ -120,7 +120,7 @@ class BaselineApiIT extends AbstractIntegrationTest {
         createBaseline(tenantId, projectId, "V3 基线", WorkflowRevisionStatus.DRAFT, 3L);
 
         ResponseEntity<String> resp = restTemplate.exchange(
-                "/api/v1/projects/" + projectId + "/baselines", HttpMethod.GET,
+                "/api/v1/workflow/baselines?projectId=" + projectId, HttpMethod.GET,
                 new HttpEntity<>(withAccessToken(tenantId, accessToken)), String.class);
 
         JsonNode data = extractData(resp.getBody());

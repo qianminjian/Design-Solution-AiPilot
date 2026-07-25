@@ -7,7 +7,9 @@ import com.platform.core.iam.domain.Principal;
 import com.platform.core.iam.domain.Tenant;
 import com.platform.core.iam.repository.PrincipalRepository;
 import com.platform.core.iam.repository.TenantRepository;
-import org.junit.jupiter.api.DisplayName;
+import org.flywaydb.core.Flyway;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -17,36 +19,45 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.sql.DataSource;
 import java.util.UUID;
 
 /**
  * 集成测试基类
  *
- * <p>使用 TestContainers 启动真实 PostgreSQL 16 容器，验证 Flyway 迁移、JPA 实体映射与 REST API 端点。
- * 不使用 H2 内存数据库，确保与生产环境一致的 PostgreSQL 行为（uuid-ossp / jsonb / 枚举类型）。
+ * <p>使用 docker-compose 启动的 PostgreSQL 16（localhost:5432）作为测试数据库。
+ * 每个测试子类运行前通过 Flyway clean + migrate 重置 schema，确保测试隔离。
+ *
+ * <p>不使用 H2 内存数据库，确保与生产环境一致的 PostgreSQL 行为（uuid-ossp / jsonb / 枚举类型）。
  *
  * <p>测试 profile=application-test.yml，JWT 密钥固定，Spring Security 启用，
  * 受保护端点需通过 {@link #withAccessToken(UUID, String)} 获取 access token 后携带 Authorization 头。
+ *
+ * <p>环境要求：本地启动 docker compose（postgres + minio + chromadb），且 design_platform_test 库已创建。
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Testcontainers
 public abstract class AbstractIntegrationTest {
 
-    /** PostgreSQL 16 容器，复用 JDBC URL（同模块测试共享，加快启动） */
-    @Container
-    protected static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("core_service_test")
-            .withUsername("test")
-            .withPassword("test");
+    /** 测试数据库连接 URL（独立测试库，避免污染开发数据库）
+     *
+     * <p>关键参数 stringtype=unspecified：让 PostgreSQL JDBC 驱动不强制 VARCHAR 类型，
+     * 服务器自动推断并转换为自定义枚举类型（如 data_classification），
+     * 解决 JPA @Enumerated(STRING) 与 PostgreSQL CREATE TYPE ... AS ENUM 不匹配问题。
+     */
+    private static final String TEST_DB_URL = "jdbc:postgresql://localhost:5432/design_platform_test?stringtype=unspecified";
+
+    private static final String TEST_DB_USER = "platform";
+
+    private static final String TEST_DB_PASSWORD = "platform_dev";
 
     /** 系统租户 ID（V4 迁移文件预置） */
     public static final UUID SYSTEM_TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
@@ -78,15 +89,239 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     protected PasswordEncoder passwordEncoder;
 
+    @Autowired
+    protected JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    protected DataSource dataSource;
+
     /**
-     * 将容器 JDBC 连接信息注入 Spring 配置
+     * 全局 Flyway 重置标志：保证整个测试套件只执行一次 Flyway clean + migrate。
+     *
+     * <p>多次执行 Flyway clean 会删除并重建 PostgreSQL 自定义枚举类型（如 data_classification），
+     * OID 变化会导致连接池中已缓存的 PreparedStatement 引用失效类型，
+     * 触发 "cache lookup failed for type XXXXX" 错误。
+     *
+     * <p>使用 AtomicBoolean 保证多线程下也只执行一次。
+     */
+    private static final AtomicBoolean FLYWAY_INITIALIZED = new AtomicBoolean(false);
+
+    /**
+     * 在所有测试启动前重置数据库 schema（仅执行一次）
+     *
+     * <p>通过 Flyway clean + migrate 完成：clean 删除所有 schema 中的所有对象，
+     * migrate 重新执行所有迁移脚本，恢复到初始状态。
+     *
+     * <p>关键点：
+     * <ul>
+     *   <li>Spring Boot 自动 Flyway 已通过 @DynamicPropertySource 禁用
+     *       （spring.flyway.enabled=false），由本方法完全控制，避免残留旧表导致 V1 迁移失败。</li>
+     *   <li>JPA ddl-auto 设为 none，避免 Hibernate 在表创建前 validate 失败。</li>
+     *   <li>使用全局 AtomicBoolean 保证只执行一次，避免 OID 变化引发 PostgreSQL 类型缓存错误。</li>
+     * </ul>
+     */
+    @BeforeAll
+    static void resetDatabase(@Autowired DataSource dataSource) {
+        if (!FLYWAY_INITIALIZED.compareAndSet(false, true)) {
+            // 已初始化过，跳过，避免重复 clean 导致 OID 变化
+            return;
+        }
+        // 显式指定所有 schema 进行 clean：Flyway 默认只清理 default-schema
+        // defaultSchema=public：让 V8/V9 等迁移脚本中无 schema 前缀的 CREATE TABLE 创建在 public 下
+        Flyway flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .baselineVersion("0")
+                .cleanDisabled(false)
+                .defaultSchema("public")
+                .schemas("iam", "portfolio", "requirement", "workflow", "cde", "ai", "platform", "compliance", "public")
+                .load();
+        // clean 会删除所有指定 schema 及其中的对象（包括 flyway_schema_history 表）
+        flyway.clean();
+        // migrate 重新执行所有迁移脚本
+        flyway.migrate();
+    }
+
+    /**
+     * 每个测试方法前清理业务数据（不重置 schema，避免 OID 变化）
+     *
+     * <p>通过 TRUNCATE CASCADE 清空所有业务表数据，保留 schema 结构与枚举类型，
+     * 确保测试间数据隔离，同时避免重置 schema 导致的 PostgreSQL 类型缓存错误。
+     */
+    @BeforeEach
+    void truncateBusinessData() {
+        truncateBusinessTables();
+    }
+
+    /**
+     * 注入测试数据源配置（指向 docker-compose 启动的 postgres + 独立测试库）
+     *
+     * <p>关键：禁用 Spring Boot 自动 Flyway（spring.flyway.enabled=false），
+     * 由 AbstractIntegrationTest.resetDatabase() 完全控制，避免残留旧表导致 V1 迁移失败。
+     * JPA ddl-auto 设为 none，避免 Hibernate 在 Flyway 执行前 validate 失败。
      */
     @DynamicPropertySource
     static void postgresProps(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.datasource.url", () -> TEST_DB_URL);
+        registry.add("spring.datasource.username", () -> TEST_DB_USER);
+        registry.add("spring.datasource.password", () -> TEST_DB_PASSWORD);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+        // 禁用 Spring Boot 自动 Flyway，由测试代码控制
+        registry.add("spring.flyway.enabled", () -> false);
+        // JPA 不 validate，由 Flyway 负责建表
+        registry.add("spring.jpa.hibernate.ddl-auto", () -> "none");
+    }
+
+    /**
+     * 清理所有业务数据表（保留 schema 结构与枚举类型）
+     *
+     * <p>每个测试子类可通过 {@code @BeforeEach} 调用，确保测试间数据隔离。
+     * 使用 TRUNCATE CASCADE 处理外键依赖，RESTART IDENTITY 重置序列。
+     *
+     * <p>表名严格对齐 V1-V13 迁移脚本中的 CREATE TABLE 语句（单数形式，带 schema 前缀）。
+     *
+     * <p>注意：TRUNCATE 会清空 V4 种子数据（系统租户、系统管理员、PLATFORM_ADMIN 角色绑定），
+     * 因此清理后需要重新执行种子数据插入，确保 FlywayMigrationIT 等测试可验证种子数据存在。
+     */
+    protected void truncateBusinessTables() {
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE
+                    public.verification_execution,
+                    public.verification_item,
+                    public.golden_dataset,
+                    public.design_feedback,
+                    public.design_option,
+                    public.ai_generation_record,
+                    compliance.compliance_findings,
+                    compliance.check_results,
+                    compliance.rule_executions,
+                    compliance.compliance_check_runs,
+                    compliance.rule_set_rules,
+                    compliance.rule_revisions,
+                    compliance.compliance_rule_sets,
+                    compliance.compliance_rules,
+                    ai.guardrail_result,
+                    ai.tool_call,
+                    ai.run,
+                    ai.capability_revision,
+                    platform.outbox_event,
+                    cde.transmittal,
+                    cde.baseline_item,
+                    cde.rendition,
+                    cde.object_manifest,
+                    cde.asset_version,
+                    cde.asset,
+                    cde.document_version,
+                    cde.document,
+                    workflow.attempt,
+                    workflow.task,
+                    workflow.timer,
+                    workflow.instance,
+                    workflow.definition_revision,
+                    workflow.project_baseline,
+                    workflow.gate_decision,
+                    workflow.stage_instance,
+                    portfolio.project_baseline,
+                    portfolio.gate_decision,
+                    portfolio.stage_instance,
+                    portfolio.project,
+                    requirement.trace_link,
+                    requirement.requirement_revision,
+                    requirement.source,
+                    iam.role_binding,
+                    iam.access_grant,
+                    iam.membership,
+                    iam.organization,
+                    iam.principal,
+                    iam.tenant
+                RESTART IDENTITY CASCADE
+                """);
+        // 重新插入 V4 种子数据（系统租户、组织、管理员、成员关系、角色绑定）
+        // 确保 FlywayMigrationIT.shouldHaveSeedData 等测试可验证种子数据存在
+        reseedSystemData();
+    }
+
+    /**
+     * 重新插入 V4 种子数据
+     *
+     * <p>TRUNCATE 清空了 V4 迁移插入的系统租户、组织、管理员、成员关系与角色绑定，
+     * 需要在每个测试方法前重新插入，保证依赖种子数据的测试可正常执行。
+     */
+    private void reseedSystemData() {
+        jdbcTemplate.execute("""
+                INSERT INTO iam.tenant (id, name, code, status, region, language, classification)
+                VALUES (
+                    '00000000-0000-0000-0000-000000000001',
+                    'System Tenant',
+                    'system',
+                    'ACTIVE',
+                    'us-east-1',
+                    'en',
+                    'PROJECT_RECORD'
+                )
+                ON CONFLICT (id) DO NOTHING;
+
+                INSERT INTO iam.organization (id, tenant_id, name, type, status)
+                VALUES (
+                    '00000000-0000-0000-0000-000000000002',
+                    '00000000-0000-0000-0000-000000000001',
+                    'Platform Admin',
+                    'ORGANIZATION',
+                    'ACTIVE'
+                )
+                ON CONFLICT (id) DO NOTHING;
+
+                INSERT INTO iam.principal (
+                    id, tenant_id, type, email, display_name, status,
+                    password_hash, locale, timezone, classification
+                )
+                VALUES (
+                    '00000000-0000-0000-0000-000000000003',
+                    '00000000-0000-0000-0000-000000000001',
+                    'USER',
+                    'admin@platform.local',
+                    'Platform Admin',
+                    'ACTIVE',
+                    '$2a$12$R9h/cIPz0gyWvyI9Apf1O.zVq9zGkP9nN8nLz7kWnqQpJY5J8l8eS',
+                    'en',
+                    'UTC',
+                    'SENSITIVE'
+                )
+                ON CONFLICT (id) DO NOTHING;
+
+                INSERT INTO iam.membership (
+                    tenant_id, principal_id, organization_id, role, status
+                )
+                SELECT
+                    '00000000-0000-0000-0000-000000000001',
+                    '00000000-0000-0000-0000-000000000003',
+                    '00000000-0000-0000-0000-000000000002',
+                    'ADMIN',
+                    'ACTIVE'
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM iam.membership
+                    WHERE principal_id = '00000000-0000-0000-0000-000000000003'
+                      AND organization_id = '00000000-0000-0000-0000-000000000002'
+                );
+
+                INSERT INTO iam.role_binding (
+                    tenant_id, principal_id, role_code, scope_type, scope_id, status, granted_by
+                )
+                SELECT
+                    '00000000-0000-0000-0000-000000000001',
+                    '00000000-0000-0000-0000-000000000003',
+                    'PLATFORM_ADMIN',
+                    'TENANT',
+                    '00000000-0000-0000-0000-000000000001',
+                    'ACTIVE',
+                    '00000000-0000-0000-0000-000000000003'
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM iam.role_binding
+                    WHERE principal_id = '00000000-0000-0000-0000-000000000003'
+                      AND role_code = 'PLATFORM_ADMIN'
+                      AND scope_type = 'TENANT'
+                );
+                """);
     }
 
     /**

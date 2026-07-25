@@ -123,6 +123,20 @@ public final class ErrorCode {
     /** 豁免缺少原因 */
     public static final int WAIVER_REASON_REQUIRED = 4257;
 
+    // ── 平台事件/Saga 域错误码段（4258-4270）──
+    /** Saga 实例不存在 */
+    public static final int SAGA_NOT_FOUND = 4258;
+    /** Saga 当前状态不允许此操作 */
+    public static final int INVALID_SAGA_STATUS = 4259;
+    /** Saga 步骤不存在或非法 */
+    public static final int INVALID_SAGA_STEP = 4260;
+    /** Saga 已完成不可再次执行 */
+    public static final int SAGA_ALREADY_COMPLETED = 4261;
+    /** Saga 补偿失败 */
+    public static final int SAGA_COMPENSATION_FAILED = 4262;
+    /** Outbox 事件不存在 */
+    public static final int OUTBOX_EVENT_NOT_FOUND = 4263;
+
     // ── 服务端错误段（500-599）──
     /** 内部异常 */
     public static final int INTERNAL_ERROR = 500;

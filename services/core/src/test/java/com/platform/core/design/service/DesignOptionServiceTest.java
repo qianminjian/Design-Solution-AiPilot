@@ -182,7 +182,7 @@ class DesignOptionServiceTest {
             Pageable pageable = PageRequest.of(0, 10);
             Page<DesignOption> page = new PageImpl<>(List.of(option), pageable, 1);
 
-            when(optionRepository.findByTenantIdAndProjectId(
+            when(optionRepository.findByTenantIdAndProjectIdAndStatusAndDiscipline(
                     tenantId, projectId, DesignOptionStatus.SUBMITTED, DesignDiscipline.ARCHITECTURE, pageable))
                     .thenReturn(page);
 
@@ -209,7 +209,7 @@ class DesignOptionServiceTest {
             Page<DesignOption> page = new PageImpl<>(List.of(option), pageable, 1);
 
             when(optionRepository.findByTenantIdAndProjectId(
-                    tenantId, projectId, null, null, pageable))
+                    tenantId, projectId, pageable))
                     .thenReturn(page);
 
             Page<DesignOptionDto> result = service.list(
@@ -225,14 +225,14 @@ class DesignOptionServiceTest {
             Page<DesignOption> emptyPage = new PageImpl<>(List.of(), pageable, 0);
 
             when(optionRepository.findByTenantIdAndProjectId(
-                    tenantId, projectId, null, null, pageable))
+                    tenantId, projectId, pageable))
                     .thenReturn(emptyPage);
 
             service.list(tenantId, projectId, null, null, 1, 20);
 
             // 验证 Pageable 为 0 起
             verify(optionRepository).findByTenantIdAndProjectId(
-                    tenantId, projectId, null, null, PageRequest.of(0, 20));
+                    tenantId, projectId, PageRequest.of(0, 20));
         }
     }
 }

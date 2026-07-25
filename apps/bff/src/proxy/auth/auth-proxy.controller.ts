@@ -20,12 +20,15 @@ import {
   LoginResponse,
   LogoutRequest,
   RefreshTokenResponse,
+  loginResponseSchema,
+  refreshTokenResponseSchema,
 } from "@design-platform/shared";
 import {
   ProxyInterceptor,
   ProxyResult,
 } from "../../interceptors/proxy.interceptor";
 import { ProxyService } from "../proxy.service";
+import { SchemaValidator } from "../schema-validator.service";
 import { CookieService } from "./cookie.service";
 
 /**
@@ -34,6 +37,10 @@ import { CookieService } from "./cookie.service";
  * - 登录/刷新：将 refresh token 写入 httpOnly Cookie，不返回给浏览器
  * - 登出：清除 Cookie
  * - me/change-password：直接转发
+ *
+ * 契约验证（security.md §2.2）：
+ *  - login/refresh 响应使用严格验证，结构错误即返回 502
+ *  - 防止 Core Service 漂移导致前端拿到残缺的 token 字段
  *
  * 权威源：@design/D39-身份多租户-授权.md §D39.7
  *
@@ -45,6 +52,7 @@ export class AuthProxyController {
   constructor(
     @Inject(ProxyService) private readonly proxyService: ProxyService,
     @Inject(CookieService) private readonly cookieService: CookieService,
+    @Inject(SchemaValidator) private readonly schemaValidator: SchemaValidator,
   ) {}
 
   /**
@@ -64,7 +72,27 @@ export class AuthProxyController {
       headers: this.extractForwardHeaders(request),
     });
 
-    this.handleRefreshTokenFromResponse(result, response);
+    // 错误响应（4xx/5xx）直接透传，不参与 schema 验证
+    if (result.status >= 200 && result.status < 300) {
+      this.handleRefreshTokenFromResponse(result, response);
+
+      // 严格验证：Core Service 返回的登录响应必须符合契约
+      // 验证发生在 refreshToken 已剥离之后，避免 refreshToken 字段干扰 schema
+      // 兼容 ApiResponse<T> 包装格式（Java Core Service）与裸对象（单元测试 fixture）
+      const businessData = this.schemaValidator.extractBusinessData(result);
+      const validatedData = this.schemaValidator.validateStrict(
+        businessData,
+        loginResponseSchema,
+        {
+          domain: "auth",
+          operation: "login",
+          traceId: request.traceId,
+          downstreamService: "core-service",
+        },
+      );
+      this.schemaValidator.writeBackBusinessData(result, validatedData);
+    }
+
     return result;
   }
 
@@ -90,8 +118,26 @@ export class AuthProxyController {
       headers: this.extractForwardHeaders(request),
     });
 
-    // refresh token rotation：设置新 cookie
-    this.handleRefreshTokenFromResponse(result, response);
+    // 错误响应直接透传，不参与 schema 验证
+    if (result.status >= 200 && result.status < 300) {
+      // refresh token rotation：设置新 cookie
+      this.handleRefreshTokenFromResponse(result, response);
+
+      // 严格验证：refresh 响应必须符合契约（含 accessToken 字段）
+      const businessData = this.schemaValidator.extractBusinessData(result);
+      const validatedData = this.schemaValidator.validateStrict(
+        businessData,
+        refreshTokenResponseSchema,
+        {
+          domain: "auth",
+          operation: "refresh",
+          traceId: request.traceId,
+          downstreamService: "core-service",
+        },
+      );
+      this.schemaValidator.writeBackBusinessData(result, validatedData);
+    }
+
     return result;
   }
 
@@ -180,12 +226,13 @@ export class AuthProxyController {
   /**
    * 从下游响应中提取 refresh token 并写入 Cookie
    * - 下游响应里 refreshToken 字段不暴露给浏览器（删除后再透传）
+   * - 兼容 ApiResponse<T> 包装格式（Java Core Service）与裸对象（单元测试 fixture）
    */
   private handleRefreshTokenFromResponse(
     result: ProxyResult,
     response: Response,
   ): void {
-    const data = result.data as
+    const data = this.schemaValidator.extractBusinessData(result) as
       | (Partial<LoginResponse> & { refreshToken?: string })
       | (Partial<RefreshTokenResponse> & { refreshToken?: string })
       | undefined;

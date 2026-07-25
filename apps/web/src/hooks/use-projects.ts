@@ -8,7 +8,12 @@ import type {
   ListProjectsRequest,
   OffsetPageResponse,
 } from "@design-platform/shared";
-import { PortfolioApiPaths, HttpHeader } from "@design-platform/shared";
+import {
+  PortfolioApiPaths,
+  HttpHeader,
+  projectDtoSchema,
+} from "@design-platform/shared";
+import { z } from "zod";
 import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
 
 /** 项目列表查询键前缀 */
@@ -41,6 +46,10 @@ function buildProjectsQueryKey(params: ListProjectsRequest) {
  * 项目列表查询
  * 对应 GET /api/v1/projects?page=&pageSize=&status=&keyword=
  * 返回偏移分页结构 { items, total, page, pageSize, hasMore }
+ *
+ * 契约验证：软验证模式
+ *  - 项目列表为高频查询，软验证不阻断用户流程
+ *  - 验证失败 console.warn 记录，便于发现契约漂移
  */
 export function useProjects(params: ListProjectsRequest = {}) {
   return useQuery<OffsetPageResponse<ProjectDto>>({
@@ -66,6 +75,12 @@ export function useProjects(params: ListProjectsRequest = {}) {
       }
       return apiGet<OffsetPageResponse<ProjectDto>>(
         `${PortfolioApiPaths.projects}?${searchParams.toString()}`,
+        {
+          validate: {
+            schema: offsetPageResponseSchema(projectDtoSchema),
+            context: "useProjects.list",
+          },
+        },
       );
     },
     placeholderData: (prev) => prev, // 翻页/筛选时保留旧数据，避免闪烁
@@ -75,11 +90,20 @@ export function useProjects(params: ListProjectsRequest = {}) {
 /**
  * 项目详情查询
  * 对应 GET /api/v1/projects/{id}
+ *
+ * 契约验证：软验证模式
+ *  - 详情数据结构错误不阻断展示，console.warn 记录便于排查
  */
 export function useProject(id: string | null | undefined) {
   return useQuery<ProjectDto>({
     queryKey: [...PROJECTS_QUERY_KEY, "detail", id] as const,
-    queryFn: () => apiGet<ProjectDto>(PortfolioApiPaths.project(id as string)),
+    queryFn: () =>
+      apiGet<ProjectDto>(PortfolioApiPaths.project(id as string), {
+        validate: {
+          schema: projectDtoSchema,
+          context: "useProjects.detail",
+        },
+      }),
     enabled: typeof id === "string" && id.length > 0,
   });
 }
@@ -88,6 +112,9 @@ export function useProject(id: string | null | undefined) {
  * 创建项目 mutation
  * 对应 POST /api/v1/projects
  * 必须携带 Idempotency-Key 头（D35 §幂等约定），自动生成 UUID
+ *
+ * 契约验证：软验证模式
+ *  - 创建响应结构错误不阻断，但会记录日志
  */
 export function useCreateProject() {
   const queryClient = useQueryClient();
@@ -97,6 +124,10 @@ export function useCreateProject() {
       apiPost<ProjectDto>(PortfolioApiPaths.projects, payload, {
         headers: {
           [HttpHeader.IDEMPOTENCY_KEY]: generateIdempotencyKey(),
+        },
+        validate: {
+          schema: projectDtoSchema,
+          context: "useProjects.create",
         },
       }),
     onSuccess: () => {
@@ -112,6 +143,8 @@ export function useCreateProject() {
  * 更新项目 mutation
  * 对应 PATCH /api/v1/projects/{id}
  * 必须携带 If-Match 头（D35 §ETag 乐观锁约定），值由 rowVersion 派生
+ *
+ * 契约验证：软验证模式
  */
 export function useUpdateProject() {
   const queryClient = useQueryClient();
@@ -127,6 +160,10 @@ export function useUpdateProject() {
           // ETag 形如 "rev-<rowVersion>"，If-Match 需携带相同值
           [HttpHeader.IF_MATCH]: `"rev-${rowVersion}"`,
         },
+        validate: {
+          schema: projectDtoSchema,
+          context: "useProjects.update",
+        },
       }),
     onSuccess: (data) => {
       // 失效列表与该条详情缓存
@@ -137,5 +174,19 @@ export function useUpdateProject() {
         queryKey: [...PROJECTS_QUERY_KEY, "detail", data.id],
       });
     },
+  });
+}
+
+/**
+ * 偏移分页响应 schema 工厂
+ * 复用 shared 包的 OffsetPageResponse 类型
+ */
+function offsetPageResponseSchema<T>(itemSchema: z.ZodType<T>) {
+  return z.object({
+    items: z.array(itemSchema),
+    total: z.number().int().nonnegative(),
+    page: z.number().int().positive(),
+    pageSize: z.number().int().positive(),
+    hasMore: z.boolean(),
   });
 }

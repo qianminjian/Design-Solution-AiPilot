@@ -50,6 +50,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────
   # Job 1: gitleaks — 扫描当前代码与 Git 历史的密钥泄露
   # 强制启用：发现密钥即 fail，阻止合并
+  # 配置文件：.gitleaks.toml（含项目特化规则与白名单）
   # ──────────────────────────────────────────────────────────────
   gitleaks-scan:
     name: gitleaks 密钥扫描
@@ -61,7 +62,7 @@ jobs:
           # fetch-depth: 0 拉取完整历史，gitleaks 才能扫描历史 commit
           fetch-depth: 0
 
-      - name: 运行 gitleaks
+      - name: 运行 gitleaks（加载 .gitleaks.toml 配置）
         uses: gitleaks/gitleaks-action@v2
         env:
           # GITHUB_TOKEN 用于上传 SARIF 报告到 Security tab
@@ -69,10 +70,13 @@ jobs:
           # 启用上传扫描结果到 GitHub Code Scanning
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: true
           GITLEAKS_ENABLE_SUMMARY: true
+          # 指定项目根目录的配置文件（含项目特化规则与白名单）
+          GITLEAKS_CONFIG: .gitleaks.toml
 
   # ──────────────────────────────────────────────────────────────
   # Job 2: trufflehog — 深度扫描 Git 历史中的密钥痕迹
   # 验证模式：仅检测已验证的密钥（避免误报）
+  # 排除路径：node_modules/dist/build/tests/__support__/design 等
   # ──────────────────────────────────────────────────────────────
   trufflehog-scan:
     name: trufflehog 历史密钥扫描
@@ -86,12 +90,16 @@ jobs:
       - name: 运行 trufflehog（仅检测已验证的密钥）
         # --only-verified: 仅报告已通过 Provider API 验证的密钥，零误报
         # --fail: 发现已验证密钥即返回非零退出码，阻断 CI
+        # --exclude-paths: 排除测试 fixture、构建产物、设计文档（避免误报）
         uses: trufflehog/trufflehog@0.20.0
         with:
           path: .
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
-          extra_args: --only-verified --fail
+          extra_args: >-
+            --only-verified
+            --fail
+            --exclude-paths=.trufflehogignore
 
   # ──────────────────────────────────────────────────────────────
   # Job 3: semgrep — 多语言 SAST 静态分析
@@ -113,6 +121,7 @@ jobs:
         uses: returntocorp/semgrep-action@v1
         with:
           # 多规则集组合：覆盖 Node/Next.js/NestJS/React 常见漏洞
+          # + 项目自定义规则 semgrep.yml（含 isAiAssisted 标记校验等）
           config: >-
             p/typescript
             p/javascript
@@ -122,6 +131,7 @@ jobs:
             p/nextjs
             p/security-audit
             p/owasp-top-ten
+            semgrep.yml
           # 仅扫描前端/BFF/shared 源码（排除测试与构建产物）
           auditOn: |
             apps/web/
@@ -136,11 +146,13 @@ jobs:
       - name: semgrep（Java）
         uses: returntocorp/semgrep-action@v1
         with:
+          # 在内置规则基础上加载项目自定义规则 semgrep.yml
           config: >-
             p/java
             p/spring
             p/security-audit
             p/owasp-top-ten
+            semgrep.yml
           auditOn: services/core/src/main/java/
           severity: ERROR|WARNING
         env:
@@ -155,6 +167,7 @@ jobs:
             p/fastapi
             p/security-audit
             p/owasp-top-ten
+            semgrep.yml
           auditOn: services/ai/src/
           severity: ERROR|WARNING
         env:

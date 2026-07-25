@@ -3,11 +3,17 @@ import type { Request } from "express";
 import { HttpHeader } from "@design-platform/shared";
 import { AiGenerationRecordProxyController } from "../../../src/proxy/ai/ai-generation-record-proxy.controller";
 import type { ProxyService } from "../../../src/proxy/proxy.service";
+import { SchemaValidator } from "../../../src/proxy/schema-validator.service";
 import type { ProxyResult } from "../../../src/interceptors/proxy.interceptor";
 
 /** 构造 ProxyService mock */
 function createProxyServiceMock(): ProxyService {
   return { forward: vi.fn() } as unknown as ProxyService;
+}
+
+/** 构造真实 SchemaValidator（无依赖服务，直接实例化） */
+function createSchemaValidator(): SchemaValidator {
+  return new SchemaValidator();
 }
 
 /** 构造 Express Request mock */
@@ -35,7 +41,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("POST 创建请求应该转发 body 与授权头到 Core Service", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const requestBody = {
       projectId: "p-001",
       promptTemplate: "concept-generation",
@@ -93,7 +102,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("GET 按 designOptionId 查询应该不携带 body", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const request = createRequest({
       method: "GET",
       originalUrl: "/api/v1/ai-generation-records?designOptionId=opt-001",
@@ -119,7 +131,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("应该在请求头未携带 traceId 时使用 request.traceId 兜底", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const request = createRequest({
       method: "POST",
       originalUrl: "/api/v1/ai-generation-records",
@@ -143,7 +158,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("应该规范化 query 参数（数组过滤非字符串）", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const request = createRequest({
       method: "GET",
       originalUrl:
@@ -168,7 +186,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("DELETE 请求应该不携带 body", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const request = createRequest({
       method: "DELETE",
       originalUrl: "/api/v1/ai-generation-records/rec-001",
@@ -193,7 +214,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("GET /reviews/pending 应该透传路径与 projectId query 到 Core Service", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const request = createRequest({
       method: "GET",
       originalUrl:
@@ -221,7 +245,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("PATCH /{id}/review 应该转发 body 与路径到 Core Service", async () => {
     // Arrange
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const reviewBody = {
       decision: "APPROVED",
       comment: "符合规范要求",
@@ -282,7 +309,10 @@ describe("AiGenerationRecordProxyController", () => {
   it("GET /reviews/pending 不携带 body 且不与 /{id} 冲突", async () => {
     // Arrange：验证 reviews 子路径不会被解析为 UUID {id}
     const proxyService = createProxyServiceMock();
-    const controller = new AiGenerationRecordProxyController(proxyService);
+    const controller = new AiGenerationRecordProxyController(
+      proxyService,
+      createSchemaValidator(),
+    );
     const request = createRequest({
       method: "GET",
       originalUrl:
