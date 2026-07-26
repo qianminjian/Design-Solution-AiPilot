@@ -95,6 +95,9 @@ public final class StageDefinitions {
      * @return 阶段元数据 Optional
      */
     public static Optional<StageMeta> getStageMeta(String stageCode) {
+        if (stageCode == null) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(STAGE_META_MAP.get(stageCode));
     }
 
@@ -105,7 +108,7 @@ public final class StageDefinitions {
      * @throws BusinessException 编码非法
      */
     public static void requireValidCode(String stageCode) {
-        if (!STAGE_META_MAP.containsKey(stageCode)) {
+        if (stageCode == null || !STAGE_META_MAP.containsKey(stageCode)) {
             throw new BusinessException(
                     ErrorCode.INVALID_STAGE_CODE,
                     "非法阶段编码: " + stageCode);
