@@ -3,7 +3,6 @@
 import {
   Card,
   Table,
-  Tag,
   Button,
   Space,
   Typography,
@@ -15,28 +14,25 @@ import {
   Alert,
   Breadcrumb,
 } from "antd";
-import {
-  PlusOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  ExclamationCircleOutlined,
-  QuestionCircleOutlined,
-} from "@ant-design/icons";
+import { PlusOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
+import {
+  type RiskLevel,
+  type VerificationStatus,
+  type VerificationType,
+  RISK_OPTIONS,
+  TYPE_OPTIONS,
+} from "@/components/verification/verification-config";
+import {
+  RiskLevelBadge,
+  VerificationStatusBadge,
+  VerificationTypeBadge,
+} from "@/components/verification/verification-badge";
 
 const { Title, Text } = Typography;
-
-/** 验证类型 */
-type VerificationType = "MANUAL" | "AUTOMATED";
-
-/** 验证状态 */
-type VerificationStatus = "PENDING" | "PASSED" | "FAILED" | "WAIVED";
-
-/** 风险等级 */
-type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 /** 验证项 DTO */
 interface VerificationItemDto {
@@ -60,79 +56,6 @@ interface CreateVerificationItemRequest {
   riskLevel: RiskLevel;
   description: string;
 }
-
-/** 验证类型标签 */
-const TYPE_LABELS: Record<VerificationType, string> = {
-  MANUAL: "手动验证",
-  AUTOMATED: "自动验证",
-};
-
-/** 状态标签配置 */
-const STATUS_CONFIG: Record<
-  VerificationStatus,
-  { label: string; color: string; icon: React.ReactNode }
-> = {
-  PENDING: {
-    label: "待验证",
-    color: "default",
-    icon: <QuestionCircleOutlined />,
-  },
-  PASSED: { label: "通过", color: "success", icon: <CheckCircleOutlined /> },
-  FAILED: { label: "未通过", color: "error", icon: <CloseCircleOutlined /> },
-  WAIVED: {
-    label: "豁免",
-    color: "warning",
-    icon: <ExclamationCircleOutlined />,
-  },
-};
-
-/** 风险等级配置 */
-const RISK_CONFIG: Record<RiskLevel, { label: string; color: string }> = {
-  LOW: { label: "低", color: "green" },
-  MEDIUM: { label: "中", color: "orange" },
-  HIGH: { label: "高", color: "red" },
-  CRITICAL: { label: "严重", color: "magenta" },
-};
-
-/** 风险等级兜底配置（BFF 已严格验证，但前端防御性兜底，避免后端返回未知枚举值导致渲染崩） */
-const RISK_FALLBACK: { label: string; color: string } = {
-  label: "未评估",
-  color: "default",
-};
-
-/** 安全访问风险等级配置 */
-function getRiskConfig(level: RiskLevel | undefined | null) {
-  return level && RISK_CONFIG[level] ? RISK_CONFIG[level] : RISK_FALLBACK;
-}
-
-/** 状态兜底配置 */
-const STATUS_FALLBACK: { label: string; color: string; icon: React.ReactNode } =
-  {
-    label: "未知",
-    color: "default",
-    icon: <QuestionCircleOutlined />,
-  };
-
-/** 安全访问状态配置 */
-function getStatusConfig(status: VerificationStatus | undefined | null) {
-  return status && STATUS_CONFIG[status]
-    ? STATUS_CONFIG[status]
-    : STATUS_FALLBACK;
-}
-
-/** 验证类型选项 */
-const TYPE_OPTIONS: { value: VerificationType; label: string }[] = [
-  { value: "MANUAL", label: "手动验证" },
-  { value: "AUTOMATED", label: "自动验证" },
-];
-
-/** 风险等级选项 */
-const RISK_OPTIONS: { value: RiskLevel; label: string }[] = [
-  { value: "LOW", label: "低" },
-  { value: "MEDIUM", label: "中" },
-  { value: "HIGH", label: "高" },
-  { value: "CRITICAL", label: "严重" },
-];
 
 /** Gate 代码选项（根据 D05 阶段门） */
 const GATE_CODE_OPTIONS = [
@@ -281,8 +204,8 @@ export default function VerificationItemsPage() {
       dataIndex: "verificationType",
       key: "verificationType",
       width: 100,
-      render: (type: VerificationType) => (
-        <Tag>{TYPE_LABELS[type] ?? "未知"}</Tag>
+      render: (type: VerificationType | string | undefined | null) => (
+        <VerificationTypeBadge value={type} />
       ),
     },
     {
@@ -290,10 +213,9 @@ export default function VerificationItemsPage() {
       dataIndex: "riskLevel",
       key: "riskLevel",
       width: 80,
-      render: (level: RiskLevel | undefined | null) => {
-        const config = getRiskConfig(level);
-        return <Tag color={config.color}>{config.label}</Tag>;
-      },
+      render: (level: RiskLevel | string | undefined | null) => (
+        <RiskLevelBadge value={level} />
+      ),
     },
     {
       title: "描述",
@@ -306,14 +228,9 @@ export default function VerificationItemsPage() {
       dataIndex: "status",
       key: "status",
       width: 100,
-      render: (status: VerificationStatus | undefined | null) => {
-        const config = getStatusConfig(status);
-        return (
-          <Tag color={config.color} icon={config.icon}>
-            {config.label}
-          </Tag>
-        );
-      },
+      render: (status: VerificationStatus | string | undefined | null) => (
+        <VerificationStatusBadge value={status} />
+      ),
     },
     {
       title: "验证时间",
