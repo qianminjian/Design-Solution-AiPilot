@@ -20,8 +20,10 @@ const AI_GEN_RECORD_QUERY_KEY = ["ai-generation-records"] as const;
  * 查询 AI 生成记录详情
  * 对应契约：GET /api/v1/ai-generation-records/{id}
  *
- * 契约验证：软验证模式
- *  - 审计追溯记录结构错误不阻断展示，console.warn 记录便于排查
+ * 契约验证：严格模式
+ *  - AI 安全红线（security.md §12）：requiresHumanReview / riskLevel / guardrailResult
+ *    等关键字段缺失或类型异常时阻断展示，避免错误数据误导专业判断
+ *  - 历史记录因 schema 演进而字段缺失属于契约漂移，需立即修复
  */
 export function useAiGenerationRecord(id: string | null | undefined) {
   return useQuery<AiGenerationRecordDto>({
@@ -34,6 +36,7 @@ export function useAiGenerationRecord(id: string | null | undefined) {
           validate: {
             schema: aiGenerationRecordDtoSchema,
             context: "useAiGenerationRecord.detail",
+            strict: true,
           },
         },
       ),
@@ -44,7 +47,8 @@ export function useAiGenerationRecord(id: string | null | undefined) {
  * 按设计选项反查 AI 生成记录（审计追溯：设计选项 → AI 来源）
  * 对应契约：GET /api/v1/ai-generation-records?designOptionId=xxx
  *
- * 契约验证：软验证模式
+ * 契约验证：严格模式
+ *  - 列表内每条记录的关键安全字段须通过 schema 校验
  */
 export function useAiGenerationRecordsByDesignOption(
   designOptionId: string | null | undefined,
@@ -65,6 +69,7 @@ export function useAiGenerationRecordsByDesignOption(
           validate: {
             schema: z.array(aiGenerationRecordDtoSchema),
             context: "useAiGenerationRecords.byDesignOption",
+            strict: true,
           },
         },
       ),
@@ -75,7 +80,8 @@ export function useAiGenerationRecordsByDesignOption(
  * 按项目查询 AI 生成记录（按时间倒序）
  * 对应契约：GET /api/v1/ai-generation-records?projectId=xxx
  *
- * 契约验证：软验证模式
+ * 契约验证：严格模式
+ *  - AI 安全红线字段缺失即阻断展示，避免误导专业判断
  */
 export function useAiGenerationRecordsByProject(
   projectId: string | null | undefined,
@@ -92,6 +98,7 @@ export function useAiGenerationRecordsByProject(
           validate: {
             schema: z.array(aiGenerationRecordDtoSchema),
             context: "useAiGenerationRecords.byProject",
+            strict: true,
           },
         },
       ),
@@ -105,7 +112,9 @@ export function useAiGenerationRecordsByProject(
  * AI 安全红线（security.md §12）：
  * requiresHumanReview=true 的记录必须经人工复核才能采纳。
  *
- * 契约验证：软验证模式
+ * 契约验证：严格模式
+ *  - 待复核记录是 AI 安全闭环的关键节点，schema 异常必须立即暴露
+ *  - 避免遗漏需要人工复核的 AI 输出（违反 AI 不替代专业审签红线）
  */
 export function usePendingAiReviews(projectId: string | null | undefined) {
   return useQuery<AiGenerationRecordDto[]>({
@@ -122,6 +131,7 @@ export function usePendingAiReviews(projectId: string | null | undefined) {
           validate: {
             schema: z.array(aiGenerationRecordDtoSchema),
             context: "usePendingAiReviews.list",
+            strict: true,
           },
         },
       ),
@@ -138,6 +148,9 @@ export function usePendingAiReviews(projectId: string | null | undefined) {
  * - RETURNED：退回重生成
  *
  * 高风险（high/critical）记录须在 decisionContext 提供 secondReviewer 与 signer。
+ *
+ * 契约验证：严格模式
+ *  - 复核后的记录用于审计追溯，schema 异常必须立即暴露
  */
 export function useSubmitAiReview() {
   const queryClient = useQueryClient();
@@ -158,6 +171,7 @@ export function useSubmitAiReview() {
           validate: {
             schema: aiGenerationRecordDtoSchema,
             context: "useSubmitAiReview",
+            strict: true,
           },
         },
       ),
@@ -178,6 +192,9 @@ export function useSubmitAiReview() {
 
 /**
  * 创建 AI 生成记录（通常由 AI Service 通过 BFF 自动转发，前端较少直接调用）
+ *
+ * 契约验证：严格模式
+ *  - AI 生成记录创建后即进入审计追溯，schema 异常必须立即暴露
  */
 export async function createAiGenerationRecord(
   payload: CreateAiGenerationRecordRequest,
@@ -189,6 +206,7 @@ export async function createAiGenerationRecord(
       validate: {
         schema: aiGenerationRecordDtoSchema,
         context: "createAiGenerationRecord",
+        strict: true,
       },
     },
   );

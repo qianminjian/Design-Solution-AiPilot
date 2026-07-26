@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { AiReviewPanel } from "@/components/review/ai-review-panel";
 import type { AiGenerationRecordDto } from "@design-platform/shared";
+import { ResponseValidationError } from "@/lib/schema-validator";
+import { z } from "zod";
 
 // Mock hooks
 const mockUsePendingAiReviews = vi.fn(
@@ -192,5 +194,53 @@ describe("AiReviewPanel", () => {
 
     // Modal 中应渲染兜底标签
     expect(screen.getAllByText("未知").length).toBeGreaterThan(0);
+  });
+
+  it("schema 校验失败（requiresHumanReview 缺失）应显示 AI 安全字段校验失败提示", () => {
+    // 模拟 BFF 返回数据缺失 requiresHumanReview 字段，前端严格模式抛 ResponseValidationError
+    const zodError = new z.ZodError([
+      {
+        code: "invalid_type",
+        expected: "boolean",
+        received: "undefined",
+        path: ["requiresHumanReview"],
+        message: "Required",
+      },
+    ]);
+    const validationError = new ResponseValidationError(
+      "usePendingAiReviews.list",
+      zodError,
+    );
+
+    mockUsePendingAiReviews.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: true,
+      error: validationError,
+      refetch: vi.fn(),
+    });
+
+    render(<AiReviewPanel projectId="project-1" />);
+
+    expect(screen.getByText("AI 生成记录数据异常")).toBeDefined();
+    expect(screen.getByText(/requiresHumanReview=Required/)).toBeDefined();
+    expect(screen.getByText(/联系管理员/)).toBeDefined();
+  });
+
+  it("普通加载错误（非 schema 错误）应显示通用加载失败提示", () => {
+    mockUsePendingAiReviews.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: true,
+      error: new Error("network timeout"),
+      refetch: vi.fn(),
+    });
+
+    render(<AiReviewPanel projectId="project-1" />);
+
+    expect(screen.getByText("AI 生成记录数据异常")).toBeDefined();
+    expect(
+      screen.getByText("待复核 AI 生成记录加载失败，请稍后重试。"),
+    ).toBeDefined();
   });
 });

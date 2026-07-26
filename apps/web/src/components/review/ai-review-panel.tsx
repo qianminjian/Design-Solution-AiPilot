@@ -36,6 +36,7 @@ import {
   usePendingAiReviews,
   useSubmitAiReview,
 } from "@/hooks/use-ai-generation-records";
+import { ResponseValidationError } from "@/lib/schema-validator";
 
 const { Paragraph, Text } = Typography;
 
@@ -96,7 +97,8 @@ interface AiReviewPanelProps {
  */
 export function AiReviewPanel({ projectId }: AiReviewPanelProps) {
   const { message } = App.useApp();
-  const { data, isLoading, isError, refetch } = usePendingAiReviews(projectId);
+  const { data, isLoading, isError, error, refetch } =
+    usePendingAiReviews(projectId);
   const submitReview = useSubmitAiReview();
   const [selectedRecord, setSelectedRecord] =
     useState<AiGenerationRecordDto | null>(null);
@@ -174,8 +176,12 @@ export function AiReviewPanel({ projectId }: AiReviewPanelProps) {
         <Alert
           type="error"
           showIcon
-          message="加载失败"
-          description="待复核 AI 生成记录加载失败，请稍后重试"
+          message="AI 生成记录数据异常"
+          description={
+            error instanceof ResponseValidationError
+              ? `AI 安全字段校验失败：${error.issues.map((i: { path: string; message: string }) => `${i.path}=${i.message}`).join("; ")}。请立即联系管理员排查 BFF/后端契约漂移。`
+              : "待复核 AI 生成记录加载失败，请稍后重试。"
+          }
         />
       ) : pendingRecords.length === 0 ? (
         <Empty description="暂无待复核的 AI 生成记录" />
