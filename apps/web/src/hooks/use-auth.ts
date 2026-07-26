@@ -12,6 +12,7 @@ import {
   AuthApiPaths,
   authContextSchema,
   loginResponseSchema,
+  logoutResponseSchema,
 } from "@design-platform/shared";
 import { apiGet, apiPost } from "@/lib/api-client";
 
@@ -75,12 +76,22 @@ export function useLogin() {
  * 登出 mutation
  * 对应 POST /api/v1/auth/logout
  * 成功后清除所有缓存（包含用户信息），避免泄露前一会话数据
+ *
+ * 契约验证：软验证模式
+ *  - 登出响应结构错误不阻断登出流程，console.warn 记录便于排查
+ *  - 即便 revoked 字段缺失，仍执行本地缓存清理以保证安全
  */
 export function useLogout() {
   const queryClient = useQueryClient();
 
   return useMutation<LogoutResponse, Error, void>({
-    mutationFn: () => apiPost<LogoutResponse>(AuthApiPaths.logout),
+    mutationFn: () =>
+      apiPost<LogoutResponse>(AuthApiPaths.logout, undefined, {
+        validate: {
+          schema: logoutResponseSchema,
+          context: "auth.logout",
+        },
+      }),
     onSuccess: () => {
       queryClient.clear();
     },
