@@ -6,7 +6,6 @@ import {
   Button,
   Space,
   Spin,
-  Result,
   Card,
   Typography,
   Row,
@@ -37,6 +36,7 @@ import { FindingList } from "@/components/review/finding-list";
 import { GateSummaryCard } from "@/components/review/gate-summary";
 import { BcfIssueList } from "@/components/review/bcf-issue-list";
 import { AiReviewPanel } from "@/components/review/ai-review-panel";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text } = Typography;
 
@@ -213,16 +213,16 @@ export default function AiReviewPage({
   }
 
   if (checkError || findingsError || gateError || bcfError) {
+    // 多数据源错误：优先展示第一个错误对象，由 DataErrorAlert 统一展示
+    const firstError =
+      checkError ?? findingsError ?? gateError ?? bcfError ?? null;
     return (
-      <Result
-        status="error"
-        title="加载失败"
-        subTitle="审签数据加载失败，请稍后重试"
-        extra={
-          <Button type="primary" onClick={() => router.push("/projects")}>
-            返回项目列表
-          </Button>
-        }
+      <DataErrorAlert
+        error={firstError}
+        context="审签数据"
+        variant="result"
+        onRetry={() => router.push("/projects")}
+        retryLabel="返回项目列表"
       />
     );
   }

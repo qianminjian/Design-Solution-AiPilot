@@ -9,7 +9,6 @@ import {
   Select,
   Space,
   Spin,
-  Result,
   Typography,
   App,
   Drawer,
@@ -29,7 +28,7 @@ import { useDocuments, useDocumentVersions } from "@/hooks/use-documents";
 import { DocumentList } from "@/components/cde/document-list";
 import { DocumentUpload } from "@/components/cde/document-upload";
 import { DocumentVersionHistory } from "@/components/cde/document-version-history";
-import { ApiError } from "@/lib/api-client";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text } = Typography;
 
@@ -47,7 +46,10 @@ const STATUS_OPTIONS: { label: string; value: DocumentStatus }[] = [
 ];
 
 /** 文档状态 Badge 状态映射 */
-const STATUS_BADGE_STATUS: Record<DocumentStatus, "default" | "processing" | "success" | "warning" | "error"> = {
+const STATUS_BADGE_STATUS: Record<
+  DocumentStatus,
+  "default" | "processing" | "success" | "warning" | "error"
+> = {
   DRAFT: "default",
   CHECKED_OUT: "processing",
   PUBLISHED: "success",
@@ -76,13 +78,17 @@ export default function ProjectDocumentsPage({
   // 查询态：debounce 后
   const [keywordQuery, setKeywordQuery] = useState("");
   // 状态筛选
-  const [statusFilter, setStatusFilter] = useState<DocumentStatus | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<DocumentStatus | undefined>(
+    undefined,
+  );
   // 分页
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   // 版本历史抽屉
   const [versionDrawerOpen, setVersionDrawerOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentDto | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentDto | null>(
+    null,
+  );
 
   // debounce 关键字
   useEffect(() => {
@@ -104,23 +110,9 @@ export default function ProjectDocumentsPage({
   );
 
   // 版本历史查询
-  const {
-    data: versions,
-    isLoading: versionsLoading,
-  } = useDocumentVersions(selectedDocument?.id ?? null);
-
-  // 错误提示
-  useEffect(() => {
-    if (isError && error) {
-      const tip =
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "文档列表加载失败";
-      message.error(tip);
-    }
-  }, [isError, error, message]);
+  const { data: versions, isLoading: versionsLoading } = useDocumentVersions(
+    selectedDocument?.id ?? null,
+  );
 
   // 打开版本历史抽屉
   const handleOpenVersions = (doc: DocumentDto) => {
@@ -128,25 +120,16 @@ export default function ProjectDocumentsPage({
     setVersionDrawerOpen(true);
   };
 
-  // 错误态
+  // 错误态：使用 DataErrorAlert 统一展示，替代 message.error() toast 与 Result 内联组合
+  // 404/403/500/schema 校验失败均通过该组件处理
   if (isError && !data) {
-    const isNotFound = error instanceof ApiError && error.status === 404;
     return (
-      <Result
-        status={isNotFound ? "404" : "error"}
-        title={isNotFound ? "项目不存在" : "加载失败"}
-        subTitle={
-          isNotFound
-            ? "该项目可能已被删除或您无权访问"
-            : error instanceof Error
-              ? error.message
-              : "请稍后重试"
-        }
-        extra={
-          <Button type="primary" onClick={() => router.push("/projects")}>
-            返回项目列表
-          </Button>
-        }
+      <DataErrorAlert
+        error={error}
+        context="项目文档"
+        variant="result"
+        onRetry={() => router.push("/projects")}
+        retryLabel="返回项目列表"
       />
     );
   }

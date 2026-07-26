@@ -12,7 +12,6 @@ import {
   Input,
   Select,
   Spin,
-  Alert,
   Popconfirm,
   App,
   Descriptions,
@@ -48,6 +47,7 @@ import {
   useImportIds,
   type UpdateRuleRequest,
 } from "@/hooks/use-compliance";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -282,13 +282,7 @@ export default function ComplianceRulesPage() {
   ];
 
   if (error) {
-    return (
-      <Alert
-        type="error"
-        message="加载失败"
-        description={(error as Error).message}
-      />
-    );
+    return <DataErrorAlert error={error} context="合规规则列表" />;
   }
 
   const revisions = revisionsData?.items ?? [];

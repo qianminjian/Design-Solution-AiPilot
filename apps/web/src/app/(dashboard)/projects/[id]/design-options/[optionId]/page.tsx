@@ -6,7 +6,6 @@ import {
   Button,
   Space,
   Spin,
-  Result,
   Typography,
   App,
   Tag,
@@ -46,6 +45,7 @@ import {
 import { useAiGenerationRecordsByDesignOption } from "@/hooks/use-ai-generation-records";
 import { MarkdownRenderer } from "@/components/ai-solution/markdown-renderer";
 import { ApiError } from "@/lib/api-client";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -188,27 +188,15 @@ export default function DesignOptionDetailPage({
     );
   }
 
+  // 错误态：使用 DataErrorAlert 统一展示，404/403/500/schema 校验失败均通过该组件处理
   if (isError || !option) {
-    const isNotFound = error instanceof ApiError && error.status === 404;
     return (
-      <Result
-        status={isNotFound ? "404" : "error"}
-        title={isNotFound ? "设计选项不存在" : "加载失败"}
-        subTitle={
-          isNotFound
-            ? "该选项可能已被删除或您无权访问"
-            : error instanceof Error
-              ? error.message
-              : "请稍后重试"
-        }
-        extra={
-          <Button
-            type="primary"
-            onClick={() => router.push(`/projects/${projectId}/design-options`)}
-          >
-            返回设计选项列表
-          </Button>
-        }
+      <DataErrorAlert
+        error={error}
+        context="设计选项详情"
+        variant="result"
+        onRetry={() => router.push(`/projects/${projectId}/design-options`)}
+        retryLabel="返回设计选项列表"
       />
     );
   }

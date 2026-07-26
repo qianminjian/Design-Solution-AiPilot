@@ -8,7 +8,6 @@ import {
   Select,
   Space,
   Spin,
-  Result,
   Typography,
   App,
   Tag,
@@ -20,6 +19,7 @@ import {
   Col,
   Badge,
 } from "antd";
+// 注意：错误态改用 DataErrorAlert 统一展示
 import {
   ArrowLeftOutlined,
   PlusOutlined,
@@ -35,6 +35,7 @@ import {
   useCreateDesignOption,
 } from "@/hooks/use-design-options";
 import { ApiError } from "@/lib/api-client";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -153,18 +154,15 @@ export default function ProjectDesignOptionsPage({
     );
   }
 
-  // 错误态
+  // 错误态：使用 DataErrorAlert 统一展示
   if (isError) {
     return (
-      <Result
-        status="error"
-        title="加载失败"
-        subTitle={error instanceof Error ? error.message : "请稍后重试"}
-        extra={
-          <Button type="primary" onClick={() => router.push("/projects")}>
-            返回项目列表
-          </Button>
-        }
+      <DataErrorAlert
+        error={error}
+        context="设计选项"
+        variant="result"
+        onRetry={() => router.push("/projects")}
+        retryLabel="返回项目列表"
       />
     );
   }

@@ -11,7 +11,6 @@ import {
   Form,
   Select,
   Spin,
-  Alert,
   App,
   Descriptions,
   Statistic,
@@ -45,6 +44,7 @@ import {
   useCreateComplianceCheckRun,
   useExecuteComplianceCheckRun,
 } from "@/hooks/use-compliance";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text } = Typography;
 
@@ -260,13 +260,7 @@ export default function ComplianceChecksPage() {
   ];
 
   if (error) {
-    return (
-      <Alert
-        type="error"
-        message="加载失败"
-        description={(error as Error).message}
-      />
-    );
+    return <DataErrorAlert error={error} context="合规检查运行列表" />;
   }
 
   // 计算结果统计
