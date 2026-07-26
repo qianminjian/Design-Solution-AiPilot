@@ -1,8 +1,8 @@
 import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
-import { json, urlencoded } from "express";
 import { AppModule } from "./app.module";
-import { logger, PinoLoggerService } from "./infra/logger";
+import { logger } from "./infra/logger";
+import { configureApp } from "./bootstrap";
 
 /**
  * BFF 启动入口
@@ -17,21 +17,8 @@ async function bootstrap(): Promise<void> {
     logger: false,
   });
 
-  // 全局替换 NestJS Logger 为 pino，使框架内部日志也走结构化 JSON
-  app.useLogger(new PinoLoggerService());
-
-  // CORS — 开发环境允许前端跨域
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-    credentials: true,
-  });
-
-  // 全局前缀：所有路由前加 /api
-  app.setGlobalPrefix("api");
-
-  // body 解析限制 10mb，支持文件上传场景（设计文件元数据/批量导入等）
-  app.use(json({ limit: "10mb" }));
-  app.use(urlencoded({ extended: true, limit: "10mb" }));
+  // 应用配置（CORS / 全局前缀 / body 解析 / pino logger）
+  configureApp(app);
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
