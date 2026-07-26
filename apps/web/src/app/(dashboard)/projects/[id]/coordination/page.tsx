@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Alert,
   Button,
   Empty,
   Space,
@@ -19,6 +20,14 @@ import {
   ClusterOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
+import {
+  useBcfIssues,
+  useUpdateBcfIssueStatus,
+  useAssignBcfIssue,
+  type BcfIssueStatus,
+} from "@/hooks/use-review";
+import { BcfIssueList } from "@/components/review/bcf-issue-list";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text } = Typography;
 
@@ -27,14 +36,12 @@ const { Title, Text } = Typography;
  * 参考 design-ui-system/pages/coordination.html (P07)
  *
  * 三大面板：
- * 1. 碰撞检测 — 多专业模型联邦冲突结果
- * 2. Issue 列表 — BCF (BIM Collaboration Format) 问题跟踪
- * 3. 联邦状态 — 各专业模型上传与同步状态
- *
- * 后端 coordination API 待开发，当前为前端框架占位
+ * 1. 碰撞检测 — 多专业模型联邦冲突结果（后端待开发，暂用 Mock 占位）
+ * 2. Issue 列表 — BCF (BIM Collaboration Format) 问题跟踪（已接入 useBcfIssues hook）
+ * 3. 联邦状态 — 各专业模型上传与同步状态（后端待开发，暂用 Mock 占位）
  */
 
-// ── Mock 数据类型（后续替换为 shared 契约）──
+// ── Mock 数据类型（碰撞/联邦后端待开发，暂用前端占位）──
 
 interface ClashResult {
   id: string;
@@ -46,16 +53,6 @@ interface ClashResult {
   status: "open" | "resolved" | "ignored";
 }
 
-interface BcfIssue {
-  id: string;
-  title: string;
-  discipline: string;
-  priority: "high" | "medium" | "low";
-  status: "open" | "in_progress" | "closed";
-  assignee: string;
-  createdAt: string;
-}
-
 interface FederationStatus {
   discipline: string;
   modelFile: string;
@@ -63,7 +60,7 @@ interface FederationStatus {
   status: "synced" | "stale" | "missing";
 }
 
-// ── Mock 数据 ──
+// ── Mock 数据（后续后端契约就绪后替换）──
 
 const MOCK_CLASHES: ClashResult[] = [
   {
@@ -83,27 +80,6 @@ const MOCK_CLASHES: ClashResult[] = [
     elementB: "Slab-012",
     severity: "major",
     status: "open",
-  },
-];
-
-const MOCK_ISSUES: BcfIssue[] = [
-  {
-    id: "BCF-001",
-    title: "管道穿越结构梁",
-    discipline: "MEP",
-    priority: "high",
-    status: "open",
-    assignee: "张工",
-    createdAt: "2026-07-20T08:00:00Z",
-  },
-  {
-    id: "BCF-002",
-    title: "楼梯净高不足",
-    discipline: "ARCH",
-    priority: "medium",
-    status: "in_progress",
-    assignee: "李工",
-    createdAt: "2026-07-21T10:30:00Z",
   },
 ];
 
@@ -135,7 +111,7 @@ const MOCK_FEDERATION: FederationStatus[] = [
   },
 ];
 
-// ── 列定义 ──
+// ── 列定义（碰撞/联邦） ──
 
 const clashColumns: ColumnsType<ClashResult> = [
   { title: "ID", dataIndex: "id", key: "id", width: 90 },
@@ -164,43 +140,6 @@ const clashColumns: ColumnsType<ClashResult> = [
         s === "open" ? "red" : s === "resolved" ? "green" : "default";
       return <Tag color={color}>{s}</Tag>;
     },
-  },
-];
-
-const issueColumns: ColumnsType<BcfIssue> = [
-  { title: "ID", dataIndex: "id", key: "id", width: 90 },
-  { title: "标题", dataIndex: "title", key: "title" },
-  { title: "专业", dataIndex: "discipline", key: "discipline", width: 80 },
-  {
-    title: "优先级",
-    dataIndex: "priority",
-    key: "priority",
-    width: 80,
-    render: (p: BcfIssue["priority"]) => {
-      const color = p === "high" ? "red" : p === "medium" ? "orange" : "blue";
-      return <Tag color={color}>{p}</Tag>;
-    },
-  },
-  {
-    title: "状态",
-    dataIndex: "status",
-    key: "status",
-    width: 100,
-    render: (s: BcfIssue["status"]) => {
-      const label =
-        s === "open" ? "待处理" : s === "in_progress" ? "处理中" : "已关闭";
-      const color =
-        s === "open" ? "red" : s === "in_progress" ? "orange" : "green";
-      return <Tag color={color}>{label}</Tag>;
-    },
-  },
-  { title: "负责人", dataIndex: "assignee", key: "assignee", width: 80 },
-  {
-    title: "创建时间",
-    dataIndex: "createdAt",
-    key: "createdAt",
-    width: 160,
-    render: (t: string) => new Date(t).toLocaleString("zh-CN"),
   },
 ];
 
@@ -240,16 +179,29 @@ export default function CoordinationPage({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("clashes");
 
+  // BCF Issues 真实数据接入
+  const bcfIssuesQuery = useBcfIssues(projectId);
+  const updateStatusMutation = useUpdateBcfIssueStatus();
+  const assignMutation = useAssignBcfIssue();
+
   const clashes = MOCK_CLASHES;
-  const issues = MOCK_ISSUES;
   const federation = MOCK_FEDERATION;
+  const bcfIssues = bcfIssuesQuery.data ?? [];
 
   // 统计摘要
   const openClashes = clashes.filter((c) => c.status === "open").length;
   const criticalClashes = clashes.filter(
     (c) => c.severity === "critical" && c.status === "open",
   ).length;
-  const openIssues = issues.filter((i) => i.status !== "closed").length;
+  const openIssues = bcfIssues.filter((i) => i.status !== "closed").length;
+
+  // BCF Issue 状态变更与指派回调
+  const handleStatusChange = (issueId: string, status: BcfIssueStatus) => {
+    void updateStatusMutation.mutateAsync({ issueId, status });
+  };
+  const handleAssign = (issueId: string, assignee: string) => {
+    void assignMutation.mutateAsync({ issueId, assignee });
+  };
 
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
@@ -310,48 +262,87 @@ export default function CoordinationPage({
             key: "clashes",
             label: `碰撞检测 (${openClashes} 待处理)`,
             children: (
-              <Table<ClashResult>
-                columns={clashColumns}
-                dataSource={clashes}
-                rowKey="id"
-                size="small"
-                pagination={{ pageSize: 20, showSizeChanger: false }}
-                locale={{
-                  emptyText: <Empty description="暂无碰撞记录" />,
-                }}
-              />
+              <>
+                <Alert
+                  type="info"
+                  showIcon
+                  message="碰撞检测功能待后端支持"
+                  description="当前展示 Mock 占位数据，后端 coordination 端点开发完成后接入实际数据。"
+                  style={{ marginBottom: 12 }}
+                />
+                <Table<ClashResult>
+                  columns={clashColumns}
+                  dataSource={clashes}
+                  rowKey="id"
+                  size="small"
+                  pagination={{ pageSize: 20, showSizeChanger: false }}
+                  locale={{
+                    emptyText: <Empty description="暂无碰撞记录" />,
+                  }}
+                />
+              </>
             ),
           },
           {
             key: "issues",
             label: `Issue 列表 (${openIssues} 待办)`,
             children: (
-              <Table<BcfIssue>
-                columns={issueColumns}
-                dataSource={issues}
-                rowKey="id"
-                size="small"
-                pagination={{ pageSize: 20, showSizeChanger: false }}
-                locale={{
-                  emptyText: <Empty description="暂无 Issue" />,
-                }}
-              />
+              <Space
+                direction="vertical"
+                size="middle"
+                style={{ width: "100%" }}
+              >
+                {bcfIssuesQuery.error && (
+                  <DataErrorAlert
+                    error={bcfIssuesQuery.error}
+                    context="BCF 协调问题列表"
+                    onRetry={() => void bcfIssuesQuery.refetch()}
+                  />
+                )}
+                {updateStatusMutation.error && (
+                  <DataErrorAlert
+                    error={updateStatusMutation.error}
+                    context="更新 BCF 问题状态"
+                  />
+                )}
+                {assignMutation.error && (
+                  <DataErrorAlert
+                    error={assignMutation.error}
+                    context="指派 BCF 问题"
+                  />
+                )}
+                <BcfIssueList
+                  data={bcfIssues}
+                  loading={bcfIssuesQuery.isLoading}
+                  onStatusChange={handleStatusChange}
+                  onAssign={handleAssign}
+                />
+              </Space>
             ),
           },
           {
             key: "federation",
             label: "联邦模型状态",
             children: (
-              <Table<FederationStatus>
-                columns={federationColumns}
-                dataSource={federation}
-                rowKey="discipline"
-                size="small"
-                pagination={false}
-                locale={{
-                  emptyText: <Empty description="暂无联邦模型" />,
-                }}
-              />
+              <>
+                <Alert
+                  type="info"
+                  showIcon
+                  message="联邦模型同步状态待后端支持"
+                  description="当前展示 Mock 占位数据，后端 federation 端点开发完成后接入实际数据。"
+                  style={{ marginBottom: 12 }}
+                />
+                <Table<FederationStatus>
+                  columns={federationColumns}
+                  dataSource={federation}
+                  rowKey="discipline"
+                  size="small"
+                  pagination={false}
+                  locale={{
+                    emptyText: <Empty description="暂无联邦模型" />,
+                  }}
+                />
+              </>
             ),
           },
         ]}
