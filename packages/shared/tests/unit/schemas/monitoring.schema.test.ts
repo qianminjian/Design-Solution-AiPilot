@@ -10,6 +10,7 @@ import { describe, it, expect } from "vitest";
 import {
   serviceHealthSchema,
   healthCheckResultSchema,
+  schemaValidationStatsSchema,
 } from "../../../src/schemas/monitoring.schema";
 
 const validServiceHealth = {
@@ -57,6 +58,12 @@ describe("healthCheckResultSchema", () => {
       ai: { status: "UP" },
       postgresql: { status: "UP" },
       minio: { status: "UP" },
+    },
+    schemaValidation: {
+      softTotal: 0,
+      strictTotal: 0,
+      softFailures: {},
+      strictFailures: {},
     },
     timestamp: "2026-07-25T08:00:00.000Z",
   };
@@ -113,6 +120,120 @@ describe("healthCheckResultSchema", () => {
       ...valid,
       status: "UNKNOWN",
     });
+    expect(result.success).toBe(false);
+  });
+
+  it("应该拒绝缺失 schemaValidation 字段", () => {
+    const { schemaValidation: _removed, ...rest } = valid;
+    const result = healthCheckResultSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("schemaValidationStatsSchema", () => {
+  const valid = {
+    softTotal: 3,
+    strictTotal: 1,
+    softFailures: {
+      "ai.generateDesign": {
+        AigenerationRecordSchema: {
+          count: 3,
+          lastTraceId: "trace-abc-001",
+          lastFailedAt: "2026-07-25T08:00:00.000Z",
+        },
+      },
+    },
+    strictFailures: {
+      "auth.login": {
+        LoginResponseSchema: {
+          count: 1,
+          lastTraceId: "trace-xyz-002",
+          lastFailedAt: "2026-07-25T08:01:00.000Z",
+        },
+      },
+    },
+  };
+
+  it("应该接受合法的 schema 验证统计", () => {
+    const result = schemaValidationStatsSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+  });
+
+  it("应该接受空快照", () => {
+    const result = schemaValidationStatsSchema.safeParse({
+      softTotal: 0,
+      strictTotal: 0,
+      softFailures: {},
+      strictFailures: {},
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("应该接受无 lastTraceId/lastFailedAt 的简化条目", () => {
+    const result = schemaValidationStatsSchema.safeParse({
+      softTotal: 1,
+      strictTotal: 0,
+      softFailures: {
+        "project.list": { ProjectSchema: { count: 1 } },
+      },
+      strictFailures: {},
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("应该拒绝负数 softTotal", () => {
+    const result = schemaValidationStatsSchema.safeParse({
+      ...valid,
+      softTotal: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("应该拒绝负数 strictTotal", () => {
+    const result = schemaValidationStatsSchema.safeParse({
+      ...valid,
+      strictTotal: -2,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("应该拒绝非 ISO datetime 的 lastFailedAt", () => {
+    const result = schemaValidationStatsSchema.safeParse({
+      ...valid,
+      softFailures: {
+        "ai.generateDesign": {
+          AigenerationRecordSchema: {
+            count: 3,
+            lastTraceId: "trace-abc-001",
+            lastFailedAt: "2026-07-25 08:00:00",
+          },
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("应该拒绝负数 count", () => {
+    const result = schemaValidationStatsSchema.safeParse({
+      ...valid,
+      softFailures: {
+        "ai.generateDesign": {
+          AigenerationRecordSchema: { count: -1 },
+        },
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("应该拒绝缺失 softFailures 字段", () => {
+    const { softFailures: _removed, ...rest } = valid;
+    const result = schemaValidationStatsSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
+  it("应该拒绝缺失 strictFailures 字段", () => {
+    const { strictFailures: _removed, ...rest } = valid;
+    const result = schemaValidationStatsSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
 });
