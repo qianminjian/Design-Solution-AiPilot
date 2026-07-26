@@ -18,6 +18,7 @@ import {
   Descriptions,
   App,
   Badge,
+  Tooltip,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -48,6 +49,28 @@ const RISK_CONFIG: Record<
   high: { color: "orange", label: "高风险" },
   critical: { color: "red", label: "极高风险" },
 };
+
+/** 未知风险等级兜底配置 */
+const RISK_FALLBACK = { color: "default", label: "未知" };
+
+/**
+ * 安全访问风险等级配置
+ * 未知枚举值返回兜底配置，避免后端返回新枚举值时渲染崩溃
+ */
+function getRiskConfig(
+  riskLevel: AiGenerationRecordDto["riskLevel"] | string | undefined | null,
+): { color: string; label: string } {
+  return riskLevel && riskLevel in RISK_CONFIG
+    ? RISK_CONFIG[riskLevel as AiGenerationRecordDto["riskLevel"]]
+    : RISK_FALLBACK;
+}
+
+/** 判断是否为已知风险等级 */
+function isKnownRiskLevel(
+  riskLevel: AiGenerationRecordDto["riskLevel"] | string | undefined | null,
+): boolean {
+  return !!riskLevel && riskLevel in RISK_CONFIG;
+}
 
 /** 决策展示配置 */
 const DECISION_CONFIG: Record<
@@ -160,7 +183,7 @@ export function AiReviewPanel({ projectId }: AiReviewPanelProps) {
         <List
           dataSource={pendingRecords}
           renderItem={(record) => {
-            const risk = RISK_CONFIG[record.riskLevel];
+            const risk = getRiskConfig(record.riskLevel);
             const hasEscalated =
               record.guardrailResult?.escalatedReview === true;
             return (
@@ -234,7 +257,7 @@ export function AiReviewPanel({ projectId }: AiReviewPanelProps) {
               <Alert
                 type="warning"
                 showIcon
-                message={`${RISK_CONFIG[selectedRecord.riskLevel].label}记录须双人复核 + 注册师签章`}
+                message={`${getRiskConfig(selectedRecord.riskLevel).label}记录须双人复核 + 注册师签章`}
                 description="请在下方填写第二复核人与注册师签章信息（security.md §12 AI 安全红线）"
                 style={{ marginBottom: 16 }}
               />
@@ -247,9 +270,20 @@ export function AiReviewPanel({ projectId }: AiReviewPanelProps) {
               style={{ marginBottom: 16 }}
             >
               <Descriptions.Item label="风险等级">
-                <Tag color={RISK_CONFIG[selectedRecord.riskLevel].color}>
-                  {RISK_CONFIG[selectedRecord.riskLevel].label}
-                </Tag>
+                {(() => {
+                  const riskCfg = getRiskConfig(selectedRecord.riskLevel);
+                  const isKnown = isKnownRiskLevel(selectedRecord.riskLevel);
+                  if (isKnown || !selectedRecord.riskLevel) {
+                    return <Tag color={riskCfg.color}>{riskCfg.label}</Tag>;
+                  }
+                  return (
+                    <Tooltip
+                      title={`未知风险等级：${selectedRecord.riskLevel}`}
+                    >
+                      <Tag color={riskCfg.color}>{riskCfg.label}</Tag>
+                    </Tooltip>
+                  );
+                })()}
               </Descriptions.Item>
               <Descriptions.Item label="模型">
                 {selectedRecord.model}
