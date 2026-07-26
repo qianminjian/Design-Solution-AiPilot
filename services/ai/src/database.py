@@ -5,6 +5,7 @@ Python AI 服务只读访问数据库，写入通过核心服务 API。
 """
 
 from collections.abc import AsyncGenerator
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
