@@ -73,6 +73,178 @@ class AiGenerationRecordServiceTest {
     }
 
     @Test
+    @DisplayName("create 在 requiresHumanReview=null 时应该默认为 true")
+    void createShouldDefaultRequiresHumanReviewToTrueWhenNull() {
+        // Arrange
+        CreateAiGenerationRecordRequest request = new CreateAiGenerationRecordRequest(
+                projectId, null, "concept-generation", null,
+                "rendered prompt", "raw content", Map.of("candidates", List.of()),
+                "gpt-4o", Map.of("totalTokens", 100), "medium", Map.of("passed", true),
+                null, null, null
+        );
+        AiGenerationRecord saved = buildRecord();
+        when(repository.save(any())).thenAnswer(inv -> {
+            AiGenerationRecord e = inv.getArgument(0);
+            // 验证默认值已被设置
+            assertThat(e.getRequiresHumanReview()).isTrue();
+            assertThat(e.getLatencyMs()).isEqualTo(0);
+            return e;
+        });
+
+        // Act
+        service.create(tenantId, request, userId);
+
+        // Assert 在 thenAnswer 中已验证
+        verify(repository).save(any(AiGenerationRecord.class));
+    }
+
+    @Test
+    @DisplayName("listByProject 应按时间倒序返回项目下记录列表")
+    void listByProjectShouldReturnRecordsOrderByCreatedAtDesc() {
+        // Arrange
+        AiGenerationRecord r1 = buildRecord();
+        r1.setCreatedAt(Instant.now());
+        AiGenerationRecord r2 = buildRecord();
+        r2.setCreatedAt(Instant.now().plusSeconds(60));
+        when(repository.findByTenantIdAndProjectIdOrderByCreatedAtDesc(tenantId, projectId))
+                .thenReturn(List.of(r2, r1));
+
+        // Act
+        List<AiGenerationRecordDto> list = service.listByProject(tenantId, projectId);
+
+        // Assert
+        assertThat(list).hasSize(2);
+        verify(repository).findByTenantIdAndProjectIdOrderByCreatedAtDesc(tenantId, projectId);
+    }
+
+    @Test
+    @DisplayName("listPendingReviews 应返回项目下 PENDING 状态记录")
+    void listPendingReviewsShouldReturnOnlyPendingRecords() {
+        // Arrange
+        AiGenerationRecord pending = buildRecord();
+        pending.setReviewStatus("PENDING");
+        when(repository.findByTenantIdAndProjectIdAndReviewStatus(tenantId, projectId, "PENDING"))
+                .thenReturn(List.of(pending));
+
+        // Act
+        List<AiGenerationRecordDto> list = service.listPendingReviews(tenantId, projectId);
+
+        // Assert
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).reviewStatus()).isEqualTo("PENDING");
+    }
+
+    @Test
+    @DisplayName("linkDesignOption 应成功关联设计选项")
+    void linkDesignOptionShouldAssociateDesignOption() {
+        // Arrange
+        UUID designOptionId = UUID.randomUUID();
+        AiGenerationRecord record = buildRecord();
+        when(repository.findByIdAndTenantId(recordId, tenantId)).thenReturn(Optional.of(record));
+        when(repository.save(any())).thenReturn(record);
+
+        // Act
+        AiGenerationRecordDto dto = service.linkDesignOption(tenantId, recordId, designOptionId);
+
+        // Assert
+        assertThat(dto.designOptionId()).isEqualTo(designOptionId);
+        verify(repository).save(any(AiGenerationRecord.class));
+    }
+
+    @Test
+    @DisplayName("linkDesignOption 在记录不存在时应抛出异常")
+    void linkDesignOptionShouldThrowWhenRecordNotFound() {
+        // Arrange
+        when(repository.findByIdAndTenantId(recordId, tenantId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.linkDesignOption(tenantId, recordId, UUID.randomUUID()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("AI 生成记录不存在");
+    }
+
+    @Test
+    @DisplayName("submitReview critical 风险等级应校验双人复核与签章")
+    void submitReviewCriticalRiskShouldValidateTwoPersonReview() {
+        // Arrange
+        AiGenerationRecord record = buildRecord();
+        record.setRiskLevel("critical");
+        record.setRequiresHumanReview(true);
+        record.setReviewStatus("PENDING");
+        when(repository.findByIdAndTenantId(recordId, tenantId)).thenReturn(Optional.of(record));
+
+        SubmitReviewRequest request = new SubmitReviewRequest(
+                "APPROVED", "通过", null  // 缺少 decisionContext
+        );
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.submitReview(tenantId, recordId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("双人复核");
+    }
+
+    @Test
+    @DisplayName("submitReview 高风险但 decisionContext 缺少 signer 应抛异常")
+    void submitReviewHighRiskMissingSignerShouldThrow() {
+        // Arrange
+        AiGenerationRecord record = buildRecord();
+        record.setRiskLevel("high");
+        record.setRequiresHumanReview(true);
+        record.setReviewStatus("PENDING");
+        when(repository.findByIdAndTenantId(recordId, tenantId)).thenReturn(Optional.of(record));
+
+        SubmitReviewRequest request = new SubmitReviewRequest(
+                "APPROVED", "通过", Map.of("secondReviewer", "reviewer-002")  // 缺少 signer
+        );
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.submitReview(tenantId, recordId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("双人复核");
+    }
+
+    @Test
+    @DisplayName("submitReview 高风险完整 decisionContext 应成功")
+    void submitReviewHighRiskWithFullContextShouldSucceed() {
+        // Arrange
+        AiGenerationRecord record = buildRecord();
+        record.setRiskLevel("high");
+        record.setRequiresHumanReview(true);
+        record.setReviewStatus("PENDING");
+        when(repository.findByIdAndTenantId(recordId, tenantId)).thenReturn(Optional.of(record));
+        when(repository.save(any())).thenReturn(record);
+
+        SubmitReviewRequest request = new SubmitReviewRequest(
+                "APPROVED", "通过",
+                Map.of("secondReviewer", "reviewer-002", "signer", "architect-001")
+        );
+
+        // Act
+        AiGenerationRecordDto dto = service.submitReview(tenantId, recordId, request, userId);
+
+        // Assert
+        assertThat(dto.reviewStatus()).isEqualTo("APPROVED");
+        verify(repository).save(any(AiGenerationRecord.class));
+    }
+
+    @Test
+    @DisplayName("submitReview requiresHumanReview=false 应拒绝复核")
+    void submitReviewShouldRejectWhenNoHumanReviewRequired() {
+        // Arrange
+        AiGenerationRecord record = buildRecord();
+        record.setRequiresHumanReview(false);
+        record.setReviewStatus("PENDING");
+        when(repository.findByIdAndTenantId(recordId, tenantId)).thenReturn(Optional.of(record));
+
+        SubmitReviewRequest request = new SubmitReviewRequest("APPROVED", "通过", null);
+
+        // Act & Assert
+        assertThatThrownBy(() -> service.submitReview(tenantId, recordId, request, userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("无需人工复核");
+    }
+
+    @Test
     @DisplayName("get 应该返回记录详情")
     void getShouldReturnRecord() {
         // Arrange
