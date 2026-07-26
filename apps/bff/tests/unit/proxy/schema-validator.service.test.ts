@@ -44,6 +44,8 @@ describe("SchemaValidator", () => {
     // 拦截 logger 输出，避免污染测试控制台，并验证日志调用
     loggerWarnSpy = vi.spyOn(Logger.prototype, "warn").mockImplementation();
     loggerErrorSpy = vi.spyOn(Logger.prototype, "error").mockImplementation();
+    // 重置失败计数器，避免跨用例污染
+    validator.resetFailures();
   });
 
   describe("validateSoft", () => {
@@ -271,6 +273,129 @@ describe("SchemaValidator", () => {
       expect(errors.some((e) => e.includes("id"))).toBe(true);
       expect(errors.some((e) => e.includes("name"))).toBe(true);
       expect(errors.some((e) => e.includes("age"))).toBe(true);
+    });
+  });
+
+  describe("本地失败计数器（V1 可观测性）", () => {
+    it("初始状态应返回空快照与零总计", () => {
+      expect(validator.readSoftFailureSnapshot()).toEqual({});
+      expect(validator.readStrictFailureSnapshot()).toEqual({});
+      expect(validator.readFailureTotals()).toEqual({
+        softTotal: 0,
+        strictTotal: 0,
+      });
+    });
+
+    it("软验证失败应递增对应 context 的计数器", () => {
+      const invalid = { id: "bad", name: "", age: -1 };
+      const ctx1 = { ...validContext, operation: "op1", traceId: "t1" };
+      const ctx2 = { ...validContext, operation: "op2", traceId: "t2" };
+
+      validator.validateSoft(invalid, testSchema, ctx1);
+      validator.validateSoft(invalid, testSchema, ctx1);
+      validator.validateSoft(invalid, testSchema, ctx2);
+
+      const snapshot = validator.readSoftFailureSnapshot();
+      // ctx1 失败 2 次
+      const ctx1Key = "test.op1";
+      expect(snapshot[ctx1Key]).toBeDefined();
+      const schemaName = Object.keys(snapshot[ctx1Key] ?? {})[0];
+      expect(schemaName).toBeDefined();
+      expect(snapshot[ctx1Key]?.[schemaName as string]?.count).toBe(2);
+      expect(snapshot[ctx1Key]?.[schemaName as string]?.lastTraceId).toBe("t1");
+
+      // ctx2 失败 1 次
+      const ctx2Key = "test.op2";
+      expect(snapshot[ctx2Key]?.[schemaName as string]?.count).toBe(1);
+
+      // 总计：软 3，严 0
+      expect(validator.readFailureTotals()).toEqual({
+        softTotal: 3,
+        strictTotal: 0,
+      });
+    });
+
+    it("严格验证失败应递增严格计数器", () => {
+      const invalid = { id: "bad" };
+      try {
+        validator.validateStrict(invalid, testSchema, {
+          ...validContext,
+          traceId: "strict-trace",
+        });
+      } catch {
+        // 预期抛错
+      }
+
+      const snapshot = validator.readStrictFailureSnapshot();
+      const ctxKey = "test.testOp";
+      expect(snapshot[ctxKey]).toBeDefined();
+      const schemaName = Object.keys(snapshot[ctxKey] ?? {})[0];
+      expect(schemaName).toBeDefined();
+      expect(snapshot[ctxKey]?.[schemaName as string]?.count).toBe(1);
+      expect(snapshot[ctxKey]?.[schemaName as string]?.lastTraceId).toBe(
+        "strict-trace",
+      );
+
+      // 总计：软 0，严 1
+      expect(validator.readFailureTotals()).toEqual({
+        softTotal: 0,
+        strictTotal: 1,
+      });
+    });
+
+    it("软验证通过不应递增计数器", () => {
+      validator.validateSoft(validData, testSchema, validContext);
+      expect(validator.readSoftFailureSnapshot()).toEqual({});
+      expect(validator.readFailureTotals().softTotal).toBe(0);
+    });
+
+    it("严格验证通过不应递增计数器", () => {
+      validator.validateStrict(validData, testSchema, validContext);
+      expect(validator.readStrictFailureSnapshot()).toEqual({});
+      expect(validator.readFailureTotals().strictTotal).toBe(0);
+    });
+
+    it("resetFailures 应清空所有计数器", () => {
+      const invalid = { id: "bad" };
+      validator.validateSoft(invalid, testSchema, validContext);
+      try {
+        validator.validateStrict(invalid, testSchema, validContext);
+      } catch {
+        // 预期抛错
+      }
+      expect(validator.readFailureTotals()).toEqual({
+        softTotal: 1,
+        strictTotal: 1,
+      });
+
+      validator.resetFailures();
+      expect(validator.readSoftFailureSnapshot()).toEqual({});
+      expect(validator.readStrictFailureSnapshot()).toEqual({});
+      expect(validator.readFailureTotals()).toEqual({
+        softTotal: 0,
+        strictTotal: 0,
+      });
+    });
+
+    it("快照应记录最近一次失败的 traceId 与 ISO 时间戳", () => {
+      const invalid = { id: "bad" };
+      const before = new Date().toISOString();
+      validator.validateSoft(invalid, testSchema, {
+        ...validContext,
+        traceId: "snapshot-trace",
+      });
+      const after = new Date().toISOString();
+
+      const snapshot = validator.readSoftFailureSnapshot();
+      const ctxKey = "test.testOp";
+      const schemaName = Object.keys(snapshot[ctxKey] ?? {})[0] as string;
+      const entry = snapshot[ctxKey]?.[schemaName];
+      expect(entry).toBeDefined();
+      expect(entry?.lastTraceId).toBe("snapshot-trace");
+      expect(entry?.lastFailedAt).toBeDefined();
+      // 时间戳应在 [before, after] 区间
+      expect(entry?.lastFailedAt >= before).toBe(true);
+      expect(entry?.lastFailedAt <= after).toBe(true);
     });
   });
 });

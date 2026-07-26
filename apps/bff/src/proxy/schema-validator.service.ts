@@ -29,6 +29,34 @@ export interface ValidationResult<T> {
 }
 
 /**
+ * 验证模式
+ */
+export type ValidationMode = "soft" | "strict";
+
+/**
+ * 失败计数器条目
+ */
+export interface FailureCounterEntry {
+  /** 累计失败次数 */
+  count: number;
+  /** 最近一次失败的 traceId（便于关联日志） */
+  lastTraceId?: string;
+  /** 最近一次失败时间（ISO 时间戳） */
+  lastFailedAt?: string;
+}
+
+/**
+ * 失败计数器快照结构
+ *
+ * 数据结构：Map<`domain.operation`, Map<schemaName, entry>>
+ */
+export interface FailureCounterSnapshot {
+  [contextKey: string]: {
+    [schemaName: string]: FailureCounterEntry;
+  };
+}
+
+/**
  * 判断值是否为 Java Core Service 返回的 ApiResponse 包装格式
  * ApiResponse<T> = { code, data, message, traceId }
  */
@@ -59,10 +87,33 @@ function isApiResponse(value: unknown): value is {
  *
  * 权威源：.trae/rules/security.md §12 AI 安全红线 + §2.2 认证 Token
  *         .trae/rules/coding-standards.md 显式优于隐式
+ *
+ * 可观测性 V1（与前端 schema-validator 对齐）：
+ *  - 内存计数器按 context + schemaName 聚合，便于 health 端点暴露
+ *  - V2 接入 Prometheus 后改为 Counter 指标，标签：(domain, operation, schema, mode)
  */
 @Injectable()
 export class SchemaValidator {
   private readonly logger = new Logger(SchemaValidator.name);
+
+  /**
+   * 内存失败计数器
+   *
+   * 结构：Map<contextKey, Map<schemaName, entry>>
+   *  - contextKey：`${domain}.${operation}`
+   *  - schemaName：schema 构造函数名
+   *  - entry：{ count, lastTraceId, lastFailedAt }
+   *
+   * 不存历史明细，仅累计计数与最近一次失败信息，避免内存膨胀
+   */
+  private readonly softFailures = new Map<
+    string,
+    Map<string, FailureCounterEntry>
+  >();
+  private readonly strictFailures = new Map<
+    string,
+    Map<string, FailureCounterEntry>
+  >();
 
   /**
    * 软验证：验证失败记录告警日志，原数据透传
@@ -96,6 +147,8 @@ export class SchemaValidator {
         `downstream=${context.downstreamService ?? "unknown"} ` +
         `errors=${JSON.stringify(errors)}`,
     );
+
+    this.incrementFailure(this.softFailures, schema, context, "soft");
 
     return { success: false, errors };
   }
@@ -134,6 +187,8 @@ export class SchemaValidator {
         `downstream=${context.downstreamService ?? "unknown"} ` +
         `errors=${JSON.stringify(errors)}`,
     );
+
+    this.incrementFailure(this.strictFailures, schema, context, "strict");
 
     throw new BadGatewayException({
       code: 502,
@@ -176,5 +231,85 @@ export class SchemaValidator {
     } else {
       result.data = validatedData;
     }
+  }
+
+  /**
+   * 读取软验证失败计数器快照（health 端点暴露用）
+   *
+   * 返回浅拷贝，避免外部直接修改内部状态
+   */
+  readSoftFailureSnapshot(): FailureCounterSnapshot {
+    return this.snapshotFailures(this.softFailures);
+  }
+
+  /**
+   * 读取严格验证失败计数器快照（health 端点暴露用）
+   */
+  readStrictFailureSnapshot(): FailureCounterSnapshot {
+    return this.snapshotFailures(this.strictFailures);
+  }
+
+  /**
+   * 读取软+严聚合失败计数（用于 health 端点简要指标）
+   *
+   * @returns { softTotal, strictTotal } 总失败次数
+   */
+  readFailureTotals(): { softTotal: number; strictTotal: number } {
+    let softTotal = 0;
+    let strictTotal = 0;
+    for (const schemaMap of this.softFailures.values()) {
+      for (const entry of schemaMap.values()) {
+        softTotal += entry.count;
+      }
+    }
+    for (const schemaMap of this.strictFailures.values()) {
+      for (const entry of schemaMap.values()) {
+        strictTotal += entry.count;
+      }
+    }
+    return { softTotal, strictTotal };
+  }
+
+  /**
+   * 重置失败计数器（仅测试用）
+   */
+  resetFailures(): void {
+    this.softFailures.clear();
+    this.strictFailures.clear();
+  }
+
+  /**
+   * 递增失败计数器
+   */
+  private incrementFailure(
+    counter: Map<string, Map<string, FailureCounterEntry>>,
+    schema: ZodType<unknown>,
+    context: ValidationContext,
+    _mode: ValidationMode,
+  ): void {
+    const contextKey = `${context.domain}.${context.operation}`;
+    const schemaName = schema.constructor.name ?? "anonymous";
+    const schemaMap =
+      counter.get(contextKey) ?? new Map<string, FailureCounterEntry>();
+    const previous = schemaMap.get(schemaName);
+    schemaMap.set(schemaName, {
+      count: (previous?.count ?? 0) + 1,
+      lastTraceId: context.traceId,
+      lastFailedAt: new Date().toISOString(),
+    });
+    counter.set(contextKey, schemaMap);
+  }
+
+  /**
+   * 将内部 Map 结构快照为可序列化的对象
+   */
+  private snapshotFailures(
+    counter: Map<string, Map<string, FailureCounterEntry>>,
+  ): FailureCounterSnapshot {
+    const snapshot: FailureCounterSnapshot = {};
+    for (const [contextKey, schemaMap] of counter.entries()) {
+      snapshot[contextKey] = Object.fromEntries(schemaMap.entries());
+    }
+    return snapshot;
   }
 }
