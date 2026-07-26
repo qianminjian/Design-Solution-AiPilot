@@ -14,6 +14,13 @@ import { GoldenDatasetProxyController } from "./tevv/tevv-proxy.controller";
 import { VerificationItemProxyController } from "./tevv/verification-item-proxy.controller";
 import { WorkflowProxyController } from "./workflow/workflow-proxy.controller";
 import { DesignOptionProxyController } from "./design/design-option-proxy.controller";
+import {
+  IamProxyController,
+  OrganizationProxyController,
+  MembershipProxyController,
+  RoleBindingProxyController,
+  AccessGrantProxyController,
+} from "./iam/iam-proxy.controller";
 import { MetricsModule } from "../metrics/metrics.module";
 
 /**
@@ -26,7 +33,9 @@ import { MetricsModule } from "../metrics/metrics.module";
  *   AuthProxyController → AiCapabilityProxyController → AiPromptProxyController →
  *   SolutionsProxyController → AiGenerationRecordProxyController →
  *   GoldenDatasetProxyController → VerificationItemProxyController →
- *   DesignOptionProxyController → WorkflowProxyController → ProxyController
+ *   DesignOptionProxyController → WorkflowProxyController →
+ *   IamProxyController/OrganizationProxyController/MembershipProxyController/
+ *   RoleBindingProxyController/AccessGrantProxyController → ProxyController
  *   （NestJS 基于 Express，按声明顺序匹配路由）
  */
 @Module({
@@ -47,6 +56,11 @@ import { MetricsModule } from "../metrics/metrics.module";
     VerificationItemProxyController,
     DesignOptionProxyController,
     WorkflowProxyController,
+    IamProxyController,
+    OrganizationProxyController,
+    MembershipProxyController,
+    RoleBindingProxyController,
+    AccessGrantProxyController,
     ProxyController,
   ],
   providers: [ProxyService, CookieService, AiProxyService, SchemaValidator],

@@ -95,7 +95,6 @@ export function generateMockFromSchema<T>(
   return merged as T;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TYPE_KIND: Record<string, string> = {
   ZodObject: "ZodObject",
   ZodArray: "ZodArray",
