@@ -10,6 +10,7 @@ COPY packages/shared/ packages/shared/
 COPY apps/web/ apps/web/
 
 RUN echo "shamefully-hoist=true" > .npmrc && \
+    echo "registry=https://registry.npmmirror.com" >> .npmrc && \
     pnpm install && \
     pnpm --filter @design-platform/shared build && \
     pnpm --filter @design-platform/web build

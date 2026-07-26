@@ -8,6 +8,8 @@ import type { NextConfig } from "next";
  * - rewrites：将 /api/* 代理到 BFF，前端同源调用避免 CORS
  */
 const nextConfig: NextConfig = {
+  // 部署在 /aidesign/ 子路径下（与 yun.gxjugu.com 其他项目共存）
+  basePath: "/aidesign",
   reactStrictMode: true,
   transpilePackages: [
     "antd",
