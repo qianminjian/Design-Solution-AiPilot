@@ -2,52 +2,15 @@
 
 import { Table, Tag, Progress, Empty, Spin, Dropdown, MenuProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import {
-  WarningOutlined,
-  InfoCircleOutlined,
-  CheckCircleOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
+import { MoreOutlined } from "@ant-design/icons";
 import type { ComplianceFinding } from "@/hooks/use-review";
+import type { FindingSeverity, FindingStatus } from "./review-config";
+import { SeverityBadge, FindingStatusBadge } from "./review-badge";
 
 interface FindingListProps {
   data: ComplianceFinding[];
   loading?: boolean;
 }
-
-const severityConfig: Record<string, { color: string; label: string; icon: React.ElementType; bgColor: string }> = {
-  critical: {
-    color: "red",
-    label: "严重",
-    icon: WarningOutlined,
-    bgColor: "#fff1f0",
-  },
-  high: {
-    color: "orange",
-    label: "高",
-    icon: WarningOutlined,
-    bgColor: "#fffbe6",
-  },
-  medium: {
-    color: "gold",
-    label: "中",
-    icon: InfoCircleOutlined,
-    bgColor: "#f6ffed",
-  },
-  low: {
-    color: "blue",
-    label: "低",
-    icon: CheckCircleOutlined,
-    bgColor: "#e6f7ff",
-  },
-};
-
-const statusConfig: Record<string, { color: string; label: string }> = {
-  pending: { color: "orange", label: "待处理" },
-  approved: { color: "green", label: "已批准" },
-  rejected: { color: "red", label: "已拒绝" },
-  resolved: { color: "blue", label: "已解决" },
-};
 
 const columns: ColumnsType<ComplianceFinding> = [
   {
@@ -56,15 +19,9 @@ const columns: ColumnsType<ComplianceFinding> = [
     key: "severity",
     width: 80,
     align: "center",
-    render: (severity) => {
-      const config = severityConfig[severity] ?? { color: "default", label: "未知", icon: InfoCircleOutlined, bgColor: "#f5f5f5" };
-      const Icon = config.icon;
-      return (
-        <Tag icon={<Icon />} color={config.color}>
-          {config.label}
-        </Tag>
-      );
-    },
+    render: (severity: FindingSeverity | string | undefined | null) => (
+      <SeverityBadge value={severity} />
+    ),
   },
   {
     title: "规则",
@@ -123,10 +80,9 @@ const columns: ColumnsType<ComplianceFinding> = [
     dataIndex: "status",
     key: "status",
     width: 80,
-    render: (status) => {
-      const config = statusConfig[status] ?? { color: "default", label: "未知" };
-      return <Tag color={config.color}>{config.label}</Tag>;
-    },
+    render: (status: FindingStatus | string | undefined | null) => (
+      <FindingStatusBadge value={status} />
+    ),
   },
   {
     title: "指派",

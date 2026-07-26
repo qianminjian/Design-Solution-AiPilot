@@ -160,4 +160,19 @@ describe("CheckResultList", () => {
     expect(screen.getByText("规则 B")).toBeDefined();
     expect(screen.getByText("规则 C")).toBeDefined();
   });
+
+  it("未知检查结果状态应渲染兜底标签（不崩溃）", () => {
+    render(
+      <CheckResultList
+        data={[
+          buildResult({
+            status: "skipped" as unknown as ComplianceCheckResult["status"],
+          }),
+        ]}
+        loading={false}
+      />,
+    );
+
+    expect(screen.getByText("未知")).toBeDefined();
+  });
 });

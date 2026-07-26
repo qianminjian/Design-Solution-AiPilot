@@ -2,20 +2,14 @@
 
 import { Table, Tag, Progress, Empty, Spin } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import type { ComplianceCheckResult } from "@/hooks/use-review";
+import type { CheckResultStatus } from "./review-config";
+import { CheckResultStatusBadge } from "./review-badge";
 
 interface CheckResultListProps {
   data: ComplianceCheckResult[];
   loading?: boolean;
 }
-
-const statusConfig: Record<string, { color: string; label: string; icon: React.ElementType }> = {
-  passed: { color: "green", label: "通过", icon: CheckCircleOutlined },
-  failed: { color: "red", label: "失败", icon: CloseCircleOutlined },
-  partial: { color: "orange", label: "部分通过", icon: MinusCircleOutlined },
-  running: { color: "blue", label: "运行中", icon: QuestionCircleOutlined },
-};
 
 const columns: ColumnsType<ComplianceCheckResult> = [
   {
@@ -30,9 +24,7 @@ const columns: ColumnsType<ComplianceCheckResult> = [
     dataIndex: "ruleCode",
     key: "ruleCode",
     width: 120,
-    render: (code) => (
-      <Tag color="default">{code}</Tag>
-    ),
+    render: (code) => <Tag color="default">{code}</Tag>,
   },
   {
     title: "适用对象数",
@@ -67,9 +59,7 @@ const columns: ColumnsType<ComplianceCheckResult> = [
     key: "naCount",
     width: 80,
     align: "center",
-    render: (count) => (
-      <span className="text-gray-500">{count}</span>
-    ),
+    render: (count) => <span className="text-gray-500">{count}</span>,
   },
   {
     title: "不确定",
@@ -77,9 +67,7 @@ const columns: ColumnsType<ComplianceCheckResult> = [
     key: "uncertainCount",
     width: 80,
     align: "center",
-    render: (count) => (
-      <span className="text-yellow-600">{count}</span>
-    ),
+    render: (count) => <span className="text-yellow-600">{count}</span>,
   },
   {
     title: "通过率",
@@ -93,7 +81,9 @@ const columns: ColumnsType<ComplianceCheckResult> = [
         <Progress
           percent={rate}
           size="small"
-          strokeColor={rate >= 80 ? "#52c41a" : rate >= 50 ? "#faad14" : "#ff4d4f"}
+          strokeColor={
+            rate >= 80 ? "#52c41a" : rate >= 50 ? "#faad14" : "#ff4d4f"
+          }
         />
       );
     },
@@ -103,15 +93,9 @@ const columns: ColumnsType<ComplianceCheckResult> = [
     dataIndex: "status",
     key: "status",
     width: 120,
-    render: (status) => {
-      const config = statusConfig[status] ?? { color: "default", label: "未知", icon: CheckCircleOutlined };
-      const Icon = config.icon;
-      return (
-        <Tag icon={<Icon />} color={config.color}>
-          {config.label}
-        </Tag>
-      );
-    },
+    render: (status: CheckResultStatus | string | undefined | null) => (
+      <CheckResultStatusBadge value={status} />
+    ),
   },
 ];
 

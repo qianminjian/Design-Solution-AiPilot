@@ -203,4 +203,34 @@ describe("FindingList", () => {
     expect(screen.getByText("Door-002")).toBeDefined();
     expect(screen.getByText("Door-003")).toBeDefined();
   });
+
+  it("未知严重级别应渲染兜底标签（不崩溃）", () => {
+    render(
+      <FindingList
+        data={[
+          buildFinding({
+            severity: "blocker" as unknown as ComplianceFinding["severity"],
+          }),
+        ]}
+        loading={false}
+      />,
+    );
+
+    expect(screen.getByText("未知")).toBeDefined();
+  });
+
+  it("未知状态应渲染兜底标签（不崩溃）", () => {
+    render(
+      <FindingList
+        data={[
+          buildFinding({
+            status: "archived" as unknown as ComplianceFinding["status"],
+          }),
+        ]}
+        loading={false}
+      />,
+    );
+
+    expect(screen.getByText("未知")).toBeDefined();
+  });
 });
