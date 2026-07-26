@@ -171,7 +171,7 @@ describe("MetricsMiddleware", () => {
     it("应该处理多个 UUID 段", () => {
       const request = createRequest({
         originalUrl:
-          "/api/v1/projects/550e8400-e29b-41d4-a716-446655440000/documents/abc-123-xyz",
+          "/api/v1/projects/550e8400-e29b-41d4-a716-446655440000/documents/660e8400-e29b-41d4-a716-446655440099",
       });
       const response = createResponse();
       const incSpy = vi.spyOn(metricsService.httpRequestsTotal, "inc");

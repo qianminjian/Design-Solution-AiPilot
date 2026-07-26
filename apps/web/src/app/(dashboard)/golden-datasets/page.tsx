@@ -1,56 +1,56 @@
 "use client";
 
-import { Card, Table, Tag, Button, Space, Typography, Modal, Form, Input, Select, Spin, Alert } from "antd";
-import { PlusOutlined, LockOutlined, CheckCircleOutlined, CloseCircleOutlined, FileSearchOutlined } from "@ant-design/icons";
+import {
+  Card,
+  Table,
+  Tag,
+  Button,
+  Space,
+  Typography,
+  Modal,
+  Form,
+  Input,
+  Select,
+  Spin,
+  Alert,
+} from "antd";
+import {
+  PlusOutlined,
+  LockOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  FileSearchOutlined,
+} from "@ant-design/icons";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost } from "@/lib/api-client";
+import { z } from "zod";
+import type {
+  GoldenDatasetDto,
+  CreateGoldenDatasetRequest,
+  DatasetCategory,
+  DatasetStatus,
+} from "@design-platform/shared";
+import {
+  TEVV_API_PATHS,
+  goldenDatasetDtoSchema,
+} from "@design-platform/shared";
 
 const { Title } = Typography;
 
-/** 数据集分类 */
-type DatasetCategory = "ARCHITECTURE" | "STRUCTURE" | "MEP" | "COORDINATION";
-
-/** 数据集状态 */
-type DatasetStatus = "DRAFT" | "FROZEN" | "DEPRECATED";
-
-/** 数据集 DTO */
-interface GoldenDatasetDto {
-  id: string;
-  name: string;
-  description: string;
-  category: DatasetCategory;
-  buildingType: string;
-  status: DatasetStatus;
-  version: string;
-  fileCount: number;
-  totalSizeBytes: number;
-  frozenAt?: string;
-  createdAt: string;
-}
-
-/** 创建数据集请求 */
-interface CreateDatasetRequest {
-  name: string;
-  description: string;
-  category: DatasetCategory;
-  buildingType: string;
-  storageKey: string;
-}
-
-/** 分类显示映射 */
-const CATEGORY_LABELS: Record<DatasetCategory, string> = {
+/** 分类显示映射（含兜底，避免未知枚举值渲染崩溃） */
+const CATEGORY_LABELS: Partial<Record<DatasetCategory, string>> = {
   ARCHITECTURE: "建筑",
   STRUCTURE: "结构",
   MEP: "机电",
-  COORDINATION: "协调",
+  INTERIOR: "室内",
+  LANDSCAPE: "景观",
 };
 
-/** 状态标签配置 */
-const STATUS_CONFIG: Record<
-  DatasetStatus,
-  { label: string; color: string; icon: React.ReactNode }
+/** 状态标签配置（含兜底） */
+const STATUS_CONFIG: Partial<
+  Record<DatasetStatus, { label: string; color: string; icon: React.ReactNode }>
 > = {
   DRAFT: { label: "草稿", color: "default", icon: <CloseCircleOutlined /> },
   FROZEN: { label: "已冻结", color: "success", icon: <LockOutlined /> },
@@ -68,32 +68,51 @@ const BUILDING_TYPE_OPTIONS = [
   { value: "OFFICE_LARGE", label: "大型办公（13-15层）" },
 ];
 
-/** 分类选项 */
+/** 分类选项（与 shared DatasetCategory 枚举对齐） */
 const CATEGORY_OPTIONS: { value: DatasetCategory; label: string }[] = [
   { value: "ARCHITECTURE", label: "建筑" },
   { value: "STRUCTURE", label: "结构" },
   { value: "MEP", label: "机电" },
-  { value: "COORDINATION", label: "协调" },
+  { value: "INTERIOR", label: "室内" },
+  { value: "LANDSCAPE", label: "景观" },
 ];
 
 /**
  * 查询数据集列表
+ *
+ * 契约验证：软验证模式
+ *  - 数据集列表结构错误不阻断展示，console.warn 记录便于排查
+ *  - 后端返回未知 category/status 枚举值时由 UI 兜底显示
  */
 function useDatasets() {
   return useQuery<GoldenDatasetDto[]>({
     queryKey: ["golden-datasets"],
-    queryFn: () => apiGet("/api/v1/golden-datasets"),
+    queryFn: () =>
+      apiGet<GoldenDatasetDto[]>(TEVV_API_PATHS.DATASETS, {
+        validate: {
+          schema: z.array(goldenDatasetDtoSchema),
+          context: "golden-datasets.list",
+        },
+      }),
   });
 }
 
 /**
  * 创建数据集
+ *
+ * 契约验证：软验证模式（请求体由前端表单校验保证）
+ *  - 创建响应结构错误不阻断，console.warn 记录便于排查
  */
 function useCreateDataset() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateDatasetRequest) =>
-      apiPost("/api/v1/golden-datasets", data),
+  return useMutation<GoldenDatasetDto, Error, CreateGoldenDatasetRequest>({
+    mutationFn: (data) =>
+      apiPost<GoldenDatasetDto>(TEVV_API_PATHS.DATASETS, data, {
+        validate: {
+          schema: goldenDatasetDtoSchema,
+          context: "golden-datasets.create",
+        },
+      }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["golden-datasets"] }),
   });
@@ -101,12 +120,24 @@ function useCreateDataset() {
 
 /**
  * 冻结数据集
+ *
+ * 契约验证：软验证模式
+ *  - 冻结响应结构错误不阻断，console.warn 记录便于排查
  */
 function useFreezeDataset() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (datasetId: string) =>
-      apiPost(`/api/v1/golden-datasets/${datasetId}/freeze`),
+  return useMutation<GoldenDatasetDto, Error, string>({
+    mutationFn: (datasetId) =>
+      apiPost<GoldenDatasetDto>(
+        TEVV_API_PATHS.DATASET_FREEZE(datasetId),
+        {},
+        {
+          validate: {
+            schema: goldenDatasetDtoSchema,
+            context: "golden-datasets.freeze",
+          },
+        },
+      ),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["golden-datasets"] }),
   });
@@ -115,13 +146,13 @@ function useFreezeDataset() {
 export default function GoldenDatasetsPage() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
-  const [form] = Form.useForm<CreateDatasetRequest>();
+  const [form] = Form.useForm<CreateGoldenDatasetRequest>();
 
   const { data: datasets, isLoading, error } = useDatasets();
   const createMutation = useCreateDataset();
   const freezeMutation = useFreezeDataset();
 
-  const handleCreate = (values: CreateDatasetRequest) => {
+  const handleCreate = (values: CreateGoldenDatasetRequest) => {
     createMutation.mutate(values, {
       onSuccess: () => {
         setModalVisible(false);
@@ -161,8 +192,9 @@ export default function GoldenDatasetsPage() {
       dataIndex: "category",
       key: "category",
       width: 80,
+      // 兜底：未知枚举值显示原始值，避免渲染崩溃
       render: (category: DatasetCategory) => (
-        <Tag>{CATEGORY_LABELS[category]}</Tag>
+        <Tag>{CATEGORY_LABELS[category] ?? category}</Tag>
       ),
     },
     {
@@ -190,8 +222,12 @@ export default function GoldenDatasetsPage() {
       dataIndex: "status",
       key: "status",
       width: 100,
+      // 兜底：未知状态枚举值显示原始值
       render: (status: DatasetStatus) => {
         const config = STATUS_CONFIG[status];
+        if (!config) {
+          return <Tag>{status}</Tag>;
+        }
         return (
           <Tag color={config.color} icon={config.icon}>
             {config.label}

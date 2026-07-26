@@ -9,10 +9,11 @@ import { MetricsService } from "./metrics.service";
  * - 防止 /projects/1、/projects/2 产生无限 label 组合
  */
 function normalizeRoutePath(req: Request): string {
-  const original = req.originalUrl || req.url;
+  // originalUrl 在 Express 中始终存在，但测试可能传入 undefined，此处兜底
+  const original = req.originalUrl ?? req.url ?? "";
   const pathOnly = original.split("?")[0] ?? original;
 
-  // 简单启发式：把 UUID 形态的段替换为 :id
+  // 简单启发式：把 UUID 形态的段替换为占位符
   return pathOnly
     .replace(/\/[0-9a-fA-F-]{8,}/g, "/:id")
     .replace(/\/\d+/g, "/:id");
@@ -33,8 +34,9 @@ export class MetricsMiddleware implements NestMiddleware {
   constructor(private readonly metricsService: MetricsService) {}
 
   use(request: Request, response: Response, next: NextFunction): void {
-    // 跳过 metrics 自身，避免抓取时自增
-    if (request.originalUrl.startsWith("/api/v1/metrics")) {
+    // 跳过 metrics 自身，避免抓取时自增（originalUrl 兜底处理 undefined）
+    const originalUrl = request.originalUrl ?? request.url ?? "";
+    if (originalUrl.startsWith("/api/v1/metrics")) {
       next();
       return;
     }

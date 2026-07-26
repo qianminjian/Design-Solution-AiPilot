@@ -19,10 +19,19 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
+import { z } from "zod";
+import type {
+  VerificationItemDto,
+  CreateVerificationItemRequest,
+  VerificationStatus,
+  VerificationType,
+  RiskLevel,
+} from "@design-platform/shared";
 import {
-  type RiskLevel,
-  type VerificationStatus,
-  type VerificationType,
+  TEVV_API_PATHS,
+  verificationItemDtoSchema,
+} from "@design-platform/shared";
+import {
   RISK_OPTIONS,
   TYPE_OPTIONS,
 } from "@/components/verification/verification-config";
@@ -33,29 +42,6 @@ import {
 } from "@/components/verification/verification-badge";
 
 const { Title, Text } = Typography;
-
-/** 验证项 DTO */
-interface VerificationItemDto {
-  id: string;
-  datasetId: string;
-  gateCode: string;
-  verificationType: VerificationType;
-  riskLevel: RiskLevel;
-  status: VerificationStatus;
-  description: string;
-  waiverReason?: string;
-  verifiedBy?: string;
-  verifiedAt?: string;
-  createdAt: string;
-}
-
-/** 创建验证项请求 */
-interface CreateVerificationItemRequest {
-  gateCode: string;
-  verificationType: VerificationType;
-  riskLevel: RiskLevel;
-  description: string;
-}
 
 /** Gate 代码选项（根据 D05 阶段门） */
 const GATE_CODE_OPTIONS = [
@@ -68,28 +54,53 @@ const GATE_CODE_OPTIONS = [
 
 /**
  * 查询验证项列表
+ *
+ * 契约验证：软验证模式
+ *  - 验证项列表结构错误不阻断展示，console.warn 记录便于排查
+ *  - 后端返回未知 riskLevel/status/type 枚举值时由 Badge 组件兜底显示
  */
 function useVerificationItems(datasetId: string) {
   return useQuery<VerificationItemDto[]>({
     queryKey: ["verification-items", datasetId],
-    queryFn: () => apiGet(`/api/v1/verification-items?datasetId=${datasetId}`),
+    queryFn: () =>
+      apiGet<VerificationItemDto[]>(
+        `${TEVV_API_PATHS.VERIFICATION_ITEMS}?datasetId=${datasetId}`,
+        {
+          validate: {
+            schema: z.array(verificationItemDtoSchema),
+            context: "verification-items.list",
+          },
+        },
+      ),
     enabled: !!datasetId,
   });
 }
 
 /**
  * 创建验证项
+ *
+ * 契约验证：软验证模式
+ *  - 创建响应结构错误不阻断，console.warn 记录便于排查
+ *  - 请求体由前端表单校验保证
  */
 function useCreateVerificationItem() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      datasetId,
-      data,
-    }: {
-      datasetId: string;
-      data: CreateVerificationItemRequest;
-    }) => apiPost(`/api/v1/verification-items`, { ...data, datasetId }),
+  return useMutation<
+    VerificationItemDto,
+    Error,
+    { datasetId: string; data: CreateVerificationItemRequest }
+  >({
+    mutationFn: ({ datasetId, data }) =>
+      apiPost<VerificationItemDto>(
+        TEVV_API_PATHS.VERIFICATION_ITEMS,
+        { ...data, datasetId },
+        {
+          validate: {
+            schema: verificationItemDtoSchema,
+            context: "verification-items.create",
+          },
+        },
+      ),
     onSuccess: (_, variables) =>
       queryClient.invalidateQueries({
         queryKey: ["verification-items", variables.datasetId],
@@ -99,21 +110,20 @@ function useCreateVerificationItem() {
 
 /**
  * 更新验证状态
+ *
+ * 契约验证：无（返回 void）
+ *  - 状态更新走 query string，无响应体需要验证
  */
 function useUpdateStatus() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      itemId,
-      status,
-      waiverReason,
-    }: {
-      itemId: string;
-      status: VerificationStatus;
-      waiverReason?: string;
-    }) =>
-      apiPatch(
-        `/api/v1/verification-items/${itemId}/status?status=${status}${waiverReason ? `&waiverReason=${encodeURIComponent(waiverReason)}` : ""}`,
+  return useMutation<
+    void,
+    Error,
+    { itemId: string; status: VerificationStatus; waiverReason?: string }
+  >({
+    mutationFn: ({ itemId, status, waiverReason }) =>
+      apiPatch<void>(
+        `${TEVV_API_PATHS.ITEM_STATUS(itemId)}?status=${status}${waiverReason ? `&waiverReason=${encodeURIComponent(waiverReason)}` : ""}`,
         {},
       ),
     onSuccess: () =>

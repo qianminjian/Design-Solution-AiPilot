@@ -49,13 +49,19 @@ export const goldenDatasetDtoSchema = z.object({
   description: z.string().optional(),
   category: datasetCategorySchema,
   buildingType: z.string().min(1),
-  version: z.number().int().nonnegative(),
+  /** 语义化版本号（如 "1.0.0"），由后端维护 */
+  version: z.string().min(1),
   fileCount: z.number().int().nonnegative(),
+  /** 数据集文件总字节数 */
+  totalSizeBytes: z.number().int().nonnegative().optional(),
   status: datasetStatusSchema,
   storageKey: z.string().optional(),
   frozenAt: z.string().datetime().optional(),
+  /** 冻结操作人 ID */
+  frozenBy: z.string().uuid().optional(),
   createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime().optional(),
+  /** 创建人 ID */
+  createdBy: z.string().uuid().optional(),
 });
 
 /** 创建金样数据集请求 schema */

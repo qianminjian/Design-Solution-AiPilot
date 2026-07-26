@@ -32,13 +32,19 @@ export interface GoldenDatasetDto {
   description?: string;
   category: DatasetCategory;
   buildingType: string;
-  version: number;
+  /** 语义化版本号（如 "1.0.0"），由后端维护 */
+  version: string;
   fileCount: number;
+  /** 数据集文件总字节数 */
+  totalSizeBytes?: number;
   status: DatasetStatus;
   storageKey?: string;
   frozenAt?: string;
+  /** 冻结操作人 ID */
+  frozenBy?: string;
   createdAt: string;
-  updatedAt?: string;
+  /** 创建人 ID */
+  createdBy?: string;
 }
 
 /** 创建金样数据集请求 */

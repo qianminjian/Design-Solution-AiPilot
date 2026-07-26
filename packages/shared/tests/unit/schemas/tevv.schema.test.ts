@@ -26,13 +26,15 @@ const validDataset = {
   description: "中小型办公建筑金样数据集",
   category: "ARCHITECTURE",
   buildingType: "OFFICE",
-  version: 1,
+  version: "1.0.0",
   fileCount: 12,
+  totalSizeBytes: 1048576,
   status: "FROZEN",
   storageKey: "datasets/office-v1.zip",
   frozenAt: "2026-07-25T08:00:00.000Z",
+  frozenBy: "550e8400-e29b-41d4-a716-446655440010",
   createdAt: "2026-07-25T08:00:00.000Z",
-  updatedAt: "2026-07-25T08:00:00.000Z",
+  createdBy: "550e8400-e29b-41d4-a716-446655440011",
 };
 
 const validVerificationItem = {
@@ -118,13 +120,45 @@ describe("goldenDatasetDtoSchema", () => {
       name: "最小数据集",
       category: "ARCHITECTURE",
       buildingType: "OFFICE",
-      version: 1,
+      version: "1.0.0",
       fileCount: 0,
       status: "DRAFT",
       createdAt: "2026-07-25T08:00:00.000Z",
     };
     const result = goldenDatasetDtoSchema.safeParse(minimal);
     expect(result.success).toBe(true);
+  });
+
+  it("应该接受 totalSizeBytes 为 0", () => {
+    const result = goldenDatasetDtoSchema.safeParse({
+      ...validDataset,
+      totalSizeBytes: 0,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("应该拒绝负数的 totalSizeBytes", () => {
+    const result = goldenDatasetDtoSchema.safeParse({
+      ...validDataset,
+      totalSizeBytes: -1,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("应该接受合法的 frozenBy UUID", () => {
+    const result = goldenDatasetDtoSchema.safeParse({
+      ...validDataset,
+      frozenBy: "550e8400-e29b-41d4-a716-446655440099",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("应该拒绝非 UUID 的 frozenBy", () => {
+    const result = goldenDatasetDtoSchema.safeParse({
+      ...validDataset,
+      frozenBy: "not-uuid",
+    });
+    expect(result.success).toBe(false);
   });
 
   it("应该拒绝非 UUID 的 id", () => {
