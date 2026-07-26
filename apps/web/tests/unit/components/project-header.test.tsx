@@ -132,9 +132,9 @@ describe("ProjectHeader", () => {
     expect(placeholders.length).toBeGreaterThan(0);
   });
 
-  it("unknown 建筑类型应回退展示原始值", () => {
+  it("unknown 建筑类型应渲染兜底标签（不崩溃）", () => {
     // buildingType 是 enum，正常情况不会出现 unknown
-    // 通过 generateMockFromSchema 生成默认值后修改为非法值，验证 BUILDING_TYPE_LABEL 兜底逻辑
+    // 通过 generateMockFromSchema 生成默认值后修改为非法值，验证 BuildingTypeBadge 兜底逻辑
     const project = generateMockFromSchema(projectDtoSchema, {
       buildingType: "office",
     }) as ProjectDto & { buildingType: string };
@@ -143,6 +143,17 @@ describe("ProjectHeader", () => {
     (project as { buildingType: string }).buildingType = "unknown-type";
     render(<ProjectHeader project={project} />);
 
-    expect(screen.getByText("unknown-type")).toBeDefined();
+    expect(screen.getByText("未知")).toBeDefined();
+  });
+
+  it("unknown 项目状态应渲染兜底标签（不崩溃）", () => {
+    const project = generateMockFromSchema(projectDtoSchema, {
+      status: "active",
+    }) as ProjectDto & { status: string };
+
+    (project as { status: string }).status = "paused";
+    render(<ProjectHeader project={project} />);
+
+    expect(screen.getByText("未知")).toBeDefined();
   });
 });

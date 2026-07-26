@@ -1,58 +1,10 @@
 "use client";
 
 import { Card, Empty, List, Tag, Typography, Tooltip, Spin } from "antd";
-import {
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  WarningOutlined,
-  PauseCircleOutlined,
-  CloseCircleOutlined,
-  ClockCircleOutlined,
-} from "@ant-design/icons";
-import type { GateDecisionDto, GateDecision } from "@design-platform/shared";
+import type { GateDecisionDto } from "@design-platform/shared";
+import { GateDecisionBadge, GateStatusBadge } from "./project-badge";
 
 const { Text, Paragraph } = Typography;
-
-/** 门禁决策结论 → 展示文本 */
-const GATE_DECISION_LABEL: Record<GateDecision, string> = {
-  approved: "Approved",
-  conditionally_approved: "Conditionally Approved",
-  rework_required: "Rework Required",
-  suspended: "Suspended",
-  cancelled: "Cancelled",
-};
-
-/** 门禁决策结论 → Tag 颜色 */
-const GATE_DECISION_TAG_COLOR: Record<GateDecision, string> = {
-  approved: "success",
-  conditionally_approved: "warning",
-  rework_required: "warning",
-  suspended: "warning",
-  cancelled: "error",
-};
-
-/** 门禁决策结论 → 图标 */
-function GateDecisionIcon({ decision }: { decision: GateDecision }) {
-  switch (decision) {
-    case "approved":
-      return <CheckCircleOutlined style={{ color: "#16a34a" }} />;
-    case "conditionally_approved":
-      return <ExclamationCircleOutlined style={{ color: "#d97706" }} />;
-    case "rework_required":
-      return <WarningOutlined style={{ color: "#d97706" }} />;
-    case "suspended":
-      return <PauseCircleOutlined style={{ color: "#d97706" }} />;
-    case "cancelled":
-      return <CloseCircleOutlined style={{ color: "#dc2626" }} />;
-  }
-}
-
-/** 门禁状态 → 展示文本 */
-const GATE_STATUS_LABEL = {
-  pending: "Pending",
-  decided: "Decided",
-  cancelled: "Cancelled",
-} as const;
 
 /** ISO 时间 → 本地化展示 */
 function formatDateTime(iso: string | null | undefined): string {
@@ -123,22 +75,9 @@ export function GateDecisionList({ gates, loading }: GateDecisionListProps) {
                     }}
                   >
                     {gate.decision ? (
-                      <>
-                        <GateDecisionIcon decision={gate.decision} />
-                        <Tag
-                          color={GATE_DECISION_TAG_COLOR[gate.decision]}
-                          style={{ margin: 0 }}
-                        >
-                          {GATE_DECISION_LABEL[gate.decision]}
-                        </Tag>
-                      </>
+                      <GateDecisionBadge value={gate.decision} />
                     ) : (
-                      <>
-                        <ClockCircleOutlined style={{ color: "#94a3b8" }} />
-                        <Tag style={{ margin: 0 }}>
-                          {GATE_STATUS_LABEL[gate.status]}
-                        </Tag>
-                      </>
+                      <GateStatusBadge value={gate.status} />
                     )}
                   </div>
                 </div>

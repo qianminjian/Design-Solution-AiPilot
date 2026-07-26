@@ -167,4 +167,27 @@ describe("GateDecisionList", () => {
     expect(screen.getByText("方案设计门禁")).toBeDefined();
     expect(screen.getByText("扩初设计门禁")).toBeDefined();
   });
+
+  it("未知决策结论应渲染兜底标签（不崩溃）", () => {
+    const gate = buildGate({
+      decision: "rejected" as unknown as GateDecisionDto["decision"],
+      gateName: "未知决策门禁",
+    });
+    render(<GateDecisionList gates={[gate]} />);
+    expect(screen.getByText("未知决策门禁")).toBeDefined();
+    expect(screen.getByText("未知")).toBeDefined();
+  });
+
+  it("未知门禁状态应渲染兜底标签（不崩溃）", () => {
+    const gate = buildGate({
+      decision: null,
+      status: "draft" as unknown as GateDecisionDto["status"],
+      decidedAt: null,
+      decidedBy: null,
+      gateName: "未知状态门禁",
+    });
+    render(<GateDecisionList gates={[gate]} />);
+    expect(screen.getByText("未知状态门禁")).toBeDefined();
+    expect(screen.getByText("未知")).toBeDefined();
+  });
 });

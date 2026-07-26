@@ -8,8 +8,10 @@ import {
   PauseCircleOutlined,
   CloseCircleOutlined,
   LockOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import type { StageInstanceDto, StageStatus } from "@design-platform/shared";
+import { getStageStatusConfig, isKnownStageStatus } from "./project-config";
 
 const { Title, Text } = Typography;
 
@@ -63,34 +65,27 @@ const VISUAL_LINE_COLOR: Record<StageVisualStatus, string> = {
   error: "#dc2626",
 };
 
-/** 阶段状态 → 展示文本 */
-const STAGE_STATUS_LABEL: Record<StageStatus, string> = {
-  planned: "Planned",
-  active: "Active",
-  review_preparing: "Review Preparing",
-  under_review: "Under Review",
-  conditionally_approved: "Conditionally Approved",
-  approved: "Approved",
-  suspended: "Suspended",
-  cancelled: "Cancelled",
-  closed: "Closed",
-};
+/**
+ * 安全获取阶段状态的视觉分类
+ * 未知状态兜底为 pending（灰色，避免渲染崩溃）
+ */
+function getStageVisual(
+  status: StageStatus | string | undefined | null,
+): StageVisualStatus {
+  return status && status in STAGE_STATUS_VISUAL
+    ? STAGE_STATUS_VISUAL[status as StageStatus]
+    : "pending";
+}
 
-/** 阶段状态 → Tag 颜色 */
-const STAGE_STATUS_TAG_COLOR: Record<StageStatus, string> = {
-  planned: "default",
-  active: "processing",
-  review_preparing: "processing",
-  under_review: "processing",
-  conditionally_approved: "success",
-  approved: "success",
-  suspended: "warning",
-  cancelled: "error",
-  closed: "success",
-};
-
-/** 阶段状态 → 图标 */
-function StageStatusIcon({ status }: { status: StageStatus }) {
+/** 阶段状态 → 图标（已兜底，未知状态显示问号图标） */
+function StageStatusIcon({
+  status,
+}: {
+  status: StageStatus | string | undefined | null;
+}) {
+  if (!isKnownStageStatus(status)) {
+    return <QuestionCircleOutlined />;
+  }
   switch (status) {
     case "approved":
     case "conditionally_approved":
@@ -168,7 +163,9 @@ export function StageTimeline({
           aria-label="项目阶段时间线"
         >
           {stages.map((stage, index) => {
-            const visual = STAGE_STATUS_VISUAL[stage.status];
+            const visual = getStageVisual(stage.status);
+            const stageStatusConfig = getStageStatusConfig(stage.status);
+            const isStageKnown = isKnownStageStatus(stage.status);
             const isActive = activeStageId === stage.id || visual === "active";
             const isLast = index === stages.length - 1;
             // 连接线颜色：当前节点为 completed/active 时，其左侧线段已走过
@@ -176,6 +173,10 @@ export function StageTimeline({
               visual === "completed" || visual === "active"
                 ? VISUAL_LINE_COLOR[visual]
                 : VISUAL_LINE_COLOR.pending;
+
+            const tooltipTitle = isStageKnown
+              ? `${stage.stageName} · ${stageStatusConfig.label}`
+              : `${stage.stageName} · 未知状态：${stage.status}`;
 
             return (
               <div
@@ -215,9 +216,7 @@ export function StageTimeline({
                     />
                   )}
                   {/* 圆点节点 */}
-                  <Tooltip
-                    title={`${stage.stageName} · ${STAGE_STATUS_LABEL[stage.status]}`}
-                  >
+                  <Tooltip title={tooltipTitle}>
                     <div
                       style={{
                         width: 32,
@@ -235,7 +234,7 @@ export function StageTimeline({
                           : "none",
                         transition: "box-shadow 200ms ease",
                       }}
-                      aria-label={`${stage.stageName}, 状态 ${STAGE_STATUS_LABEL[stage.status]}`}
+                      aria-label={`${stage.stageName}, 状态 ${stageStatusConfig.label}`}
                     >
                       <StageStatusIcon status={stage.status} />
                     </div>
@@ -268,9 +267,9 @@ export function StageTimeline({
                   {stage.stageName}
                 </Text>
 
-                {/* 阶段编码 + 状态 Tag */}
+                {/* 阶段编码 + 状态 Tag（颜色已兜底） */}
                 <Tag
-                  color={STAGE_STATUS_TAG_COLOR[stage.status]}
+                  color={stageStatusConfig.color}
                   style={{ margin: 0, fontSize: 11 }}
                 >
                   {stage.stageCode}

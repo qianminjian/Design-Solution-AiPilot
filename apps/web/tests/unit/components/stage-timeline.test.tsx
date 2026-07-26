@@ -124,4 +124,28 @@ describe("StageTimeline", () => {
     render(<StageTimeline stages={[]} />);
     expect(screen.getByTestId("empty")).toBeDefined();
   });
+
+  it("未知阶段状态应不崩溃（兜底为 pending 视觉）", () => {
+    const stagesWithUnknown: StageInstanceDto[] = [
+      {
+        id: "stage-unknown",
+        tenantId: "tenant-1",
+        projectId: "project-1",
+        stageCode: "STG-UNKNOWN" as StageCode,
+        stageName: "未知阶段",
+        stageOrder: 1,
+        status: "rejected" as unknown as StageInstanceDto["status"],
+        startedAt: null,
+        completedAt: null,
+        metadata: {},
+        createdAt: "2024-01-01T00:00:00Z",
+        updatedAt: "2024-01-01T00:00:00Z",
+        rowVersion: 1,
+      },
+    ];
+    // 不应抛出异常，且仍渲染阶段名
+    render(<StageTimeline stages={stagesWithUnknown} />);
+    expect(screen.getByText("未知阶段")).toBeDefined();
+    expect(screen.getByText("STG-UNKNOWN")).toBeDefined();
+  });
 });

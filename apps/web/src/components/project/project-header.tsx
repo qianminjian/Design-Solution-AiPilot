@@ -1,39 +1,10 @@
 "use client";
 
-import { Card, Tag, Typography, Space, Descriptions } from "antd";
-import type {
-  ProjectDto,
-  ProjectStatus,
-  BuildingType,
-} from "@design-platform/shared";
+import { Card, Typography, Space, Descriptions } from "antd";
+import type { ProjectDto } from "@design-platform/shared";
+import { ProjectStatusBadge, BuildingTypeBadge } from "./project-badge";
 
 const { Title, Text } = Typography;
-
-/** 项目状态 → Tag 颜色映射（与 projects 列表页一致，D34 §项目状态） */
-const STATUS_TAG_COLOR: Record<ProjectStatus, string> = {
-  active: "green",
-  on_hold: "orange",
-  completed: "blue",
-  cancelled: "red",
-  archived: "default",
-};
-
-/** 项目状态 → 展示文本 */
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: "Active",
-  on_hold: "On Hold",
-  completed: "Completed",
-  cancelled: "Cancelled",
-  archived: "Archived",
-};
-
-/** 建筑类型 → 展示文本 */
-const BUILDING_TYPE_LABEL: Record<BuildingType, string> = {
-  office: "Office",
-  residential: "Residential",
-  commercial: "Commercial",
-  mixed: "Mixed-use",
-};
 
 /** ISO 时间 → 本地化展示（undefined / null 显示 —） */
 function formatDateTime(iso: string | null | undefined): string {
@@ -86,16 +57,12 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
             {project.name}
           </Title>
           <Text code>{project.code}</Text>
-          <Tag color={STATUS_TAG_COLOR[project.status]}>
-            {STATUS_LABEL[project.status]}
-          </Tag>
+          <ProjectStatusBadge value={project.status} />
         </div>
 
         {/* 摘要行：建筑类型 / 楼层 / 地区 */}
         <Space size="large" wrap>
-          <Text type="secondary">
-            {BUILDING_TYPE_LABEL[project.buildingType] ?? project.buildingType}
-          </Text>
+          <BuildingTypeBadge value={project.buildingType} />
           <Text type="secondary">{floorsText} floors</Text>
           <Text type="secondary">{project.region || "—"}</Text>
         </Space>
