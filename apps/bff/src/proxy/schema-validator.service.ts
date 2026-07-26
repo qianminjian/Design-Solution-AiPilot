@@ -1,6 +1,12 @@
-import { Injectable, Logger, BadGatewayException } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  BadGatewayException,
+  Optional,
+} from "@nestjs/common";
 import { ZodType } from "zod";
 import { ProxyResult } from "../interceptors/proxy.interceptor";
+import { MetricsService } from "../metrics/metrics.service";
 
 /**
  * Schema 验证上下文（用于日志关联）
@@ -88,9 +94,10 @@ function isApiResponse(value: unknown): value is {
  * 权威源：.trae/rules/security.md §12 AI 安全红线 + §2.2 认证 Token
  *         .trae/rules/coding-standards.md 显式优于隐式
  *
- * 可观测性 V1（与前端 schema-validator 对齐）：
- *  - 内存计数器按 context + schemaName 聚合，便于 health 端点暴露
- *  - V2 接入 Prometheus 后改为 Counter 指标，标签：(domain, operation, schema, mode)
+ * 可观测性：
+ *  - V1：内存计数器按 context + schemaName 聚合，便于 health 端点暴露
+ *  - V2：Prometheus Counter（bff_schema_validation_failures_total），按 domain/operation/mode 聚合
+ *    MetricsService 通过 @Optional 注入，缺失时（如单元测试）降级为仅内存计数
  */
 @Injectable()
 export class SchemaValidator {
@@ -114,6 +121,8 @@ export class SchemaValidator {
     string,
     Map<string, FailureCounterEntry>
   >();
+
+  constructor(@Optional() private readonly metrics?: MetricsService) {}
 
   /**
    * 软验证：验证失败记录告警日志，原数据透传
@@ -280,12 +289,16 @@ export class SchemaValidator {
 
   /**
    * 递增失败计数器
+   *
+   * 同时更新：
+   *  - V1 内存计数器（health 端点暴露，含 schemaName 与 lastTraceId）
+   *  - V2 Prometheus Counter（Grafana/Alertmanager 告警用，仅 domain/operation/mode 标签）
    */
   private incrementFailure(
     counter: Map<string, Map<string, FailureCounterEntry>>,
     schema: ZodType<unknown>,
     context: ValidationContext,
-    _mode: ValidationMode,
+    mode: ValidationMode,
   ): void {
     const contextKey = `${context.domain}.${context.operation}`;
     const schemaName = schema.constructor.name ?? "anonymous";
@@ -298,6 +311,11 @@ export class SchemaValidator {
       lastFailedAt: new Date().toISOString(),
     });
     counter.set(contextKey, schemaMap);
+
+    // V2 Prometheus Counter（如 MetricsService 可用）
+    this.metrics?.schemaValidationFailures
+      .labels(context.domain, context.operation, mode)
+      .inc();
   }
 
   /**

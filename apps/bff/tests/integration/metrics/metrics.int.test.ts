@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
-import { INestApplication, Controller, Get, Header, Res, Inject } from "@nestjs/common";
+import {
+  INestApplication,
+  Controller,
+  Get,
+  Header,
+  Res,
+  Inject,
+} from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import type { Response } from "express";
@@ -9,13 +16,18 @@ import { MetricsService } from "../../../src/metrics/metrics.service";
 
 @Controller("v1/metrics")
 class TestMetricsController {
-  constructor(@Inject(MetricsService) private readonly metricsService: MetricsService) {}
+  constructor(
+    @Inject(MetricsService) private readonly metricsService: MetricsService,
+  ) {}
 
   @Get()
   @Header("Cache-Control", "no-store")
   async getMetrics(@Res({ passthrough: true }) response: Response) {
     const body = await this.metricsService.toText();
-    response.setHeader("Content-Type", "text/plain; version=0.0.4; charset=utf-8");
+    response.setHeader(
+      "Content-Type",
+      "text/plain; version=0.0.4; charset=utf-8",
+    );
     return body;
   }
 }
@@ -39,6 +51,9 @@ bff_http_request_duration_seconds_bucket{method="GET",path="/api/v1/health",stat
 # HELP bff_jwt_active_sessions 当前活跃 JWT 会话数（gauge）
 # TYPE bff_jwt_active_sessions gauge
 bff_jwt_active_sessions 0
+# HELP bff_schema_validation_failures_total BFF schema 验证失败总数（按 domain/operation/mode 聚合）
+# TYPE bff_schema_validation_failures_total counter
+bff_schema_validation_failures_total{domain="auth",operation="login",mode="soft"} 2
 # HELP bff_node_process_uptime_seconds Node 进程运行时长（秒）
 # TYPE bff_node_process_uptime_seconds gauge
 bff_node_process_uptime_seconds 120.5
@@ -84,6 +99,7 @@ bff_node_process_uptime_seconds 120.5
     expect(response.text).toContain("bff_proxy_calls_total");
     expect(response.text).toContain("bff_proxy_call_duration_seconds");
     expect(response.text).toContain("bff_jwt_active_sessions");
+    expect(response.text).toContain("bff_schema_validation_failures_total");
     expect(response.text).toContain("bff_node_process_uptime_seconds");
   });
 
@@ -96,6 +112,8 @@ bff_http_requests_total{method="GET",path="/api/v1/projects",status="200"} 1
     const response = await request(app.getHttpServer()).get("/api/v1/metrics");
 
     expect(response.status).toBe(200);
-    expect(response.text).toMatch(/bff_http_requests_total\{[^}]*method="GET"[^}]*\}\s+\d+/);
+    expect(response.text).toMatch(
+      /bff_http_requests_total\{[^}]*method="GET"[^}]*\}\s+\d+/,
+    );
   });
 });

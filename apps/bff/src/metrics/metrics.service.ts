@@ -37,6 +37,9 @@ export class MetricsService {
   /** 当前活跃 JWT 会话数（gauge）：bff_jwt_active_sessions */
   readonly jwtActiveSessions: Gauge;
 
+  /** Schema 验证失败总数（counter）：bff_schema_validation_failures_total{domain, operation, mode} */
+  readonly schemaValidationFailures: Counter<string>;
+
   /** Node 进程运行时长（gauge, 秒）：bff_node_process_uptime_seconds */
   readonly nodeProcessUptimeSeconds: Gauge;
 
@@ -80,6 +83,16 @@ export class MetricsService {
     this.jwtActiveSessions = new Gauge({
       name: "bff_jwt_active_sessions",
       help: "当前活跃 JWT 会话数（gauge）",
+      registers: [this.registry],
+    });
+
+    // Schema 验证失败计数器
+    // 标签基数：domain ~10、operation ~30、mode 2 → 组合数受控
+    // 用途：监控 BFF 与下游服务（Core/AI）的契约漂移趋势
+    this.schemaValidationFailures = new Counter({
+      name: "bff_schema_validation_failures_total",
+      help: "BFF schema 验证失败总数（按 domain/operation/mode 聚合）",
+      labelNames: ["domain", "operation", "mode"] as const,
       registers: [this.registry],
     });
 

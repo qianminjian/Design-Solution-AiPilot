@@ -6,6 +6,8 @@
  *  - 严格验证（validateStrict）：失败抛 BadGatewayException（502）
  *  - 错误信息包含 traceId/domain/operation 上下文
  *  - 错误信息包含 schema 验证失败的 path 与 message
+ *  - V1 内存计数器（health 端点暴露）
+ *  - V2 Prometheus Counter（MetricsService 注入时递增）
  *
  * 权威源：.trae/rules/security.md §12 AI 安全红线 + §2.2 认证 Token
  */
@@ -13,6 +15,7 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { BadGatewayException, Logger } from "@nestjs/common";
 import { z } from "zod";
 import { SchemaValidator } from "../../../src/proxy/schema-validator.service";
+import { MetricsService } from "../../../src/metrics/metrics.service";
 
 /** 简单测试 schema：含必填字段 + 类型约束 */
 const testSchema = z.object({
@@ -396,6 +399,167 @@ describe("SchemaValidator", () => {
       // 时间戳应在 [before, after] 区间
       expect(entry?.lastFailedAt >= before).toBe(true);
       expect(entry?.lastFailedAt <= after).toBe(true);
+    });
+  });
+
+  describe("V2 Prometheus Counter（MetricsService 集成）", () => {
+    /** 构造一个真实 MetricsService 以验证 Counter 行为 */
+    function createMetrics(): MetricsService {
+      return new MetricsService();
+    }
+
+    /** 从 MetricsService 注册表中提取 schema 验证失败计数 */
+    function readSchemaCounter(
+      metrics: MetricsService,
+      domain: string,
+      operation: string,
+      mode: string,
+    ): number {
+      const registry = metrics.getRegistry();
+      const metric = registry.getSingleMetric(
+        "bff_schema_validation_failures_total",
+      );
+      if (!metric) return 0;
+      // prom-client Counter 内部 values 映射：labelString -> { value }
+      const values = (
+        metric as unknown as {
+          hashMap: Record<
+            string,
+            { value: number; labels: Record<string, string> }
+          >;
+        }
+      ).hashMap;
+      let total = 0;
+      for (const key of Object.keys(values)) {
+        const entry = values[key];
+        if (
+          entry?.labels?.domain === domain &&
+          entry?.labels?.operation === operation &&
+          entry?.labels?.mode === mode
+        ) {
+          total += entry.value;
+        }
+      }
+      return total;
+    }
+
+    it("MetricsService 应正确注册 bff_schema_validation_failures_total 指标", () => {
+      const metrics = createMetrics();
+      const registry = metrics.getRegistry();
+      const metric = registry.getSingleMetric(
+        "bff_schema_validation_failures_total",
+      );
+      expect(metric).toBeDefined();
+      expect(metric?.name).toBe("bff_schema_validation_failures_total");
+    });
+
+    it("软验证失败应递增 Prometheus Counter（mode=soft）", () => {
+      const metrics = createMetrics();
+      const validatorWithMetrics = new SchemaValidator(metrics);
+
+      const invalid = { id: "bad" };
+      validatorWithMetrics.validateSoft(invalid, testSchema, {
+        domain: "auth",
+        operation: "login",
+        traceId: "v2-soft-001",
+      });
+
+      expect(readSchemaCounter(metrics, "auth", "login", "soft")).toBe(1);
+    });
+
+    it("严格验证失败应递增 Prometheus Counter（mode=strict）", () => {
+      const metrics = createMetrics();
+      const validatorWithMetrics = new SchemaValidator(metrics);
+
+      try {
+        validatorWithMetrics.validateStrict({ id: "bad" }, testSchema, {
+          domain: "ai",
+          operation: "generate",
+          traceId: "v2-strict-001",
+        });
+      } catch {
+        // 预期抛错
+      }
+
+      expect(readSchemaCounter(metrics, "ai", "generate", "strict")).toBe(1);
+    });
+
+    it("多次失败应累计计数", () => {
+      const metrics = createMetrics();
+      const validatorWithMetrics = new SchemaValidator(metrics);
+
+      for (let i = 0; i < 5; i++) {
+        validatorWithMetrics.validateSoft({ id: "bad" }, testSchema, {
+          domain: "prompts",
+          operation: "getById",
+          traceId: `trace-${i}`,
+        });
+      }
+
+      expect(readSchemaCounter(metrics, "prompts", "getById", "soft")).toBe(5);
+    });
+
+    it("不同 domain/operation 应分别记录到对应标签", () => {
+      const metrics = createMetrics();
+      const validatorWithMetrics = new SchemaValidator(metrics);
+
+      validatorWithMetrics.validateSoft({ id: "bad" }, testSchema, {
+        domain: "auth",
+        operation: "login",
+      });
+      validatorWithMetrics.validateSoft({ id: "bad" }, testSchema, {
+        domain: "auth",
+        operation: "refresh",
+      });
+      validatorWithMetrics.validateSoft({ id: "bad" }, testSchema, {
+        domain: "ai",
+        operation: "generate",
+      });
+
+      expect(readSchemaCounter(metrics, "auth", "login", "soft")).toBe(1);
+      expect(readSchemaCounter(metrics, "auth", "refresh", "soft")).toBe(1);
+      expect(readSchemaCounter(metrics, "ai", "generate", "soft")).toBe(1);
+    });
+
+    it("验证通过不应递增 Prometheus Counter", () => {
+      const metrics = createMetrics();
+      const validatorWithMetrics = new SchemaValidator(metrics);
+
+      validatorWithMetrics.validateSoft(validData, testSchema, validContext);
+      validatorWithMetrics.validateStrict(validData, testSchema, validContext);
+
+      expect(readSchemaCounter(metrics, "test", "testOp", "soft")).toBe(0);
+      expect(readSchemaCounter(metrics, "test", "testOp", "strict")).toBe(0);
+    });
+
+    it("MetricsService 未注入时应降级为仅内存计数（不抛错）", () => {
+      // 模拟 @Optional 未注入场景
+      const validatorWithoutMetrics = new SchemaValidator();
+      expect(() =>
+        validatorWithoutMetrics.validateSoft(
+          { id: "bad" },
+          testSchema,
+          validContext,
+        ),
+      ).not.toThrow();
+      // 内存计数器仍正常工作
+      expect(validatorWithoutMetrics.readFailureTotals().softTotal).toBe(1);
+    });
+
+    it("metrics 端点 toText 应包含 schema_validation_failures_total", async () => {
+      const metrics = createMetrics();
+      const validatorWithMetrics = new SchemaValidator(metrics);
+
+      validatorWithMetrics.validateSoft({ id: "bad" }, testSchema, {
+        domain: "auth",
+        operation: "login",
+      });
+
+      const text = await metrics.toText();
+      expect(text).toContain("bff_schema_validation_failures_total");
+      expect(text).toContain('domain="auth"');
+      expect(text).toContain('operation="login"');
+      expect(text).toContain('mode="soft"');
     });
   });
 });

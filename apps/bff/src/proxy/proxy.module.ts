@@ -14,11 +14,13 @@ import { GoldenDatasetProxyController } from "./tevv/tevv-proxy.controller";
 import { VerificationItemProxyController } from "./tevv/verification-item-proxy.controller";
 import { WorkflowProxyController } from "./workflow/workflow-proxy.controller";
 import { DesignOptionProxyController } from "./design/design-option-proxy.controller";
+import { MetricsModule } from "../metrics/metrics.module";
 
 /**
  * 代理模块
  * - 汇聚 ProxyController（通用代理）、AuthProxyController（认证域专用）与 AI 域代理
  * - 内部 HttpModule 为 ProxyService / AiProxyService 提供 HttpService
+ * - 引入 MetricsModule 使 SchemaValidator 可注入 MetricsService（V2 Prometheus Counter）
  * - 测试时通过 overrideProvider(ProxyService) / overrideProvider(AiProxyService) 替换
  * - controllers 数组顺序确保路由优先匹配：
  *   AuthProxyController → AiCapabilityProxyController → AiPromptProxyController →
@@ -33,6 +35,7 @@ import { DesignOptionProxyController } from "./design/design-option-proxy.contro
       timeout: 30_000,
       maxRedirects: 0,
     }),
+    MetricsModule,
   ],
   controllers: [
     AuthProxyController,
