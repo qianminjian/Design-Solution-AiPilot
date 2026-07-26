@@ -2,27 +2,11 @@
 
 import { Table, Tag, Typography, Empty } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
-import type { DocumentDto, DocumentStatus } from "@design-platform/shared";
+import type { DocumentDto } from "@design-platform/shared";
+import type { DocumentStatus } from "./document-config";
+import { DocumentStatusBadge } from "./document-badge";
 
 const { Text } = Typography;
-
-/** 文档状态 → Tag 颜色映射（参考 cde.contract.ts 状态机） */
-const STATUS_TAG_COLOR: Record<DocumentStatus, string> = {
-  DRAFT: "default",
-  CHECKED_OUT: "processing",
-  PUBLISHED: "success",
-  SUPERSEDED: "warning",
-  ARCHIVED: "default",
-};
-
-/** 文档状态 → 展示文本 */
-const STATUS_LABEL: Record<DocumentStatus, string> = {
-  DRAFT: "Draft",
-  CHECKED_OUT: "Checked Out",
-  PUBLISHED: "Published",
-  SUPERSEDED: "Superseded",
-  ARCHIVED: "Archived",
-};
 
 /** 文件大小（字节）→ 人类可读展示 */
 function formatFileSize(bytes: number): string {
@@ -115,8 +99,8 @@ export function DocumentList({
       dataIndex: "status",
       key: "status",
       width: 140,
-      render: (status: DocumentStatus) => (
-        <Tag color={STATUS_TAG_COLOR[status]}>{STATUS_LABEL[status]}</Tag>
+      render: (status: DocumentStatus | string | undefined | null) => (
+        <DocumentStatusBadge value={status} />
       ),
     },
     {

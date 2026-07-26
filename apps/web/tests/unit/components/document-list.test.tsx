@@ -192,4 +192,21 @@ describe("DocumentList", () => {
     const pagination = document.querySelector(".ant-pagination");
     expect(pagination).toBeDefined();
   });
+
+  it("未知文档状态应渲染兜底标签（不崩溃）", () => {
+    render(
+      <DocumentList
+        documents={[
+          buildDocument({
+            status: "DELETED" as unknown as DocumentStatus,
+            name: "unknown.doc",
+          }),
+        ]}
+        loading={false}
+      />,
+    );
+
+    expect(screen.getByText("unknown.doc")).toBeDefined();
+    expect(screen.getByText("未知")).toBeDefined();
+  });
 });

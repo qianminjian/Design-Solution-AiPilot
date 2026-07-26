@@ -190,4 +190,22 @@ describe("DocumentVersionHistory", () => {
 
     expect(screen.getByText(chineseComment)).toBeDefined();
   });
+
+  it("未知版本状态应渲染兜底标签（不崩溃）", () => {
+    render(
+      <DocumentVersionHistory
+        versions={[
+          buildVersion({
+            status: "ARCHIVED" as unknown as DocumentVersionStatus,
+            versionNumber: 99,
+          }),
+        ]}
+        loading={false}
+      />,
+    );
+
+    expect(screen.getByText("v99")).toBeDefined();
+    expect(screen.getByText("未知")).toBeDefined();
+    expect(screen.getByText("原始状态值：ARCHIVED")).toBeDefined();
+  });
 });
