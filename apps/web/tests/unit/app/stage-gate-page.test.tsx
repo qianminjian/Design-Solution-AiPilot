@@ -110,6 +110,7 @@ describe("StageGateIndexPage", () => {
 
   it("ApiError 404 错误应该显示对应标题", () => {
     const apiError = new ApiError({
+      code: 404,
       errorCode: "PROJECT_NOT_FOUND",
       status: 404,
       title: "项目不存在",

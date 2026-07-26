@@ -9,7 +9,7 @@
  *  - 服务卡片：UP 显示绿色，DOWN 显示红色与错误 tag
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 const { mockUseHealth } = vi.hoisted(() => ({
   mockUseHealth: vi.fn(),
@@ -71,8 +71,8 @@ function buildUpHealth(): HealthCheckResult {
     schemaValidation: {
       softTotal: 0,
       strictTotal: 0,
-      softFailures: [],
-      strictFailures: [],
+      softFailures: {},
+      strictFailures: {},
     },
     timestamp: "2026-07-26T00:00:00.000Z",
   };

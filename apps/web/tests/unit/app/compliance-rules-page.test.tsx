@@ -171,6 +171,7 @@ describe("ComplianceRulesPage", () => {
 
   it("ApiError 错误应该渲染对应错误信息", () => {
     const apiError = new ApiError({
+      code: 404,
       errorCode: "RULE_NOT_FOUND",
       status: 404,
       title: "规则不存在",

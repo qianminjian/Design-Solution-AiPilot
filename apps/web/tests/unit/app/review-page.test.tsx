@@ -110,6 +110,7 @@ describe("ReviewIndexPage", () => {
 
   it("ApiError 错误应该显示对应标题", () => {
     const apiError = new ApiError({
+      code: 403,
       errorCode: "AUTHORIZATION_REQUIRED",
       status: 403,
       title: "无权访问",

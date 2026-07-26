@@ -153,6 +153,7 @@ describe("ComplianceChecksPage", () => {
 
   it("ApiError 错误应该渲染对应错误信息", () => {
     const apiError = new ApiError({
+      code: 403,
       errorCode: "AUTHORIZATION_REQUIRED",
       status: 403,
       title: "无权访问",
