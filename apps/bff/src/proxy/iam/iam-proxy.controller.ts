@@ -119,7 +119,7 @@ export class IamProxyController {
     private readonly schemaValidator: SchemaValidator,
   ) {}
 
-  @All("*")
+  @All()
   proxy(@Req() request: Request): Promise<ProxyResult> {
     return proxyWithValidation(
       request,
@@ -140,7 +140,7 @@ export class OrganizationProxyController {
     private readonly schemaValidator: SchemaValidator,
   ) {}
 
-  @All("*")
+  @All()
   proxy(@Req() request: Request): Promise<ProxyResult> {
     return proxyWithValidation(
       request,
@@ -161,7 +161,7 @@ export class MembershipProxyController {
     private readonly schemaValidator: SchemaValidator,
   ) {}
 
-  @All("*")
+  @All()
   proxy(@Req() request: Request): Promise<ProxyResult> {
     return proxyWithValidation(
       request,
@@ -182,7 +182,7 @@ export class RoleBindingProxyController {
     private readonly schemaValidator: SchemaValidator,
   ) {}
 
-  @All("*")
+  @All()
   proxy(@Req() request: Request): Promise<ProxyResult> {
     return proxyWithValidation(
       request,
@@ -203,7 +203,7 @@ export class AccessGrantProxyController {
     private readonly schemaValidator: SchemaValidator,
   ) {}
 
-  @All("*")
+  @All()
   proxy(@Req() request: Request): Promise<ProxyResult> {
     return proxyWithValidation(
       request,
