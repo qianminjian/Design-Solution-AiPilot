@@ -5,11 +5,17 @@ import { ConfigModule } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import type { Response } from "express";
 import appConfig from "../../../src/config/app.config";
-import { HealthService, type HealthCheckResult } from "../../../src/health/health.service";
+import {
+  HealthService,
+  type HealthCheckResult,
+  type SchemaValidationStats,
+} from "../../../src/health/health.service";
 
 @Controller("v1/health")
 class TestHealthController {
-  constructor(@Inject(HealthService) private readonly healthService: HealthService) {}
+  constructor(
+    @Inject(HealthService) private readonly healthService: HealthService,
+  ) {}
 
   @Get()
   async check(@Res({ passthrough: true }) response: Response) {
@@ -53,9 +59,18 @@ describe("Health API 集成测试", () => {
     vi.clearAllMocks();
   });
 
+  /** 空的 schema 验证统计（用于测试默认场景） */
+  const emptySchemaValidation: SchemaValidationStats = {
+    softTotal: 0,
+    strictTotal: 0,
+    softFailures: {},
+    strictFailures: {},
+  };
+
   function buildHealthResult(
     status: "UP" | "DOWN",
     services: Partial<HealthCheckResult["services"]> = {},
+    schemaValidation: SchemaValidationStats = emptySchemaValidation,
   ): HealthCheckResult {
     return {
       status,
@@ -67,6 +82,7 @@ describe("Health API 集成测试", () => {
         minio: { status: "UP" },
         ...services,
       },
+      schemaValidation,
       timestamp: new Date().toISOString(),
     };
   }
@@ -113,5 +129,61 @@ describe("Health API 集成测试", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe("UP");
+  });
+
+  it("应该在响应中暴露 schemaValidation 字段（默认空统计）", async () => {
+    mockCheckAll.mockResolvedValue(buildHealthResult("UP"));
+
+    const response = await request(app.getHttpServer()).get("/api/v1/health");
+
+    expect(response.status).toBe(200);
+    expect(response.body.schemaValidation).toEqual({
+      softTotal: 0,
+      strictTotal: 0,
+      softFailures: {},
+      strictFailures: {},
+    });
+  });
+
+  it("应该在 schemaValidation 中正确反映软验证与严格验证失败统计", async () => {
+    const stats: SchemaValidationStats = {
+      softTotal: 3,
+      strictTotal: 1,
+      softFailures: {
+        "auth.login": {
+          LoginResponseSchema: {
+            count: 2,
+            lastTraceId: "trace-soft-001",
+            lastFailedAt: "2026-07-26T10:00:00.000Z",
+          },
+        },
+      },
+      strictFailures: {
+        "ai.generate": {
+          AiGenerationResponseSchema: {
+            count: 1,
+            lastTraceId: "trace-strict-001",
+            lastFailedAt: "2026-07-26T10:05:00.000Z",
+          },
+        },
+      },
+    };
+    mockCheckAll.mockResolvedValue(buildHealthResult("UP", {}, stats));
+
+    const response = await request(app.getHttpServer()).get("/api/v1/health");
+
+    expect(response.status).toBe(200);
+    expect(response.body.schemaValidation.softTotal).toBe(3);
+    expect(response.body.schemaValidation.strictTotal).toBe(1);
+    expect(
+      response.body.schemaValidation.softFailures["auth.login"],
+    ).toBeDefined();
+    expect(
+      response.body.schemaValidation.softFailures["auth.login"]
+        .LoginResponseSchema.count,
+    ).toBe(2);
+    expect(
+      response.body.schemaValidation.strictFailures["ai.generate"],
+    ).toBeDefined();
   });
 });

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { of, throwError } from "rxjs";
 import type { HttpService } from "@nestjs/axios";
 import { HealthService } from "../../../src/health/health.service";
+import { SchemaValidator } from "../../../src/proxy/schema-validator.service";
 import {
   createHttpServiceMock,
   buildAxiosResponse,
@@ -27,15 +28,22 @@ function downResponse(): ReturnType<typeof buildAxiosResponse> {
 
 describe("HealthService", () => {
   let httpService: HttpService;
+  let schemaValidator: SchemaValidator;
 
   beforeEach(() => {
     httpService = createHttpServiceMock();
+    schemaValidator = new SchemaValidator();
+    schemaValidator.resetFailures();
   });
 
   it("应该在所有依赖 UP 时返回整体 status=UP 且 timestamp 合法", async () => {
     // Arrange
     vi.mocked(httpService.get).mockReturnValue(of(okResponse()));
-    const service = new HealthService(TEST_CONFIG as never, httpService);
+    const service = new HealthService(
+      TEST_CONFIG as never,
+      httpService,
+      schemaValidator,
+    );
 
     // Act
     const result = await service.checkAll();
@@ -65,7 +73,11 @@ describe("HealthService", () => {
       }
       return of(okResponse());
     });
-    const service = new HealthService(TEST_CONFIG as never, httpService);
+    const service = new HealthService(
+      TEST_CONFIG as never,
+      httpService,
+      schemaValidator,
+    );
 
     // Act
     const result = await service.checkAll();
@@ -87,7 +99,11 @@ describe("HealthService", () => {
       }
       return of(okResponse());
     });
-    const service = new HealthService(TEST_CONFIG as never, httpService);
+    const service = new HealthService(
+      TEST_CONFIG as never,
+      httpService,
+      schemaValidator,
+    );
 
     // Act
     const result = await service.checkAll();
@@ -109,7 +125,11 @@ describe("HealthService", () => {
       }
       return of(okResponse());
     });
-    const service = new HealthService(TEST_CONFIG as never, httpService);
+    const service = new HealthService(
+      TEST_CONFIG as never,
+      httpService,
+      schemaValidator,
+    );
 
     // Act
     const result = await service.checkAll();
@@ -124,7 +144,11 @@ describe("HealthService", () => {
   it("应该使用正确的下游 URL（core/ai/db/storage）探测各服务", async () => {
     // Arrange
     vi.mocked(httpService.get).mockReturnValue(of(okResponse()));
-    const service = new HealthService(TEST_CONFIG as never, httpService);
+    const service = new HealthService(
+      TEST_CONFIG as never,
+      httpService,
+      schemaValidator,
+    );
 
     // Act
     await service.checkAll();
@@ -138,5 +162,81 @@ describe("HealthService", () => {
     expect(urls).toContain("http://ai.test/health/live");
     // 探测超时为 3s
     expect(calls[0]?.[1]).toEqual({ timeout: 3_000 });
+  });
+
+  describe("schema 验证失败统计（V1 可观测性）", () => {
+    it("初始状态应返回空 schemaValidation 字段", async () => {
+      vi.mocked(httpService.get).mockReturnValue(of(okResponse()));
+      const service = new HealthService(
+        TEST_CONFIG as never,
+        httpService,
+        schemaValidator,
+      );
+
+      const result = await service.checkAll();
+
+      expect(result.schemaValidation).toEqual({
+        softTotal: 0,
+        strictTotal: 0,
+        softFailures: {},
+        strictFailures: {},
+      });
+    });
+
+    it("schema 验证失败次数应反映在 schemaValidation 字段", async () => {
+      vi.mocked(httpService.get).mockReturnValue(of(okResponse()));
+      const service = new HealthService(
+        TEST_CONFIG as never,
+        httpService,
+        schemaValidator,
+      );
+
+      // 触发软验证失败 2 次（直接调用 SchemaValidator 内部计数器）
+      const testSchema = (await import("zod")).z.object({
+        id: (await import("zod")).z.string().uuid(),
+      });
+      schemaValidator.validateSoft({ id: "bad" }, testSchema, {
+        domain: "test",
+        operation: "op1",
+      });
+      schemaValidator.validateSoft({ id: "bad" }, testSchema, {
+        domain: "test",
+        operation: "op1",
+      });
+
+      const result = await service.checkAll();
+
+      expect(result.schemaValidation.softTotal).toBe(2);
+      expect(result.schemaValidation.strictTotal).toBe(0);
+      expect(result.schemaValidation.softFailures["test.op1"]).toBeDefined();
+    });
+
+    it("严格验证失败次数应反映在 schemaValidation.strictTotal", async () => {
+      vi.mocked(httpService.get).mockReturnValue(of(okResponse()));
+      const service = new HealthService(
+        TEST_CONFIG as never,
+        httpService,
+        schemaValidator,
+      );
+
+      const { z } = await import("zod");
+      const testSchema = z.object({ id: z.string().uuid() });
+      try {
+        schemaValidator.validateStrict({ id: "bad" }, testSchema, {
+          domain: "test",
+          operation: "strictOp",
+        });
+      } catch {
+        // 预期抛错
+      }
+
+      const result = await service.checkAll();
+
+      expect(result.schemaValidation.strictTotal).toBe(1);
+      expect(result.schemaValidation.softTotal).toBe(0);
+      expect(
+        result.schemaValidation.strictFailures["test.strictOp"],
+      ).toBeDefined();
+    });
   });
 });
