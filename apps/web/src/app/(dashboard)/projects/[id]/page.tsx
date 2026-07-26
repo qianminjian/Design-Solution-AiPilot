@@ -1,8 +1,8 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Space, Spin, Result, App } from "antd";
+import { Button, Space, Spin } from "antd";
 import {
   ArrowLeftOutlined,
   FolderOutlined,
@@ -14,7 +14,7 @@ import { useGates } from "@/hooks/use-gates";
 import { ProjectHeader } from "@/components/project/project-header";
 import { StageTimeline } from "@/components/project/stage-timeline";
 import { GateDecisionList } from "@/components/project/gate-decision-list";
-import { ApiError } from "@/lib/api-client";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 import type { StageInstanceDto } from "@design-platform/shared";
 
 /**
@@ -22,7 +22,7 @@ import type { StageInstanceDto } from "@design-platform/shared";
  * - 服务端路由参数 params.id 通过 React 19 use() 解包（Next.js 15 params 为 Promise）
  * - 数据获取：useProjectDetail（项目 + 阶段列表聚合）
  * - 门禁决策：取首个非 closed 阶段关联的门禁（避免一次性拉取所有阶段门禁）
- * - 加载/错误三态处理
+ * - 加载/错误三态处理（错误使用 DataErrorAlert 统一展示，不再弹 toast）
  *
  * 参考 design-ui-system/pages/project-home.html 的项目头部 + 门控横条布局
  */
@@ -33,7 +33,6 @@ export default function ProjectDetailPage({
 }) {
   const { id: projectId } = use(params);
   const router = useRouter();
-  const { message } = App.useApp();
 
   const { data, isLoading, isError, error } = useProjectDetail(projectId);
 
@@ -45,19 +44,6 @@ export default function ProjectDetailPage({
   const { data: gates, isLoading: gatesLoading } = useGates(
     currentStage?.id ?? null,
   );
-
-  // 错误提示（404 时显示 Result，其他错误用 message）
-  useEffect(() => {
-    if (isError && error) {
-      const tip =
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "项目详情加载失败";
-      message.error(tip);
-    }
-  }, [isError, error, message]);
 
   // 加载态
   if (isLoading) {
@@ -75,25 +61,15 @@ export default function ProjectDetailPage({
     );
   }
 
-  // 错误态：404 显示专用 Result，其他错误显示通用 Result
+  // 错误态：使用 DataErrorAlert 统一展示，404/403/500/schema 失败均通过该组件
   if (isError || !data) {
-    const isNotFound = error instanceof ApiError && error.status === 404;
     return (
-      <Result
-        status={isNotFound ? "404" : "error"}
-        title={isNotFound ? "项目不存在" : "加载失败"}
-        subTitle={
-          isNotFound
-            ? "该项目可能已被删除或您无权访问"
-            : error instanceof Error
-              ? error.message
-              : "请稍后重试"
-        }
-        extra={
-          <Button type="primary" onClick={() => router.push("/projects")}>
-            返回项目列表
-          </Button>
-        }
+      <DataErrorAlert
+        error={error}
+        context="项目"
+        variant="result"
+        onRetry={() => router.push("/projects")}
+        retryLabel="返回项目列表"
       />
     );
   }

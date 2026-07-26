@@ -36,7 +36,7 @@ import {
   usePendingAiReviews,
   useSubmitAiReview,
 } from "@/hooks/use-ai-generation-records";
-import { ResponseValidationError } from "@/lib/schema-validator";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Paragraph, Text } = Typography;
 
@@ -173,15 +173,10 @@ export function AiReviewPanel({ projectId }: AiReviewPanelProps) {
           <Spin />
         </div>
       ) : isError ? (
-        <Alert
-          type="error"
-          showIcon
-          message="AI 生成记录数据异常"
-          description={
-            error instanceof ResponseValidationError
-              ? `AI 安全字段校验失败：${error.issues.map((i: { path: string; message: string }) => `${i.path}=${i.message}`).join("; ")}。请立即联系管理员排查 BFF/后端契约漂移。`
-              : "待复核 AI 生成记录加载失败，请稍后重试。"
-          }
+        <DataErrorAlert
+          error={error}
+          context="待复核 AI 生成记录"
+          onRetry={() => void refetch()}
         />
       ) : pendingRecords.length === 0 ? (
         <Empty description="暂无待复核的 AI 生成记录" />

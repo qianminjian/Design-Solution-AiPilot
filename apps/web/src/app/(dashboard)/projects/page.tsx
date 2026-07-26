@@ -12,7 +12,7 @@ import {
   Typography,
   Tag,
   Empty,
-  App,
+  Spin,
   Row,
   Col,
   Statistic,
@@ -34,7 +34,7 @@ import type {
 } from "@design-platform/shared";
 import { useProjects } from "@/hooks/use-projects";
 import { CreateProjectModal } from "@/components/project/create-project-modal";
-import { ApiError } from "@/lib/api-client";
+import { DataErrorAlert } from "@/components/common/data-error-alert";
 
 const { Title, Text } = Typography;
 
@@ -118,7 +118,12 @@ interface ProjectCardProps {
   progress: number;
 }
 
-function ProjectCard({ project, currentStage, gateStatus, progress }: ProjectCardProps) {
+function ProjectCard({
+  project,
+  currentStage,
+  gateStatus,
+  progress,
+}: ProjectCardProps) {
   const router = useRouter();
   const statusColor = STATUS_TAG_COLOR[project.status];
 
@@ -137,13 +142,16 @@ function ProjectCard({ project, currentStage, gateStatus, progress }: ProjectCar
           }}
         >
           <div>
-            <Text code style={{ fontSize: 12 }}>{project.code}</Text>
+            <Text code style={{ fontSize: 12 }}>
+              {project.code}
+            </Text>
             <Title level={4} style={{ margin: "4px 0 0" }}>
               {project.name}
             </Title>
           </div>
           <Tag color={statusColor}>
-            {STATUS_OPTIONS.find((o) => o.value === project.status)?.label ?? project.status}
+            {STATUS_OPTIONS.find((o) => o.value === project.status)?.label ??
+              project.status}
           </Tag>
         </div>
 
@@ -157,7 +165,10 @@ function ProjectCard({ project, currentStage, gateStatus, progress }: ProjectCar
               color: "#64748b",
             }}
           >
-            <span>{BUILDING_TYPE_LABEL[project.buildingType]} · {formatFloors(project)}F</span>
+            <span>
+              {BUILDING_TYPE_LABEL[project.buildingType]} ·{" "}
+              {formatFloors(project)}F
+            </span>
             <span>{formatDate(project.updatedAt)}</span>
           </div>
 
@@ -180,7 +191,15 @@ function ProjectCard({ project, currentStage, gateStatus, progress }: ProjectCar
             }}
           >
             <span style={{ fontSize: 12, color: "#64748b" }}>门禁状态</span>
-            <Tag color={gateStatus === "Pending" ? "orange" : gateStatus === "Approved" ? "green" : "default"}>
+            <Tag
+              color={
+                gateStatus === "Pending"
+                  ? "orange"
+                  : gateStatus === "Approved"
+                    ? "green"
+                    : "default"
+              }
+            >
               {gateStatus}
             </Tag>
           </div>
@@ -218,11 +237,12 @@ function ProjectCard({ project, currentStage, gateStatus, progress }: ProjectCar
 }
 
 export default function ProjectsPage() {
-  const { message } = App.useApp();
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [keywordInput, setKeywordInput] = useState(searchParams.get("keyword") ?? "");
+  const [keywordInput, setKeywordInput] = useState(
+    searchParams.get("keyword") ?? "",
+  );
   const [keywordQuery, setKeywordQuery] = useState(keywordInput);
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | undefined>(
     (searchParams.get("status") as ProjectStatus) ?? undefined,
@@ -261,19 +281,16 @@ export default function ProjectsPage() {
     [page, pageSize, statusFilter, keywordQuery],
   );
 
-  const { data, isLoading, isError, error, isFetching } = useProjects(queryParams);
+  const { data, isLoading, isError, error, isFetching } =
+    useProjects(queryParams);
 
   useEffect(() => {
-    if (isError && error) {
-      const tip =
-        error instanceof ApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : "项目列表加载失败";
-      message.error(tip);
-    }
-  }, [isError, error, message]);
+    const timer = setTimeout(() => {
+      setKeywordQuery(keywordInput);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keywordInput]);
 
   const columns: ColumnsType<ProjectDto> = [
     {
@@ -327,7 +344,11 @@ export default function ProjectsPage() {
       width: 100,
       fixed: "right",
       render: (_: unknown, record: ProjectDto) => (
-        <Button type="link" size="small" onClick={() => router.push(`/projects/${record.id}`)}>
+        <Button
+          type="link"
+          size="small"
+          onClick={() => router.push(`/projects/${record.id}`)}
+        >
           详情
         </Button>
       ),
@@ -351,10 +372,50 @@ export default function ProjectsPage() {
 
   const projects = data?.items ?? [];
 
-  const STAGES = ["STG-P0", "STG-P1", "STG-P2", "STG-P3", "STG-P4", "STG-P5", "STG-P6", "STG-P7", "STG-P8"] as StageCode[];
+  // 列表区域：加载/错误/数据三态
+  // schema 校验失败或网络错误时用 DataErrorAlert 内联展示，替代 message.error() toast
+  const tableRegion = (() => {
+    if (isLoading) {
+      return (
+        <div style={{ textAlign: "center", padding: 48 }}>
+          <Spin />
+        </div>
+      );
+    }
+    if (isError) {
+      return <DataErrorAlert error={error} context="项目列表" />;
+    }
+    return (
+      <Table<ProjectDto>
+        rowKey="id"
+        columns={columns}
+        dataSource={projects}
+        loading={isFetching}
+        pagination={pagination}
+        scroll={{ x: 960 }}
+        locale={{
+          emptyText: <Empty description="暂无项目，可点击右上角新建" />,
+        }}
+      />
+    );
+  })();
+
+  const STAGES = [
+    "STG-P0",
+    "STG-P1",
+    "STG-P2",
+    "STG-P3",
+    "STG-P4",
+    "STG-P5",
+    "STG-P6",
+    "STG-P7",
+    "STG-P8",
+  ] as StageCode[];
 
   const getMockStageInfo = (projectId: string) => {
-    const hash = projectId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = projectId
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const stageIndex = Math.floor(hash % STAGES.length);
     const safeStageCode = STAGES[stageIndex] ?? "STG-P0";
     const progress = Math.round(((stageIndex + 1) / STAGES.length) * 100);
@@ -368,7 +429,9 @@ export default function ProjectsPage() {
   };
 
   const totalActive = projects.filter((p) => p.status === "active").length;
-  const totalCompleted = projects.filter((p) => p.status === "completed").length;
+  const totalCompleted = projects.filter(
+    (p) => p.status === "completed",
+  ).length;
   const totalOnHold = projects.filter((p) => p.status === "on_hold").length;
 
   return (
@@ -417,10 +480,12 @@ export default function ProjectsPage() {
                 setPage(1);
               }}
               style={{ width: 160 }}
-              options={Object.entries(STAGE_CODE_LABEL).map(([value, label]) => ({
-                label,
-                value: value as StageCode,
-              }))}
+              options={Object.entries(STAGE_CODE_LABEL).map(
+                ([value, label]) => ({
+                  label,
+                  value: value as StageCode,
+                }),
+              )}
               aria-label="阶段筛选"
             />
             <Button
@@ -436,17 +501,29 @@ export default function ProjectsPage() {
         <Row gutter={16}>
           <Col xs={24} sm={8}>
             <Card>
-              <Statistic title="Active Projects" value={totalActive} prefix={<Tag color="green" />} />
+              <Statistic
+                title="Active Projects"
+                value={totalActive}
+                prefix={<Tag color="green" />}
+              />
             </Card>
           </Col>
           <Col xs={24} sm={8}>
             <Card>
-              <Statistic title="Completed" value={totalCompleted} prefix={<Tag color="blue" />} />
+              <Statistic
+                title="Completed"
+                value={totalCompleted}
+                prefix={<Tag color="blue" />}
+              />
             </Card>
           </Col>
           <Col xs={24} sm={8}>
             <Card>
-              <Statistic title="On Hold" value={totalOnHold} prefix={<Tag color="orange" />} />
+              <Statistic
+                title="On Hold"
+                value={totalOnHold}
+                prefix={<Tag color="orange" />}
+              />
             </Card>
           </Col>
         </Row>
@@ -460,9 +537,7 @@ export default function ProjectsPage() {
               marginBottom: 16,
             }}
           >
-            <Text style={{ color: "#64748b" }}>
-              {data?.total ?? 0} 个项目
-            </Text>
+            <Text style={{ color: "#64748b" }}>{data?.total ?? 0} 个项目</Text>
             <Space>
               <Button
                 type={viewMode === "card" ? "primary" : "default"}
@@ -504,17 +579,7 @@ export default function ProjectsPage() {
               )}
             </Row>
           ) : (
-            <Table<ProjectDto>
-              rowKey="id"
-              columns={columns}
-              dataSource={projects}
-              loading={isLoading || isFetching}
-              pagination={pagination}
-              scroll={{ x: 960 }}
-              locale={{
-                emptyText: <Empty description="暂无项目，可点击右上角新建" />,
-              }}
-            />
+            tableRegion
           )}
 
           {viewMode === "card" && projects.length > 0 && (

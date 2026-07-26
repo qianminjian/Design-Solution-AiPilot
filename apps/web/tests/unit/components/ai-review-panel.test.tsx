@@ -11,11 +11,13 @@ const mockUsePendingAiReviews = vi.fn(
     data: AiGenerationRecordDto[];
     isLoading: boolean;
     isError: boolean;
+    error: unknown;
     refetch: () => void;
   } => ({
     data: [],
     isLoading: false,
     isError: false,
+    error: null,
     refetch: vi.fn(),
   }),
 );
@@ -99,6 +101,7 @@ describe("AiReviewPanel", () => {
       data: [],
       isLoading: false,
       isError: false,
+      error: null,
       refetch: vi.fn(),
     });
   });
@@ -124,6 +127,7 @@ describe("AiReviewPanel", () => {
       data: [buildRecord({ riskLevel: "high", id: "rec-high" })],
       isLoading: false,
       isError: false,
+      error: null,
       refetch: vi.fn(),
     });
 
@@ -143,6 +147,7 @@ describe("AiReviewPanel", () => {
       ],
       isLoading: false,
       isError: false,
+      error: null,
       refetch: vi.fn(),
     });
 
@@ -158,6 +163,7 @@ describe("AiReviewPanel", () => {
       data: [buildRecord({ riskLevel: "critical", id: "rec-critical" })],
       isLoading: false,
       isError: false,
+      error: null,
       refetch: vi.fn(),
     });
 
@@ -183,6 +189,7 @@ describe("AiReviewPanel", () => {
       ],
       isLoading: false,
       isError: false,
+      error: null,
       refetch: vi.fn(),
     });
 
@@ -222,7 +229,7 @@ describe("AiReviewPanel", () => {
 
     render(<AiReviewPanel projectId="project-1" />);
 
-    expect(screen.getByText("AI 生成记录数据异常")).toBeDefined();
+    expect(screen.getByText("数据格式异常")).toBeDefined();
     expect(screen.getByText(/requiresHumanReview=Required/)).toBeDefined();
     expect(screen.getByText(/联系管理员/)).toBeDefined();
   });
@@ -238,9 +245,7 @@ describe("AiReviewPanel", () => {
 
     render(<AiReviewPanel projectId="project-1" />);
 
-    expect(screen.getByText("AI 生成记录数据异常")).toBeDefined();
-    expect(
-      screen.getByText("待复核 AI 生成记录加载失败，请稍后重试。"),
-    ).toBeDefined();
+    expect(screen.getByText("待复核 AI 生成记录加载失败")).toBeDefined();
+    expect(screen.getByText("network timeout")).toBeDefined();
   });
 });
