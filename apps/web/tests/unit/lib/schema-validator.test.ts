@@ -6,6 +6,7 @@ import {
   validateResponseStrict,
   readSchemaValidationFailures,
   resetSchemaValidationFailures,
+  setSentryReporter,
 } from "@/lib/schema-validator";
 
 /**
@@ -36,11 +37,15 @@ describe("schema-validator", () => {
   beforeEach(() => {
     consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     resetSchemaValidationFailures();
+    // 每个测试前重置 Sentry reporter 为 noop
+    setSentryReporter(null);
   });
 
   afterEach(() => {
     consoleWarnSpy.mockRestore();
     resetSchemaValidationFailures();
+    // 测试后重置 Sentry reporter，避免泄漏到其他测试
+    setSentryReporter(null);
   });
 
   describe("validateResponse (软验证)", () => {
@@ -232,6 +237,130 @@ describe("schema-validator", () => {
 
       resetSchemaValidationFailures();
       expect(readSchemaValidationFailures()).toEqual({});
+    });
+  });
+
+  describe("Sentry 上报接入点（V2 预埋）", () => {
+    it("V1 默认状态：sentryReporter 为 null 时不应调用上报", () => {
+      const reporter = vi.fn();
+      // 不注入 reporter，验证默认 noop
+      const invalid = { id: "bad", email: "bad", age: -1 };
+      validateResponse(invalid, userSchema, { context: "sentry.noop" });
+      // reporter 未注入，不应被调用
+      expect(reporter).not.toHaveBeenCalled();
+    });
+
+    it("软验证失败且采样命中时应该上报到 Sentry", () => {
+      // Mock Math.random 返回 0.05（< 0.1，采样命中）
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.05);
+      const reporter = vi.fn();
+      setSentryReporter(reporter);
+
+      const invalid = { id: "bad", email: "bad", age: -1 };
+      validateResponse(invalid, userSchema, { context: "sentry.soft.hit" });
+
+      expect(reporter).toHaveBeenCalledTimes(1);
+      const event = reporter.mock.calls[0]?.[0];
+      expect(event).toBeDefined();
+      expect(event?.type).toBe("schema_validation_failure");
+      expect(event?.context).toBe("sentry.soft.hit");
+      expect(event?.mode).toBe("soft");
+      expect(Array.isArray(event?.issues)).toBe(true);
+      expect(event?.issues.length).toBeGreaterThan(0);
+
+      randomSpy.mockRestore();
+    });
+
+    it("严格验证失败且采样命中时应该上报到 Sentry（mode=strict）", () => {
+      // Mock Math.random 返回 0.05（< 0.1，采样命中）
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.05);
+      const reporter = vi.fn();
+      setSentryReporter(reporter);
+
+      const invalid = { id: "bad" };
+      try {
+        validateResponseStrict(invalid, userSchema, {
+          context: "sentry.strict.hit",
+        });
+        expect.fail("应抛 ResponseValidationError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ResponseValidationError);
+      }
+
+      expect(reporter).toHaveBeenCalledTimes(1);
+      const event = reporter.mock.calls[0]?.[0];
+      expect(event?.mode).toBe("strict");
+      expect(event?.context).toBe("sentry.strict.hit");
+
+      randomSpy.mockRestore();
+    });
+
+    it("采样未命中（random >= 0.1）时不应上报", () => {
+      // Mock Math.random 返回 0.5（>= 0.1，采样未命中）
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
+      const reporter = vi.fn();
+      setSentryReporter(reporter);
+
+      const invalid = { id: "bad" };
+      validateResponse(invalid, userSchema, { context: "sentry.miss" });
+
+      expect(reporter).not.toHaveBeenCalled();
+
+      randomSpy.mockRestore();
+    });
+
+    it("上报函数抛错时不应影响主流程（软验证仍透传原数据）", () => {
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.05);
+      const throwingReporter = vi.fn(() => {
+        throw new Error("Sentry SDK 网络异常");
+      });
+      setSentryReporter(throwingReporter);
+
+      const invalid = { id: "bad", email: "bad", age: -1 };
+      // 不应抛错，仍透传原数据
+      const result = validateResponse(invalid, userSchema, {
+        context: "sentry.throwing",
+      });
+      expect(result).toBe(invalid);
+      // 应记录 console.warn（上报失败提示）
+      const warnCalls = consoleWarnSpy.mock.calls;
+      const hasSentryWarn = warnCalls.some((call) => {
+        const msg = (call?.[0] ?? "") as string;
+        return (
+          msg.includes("SentryReporter") && msg.includes("sentry.throwing")
+        );
+      });
+      expect(hasSentryWarn).toBe(true);
+
+      randomSpy.mockRestore();
+    });
+
+    it("setSentryReporter 传 null 应禁用上报", () => {
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.05);
+      const reporter = vi.fn();
+      // 先注入，再禁用
+      setSentryReporter(reporter);
+      setSentryReporter(null);
+
+      const invalid = { id: "bad" };
+      validateResponse(invalid, userSchema, { context: "sentry.disabled" });
+
+      expect(reporter).not.toHaveBeenCalled();
+
+      randomSpy.mockRestore();
+    });
+
+    it("验证通过时不应上报到 Sentry", () => {
+      const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.05);
+      const reporter = vi.fn();
+      setSentryReporter(reporter);
+
+      // 合法数据，验证通过
+      validateResponse(validUser, userSchema, { context: "sentry.pass" });
+
+      expect(reporter).not.toHaveBeenCalled();
+
+      randomSpy.mockRestore();
     });
   });
 });

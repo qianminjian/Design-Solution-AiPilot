@@ -109,6 +109,81 @@ export function resetSchemaValidationFailures(): void {
   counter?.clear();
 }
 
+// ── Sentry 上报接入点（V2 预埋） ──
+//
+// 设计目的：
+//  - V2 阶段接入 Sentry SDK 后，将 schema 验证失败上报到 Sentry
+//  - 采样率 10%，避免高频契约漂移淹没 Sentry
+//  - 通过 setSentryReporter 注入实际的上报函数，避免在 V1 阶段引入 Sentry SDK 依赖
+//
+// 使用方式（V2 阶段）：
+//   import * as Sentry from "@sentry/nextjs";
+//   setSentryReporter((event) => Sentry.captureMessage(event.message, "warning"));
+//
+// V1 阶段：默认 reporter 为 noop，仅记录本地计数器
+
+/** Sentry 上报事件结构 */
+export interface SentryReportEvent {
+  /** 事件类型 */
+  type: "schema_validation_failure";
+  /** 调用上下文 */
+  context: string;
+  /** schema 名称 */
+  schemaName: string;
+  /** 错误详情（zod issues） */
+  issues: ReadonlyArray<{ path: string; message: string }>;
+  /** 验证模式（soft/strict） */
+  mode: "soft" | "strict";
+}
+
+/** Sentry 上报函数类型 */
+type SentryReporter = (event: SentryReportEvent) => void;
+
+/** 当前注入的 Sentry 上报函数（默认 noop） */
+let sentryReporter: SentryReporter | null = null;
+
+/**
+ * 注入 Sentry 上报函数（V2 阶段使用）
+ *
+ * V1 阶段不需要调用此函数，schema 验证失败仅记录本地计数器。
+ * V2 阶段接入 Sentry SDK 后，调用此函数注入实际上报函数。
+ *
+ * @param reporter Sentry 上报函数，传入 null 可禁用上报
+ */
+export function setSentryReporter(reporter: SentryReporter | null): void {
+  sentryReporter = reporter;
+}
+
+/**
+ * 上报 schema 验证失败到 Sentry（V2 阶段生效）
+ *
+ * 采样率：10%（避免高频契约漂移淹没 Sentry）
+ * V1 阶段：sentryReporter 为 null，此函数为 noop
+ */
+function reportToSentry(
+  context: string,
+  schemaName: string,
+  issues: ReadonlyArray<{ path: string; message: string }>,
+  mode: "soft" | "strict",
+): void {
+  if (!sentryReporter) return;
+  // 采样率 10%：Math.random() < 0.1 时上报
+  if (Math.random() >= 0.1) return;
+  try {
+    sentryReporter({
+      type: "schema_validation_failure",
+      context,
+      schemaName,
+      issues,
+      mode,
+    });
+  } catch {
+    // 上报失败不影响主流程，仅记录 console.warn
+    // eslint-disable-next-line no-console
+    console.warn(`[SentryReporter] 上报失败：context=${context}`);
+  }
+}
+
 /**
  * 软验证：验证失败记录 console.warn，原数据透传
  *
@@ -138,6 +213,14 @@ export function validateResponse<T>(
   // 递增本地失败计数器（V1 可观测性）
   incrementFailureCounter(options.context, schema.constructor.name);
 
+  // 上报到 Sentry（V2 预埋，V1 阶段为 noop）
+  reportToSentry(
+    options.context,
+    schema.constructor.name,
+    error.issues,
+    "soft",
+  );
+
   // 返回原数据（类型断言为 T，因为前端 schema 通常比运行时数据更严格）
   return data as T;
 }
@@ -162,7 +245,18 @@ export function validateResponseStrict<T>(
     return result.data;
   }
 
+  const error = new ResponseValidationError(options.context, result.error);
+
   // 严格模式同样递增计数器，便于事后排查
   incrementFailureCounter(options.context, schema.constructor.name);
-  throw new ResponseValidationError(options.context, result.error);
+
+  // 上报到 Sentry（V2 预埋，V1 阶段为 noop）
+  reportToSentry(
+    options.context,
+    schema.constructor.name,
+    error.issues,
+    "strict",
+  );
+
+  throw error;
 }
