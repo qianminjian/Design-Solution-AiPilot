@@ -224,4 +224,21 @@ describe("BcfIssueList", () => {
     expect(screen.getByText("Issue Two")).toBeDefined();
     expect(screen.getByText("Issue Three")).toBeDefined();
   });
+
+  it("未知优先级应渲染兜底标签（不崩溃）", () => {
+    render(
+      <BcfIssueList
+        data={[
+          buildIssue({
+            priority: "urgent" as unknown as BcfIssue["priority"],
+            title: "未知优先级 Issue",
+          }),
+        ]}
+        loading={false}
+      />,
+    );
+
+    expect(screen.getByText("未知优先级 Issue")).toBeDefined();
+    expect(screen.getByText("未知")).toBeDefined();
+  });
 });

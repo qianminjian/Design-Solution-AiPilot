@@ -134,4 +134,17 @@ describe("ComplianceSummary", () => {
     const statusTags = screen.getAllByText("Completed");
     expect(statusTags.length).toBeGreaterThan(0);
   });
+
+  it("未知检查状态应渲染兜底标签（不崩溃）", () => {
+    const data = {
+      totalRules: 10,
+      passedRules: 8,
+      failedRules: 2,
+      checkStatus: "paused" as unknown as ComplianceSummaryData["checkStatus"],
+    };
+    render(
+      <ComplianceSummary data={data as unknown as ComplianceSummaryData} />,
+    );
+    expect(screen.getByText("未知")).toBeDefined();
+  });
 });

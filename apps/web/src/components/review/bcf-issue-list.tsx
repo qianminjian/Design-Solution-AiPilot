@@ -13,14 +13,16 @@ import {
   Empty,
   Spin,
   Dropdown,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import type { MenuProps } from "antd";
-import {
-  UserOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
-import type { BcfIssue, BcfIssueStatus, BcfIssuePriority } from "@/hooks/use-review";
+import { UserOutlined, MoreOutlined } from "@ant-design/icons";
+import type {
+  BcfIssue,
+  BcfIssueStatus,
+  BcfIssuePriority,
+} from "@/hooks/use-review";
 
 interface BcfIssueListProps {
   data: BcfIssue[];
@@ -32,12 +34,37 @@ interface BcfIssueListProps {
 }
 
 /** 优先级配置 */
-const PRIORITY_CONFIG: Record<BcfIssuePriority, { color: string; label: string }> = {
+const PRIORITY_CONFIG: Record<
+  BcfIssuePriority,
+  { color: string; label: string }
+> = {
   critical: { color: "red", label: "Critical" },
   high: { color: "orange", label: "High" },
   medium: { color: "gold", label: "Medium" },
   low: { color: "blue", label: "Low" },
 };
+
+/** 未知优先级兜底配置 */
+const PRIORITY_FALLBACK = { color: "default", label: "未知" };
+
+/**
+ * 安全访问优先级配置
+ * 未知枚举值返回兜底配置，避免后端返回新枚举值时渲染崩溃
+ */
+function getPriorityConfig(
+  priority: BcfIssuePriority | string | undefined | null,
+): { color: string; label: string } {
+  return priority && priority in PRIORITY_CONFIG
+    ? PRIORITY_CONFIG[priority as BcfIssuePriority]
+    : PRIORITY_FALLBACK;
+}
+
+/** 判断是否为已知优先级 */
+function isKnownPriority(
+  priority: BcfIssuePriority | string | undefined | null,
+): boolean {
+  return !!priority && priority in PRIORITY_CONFIG;
+}
 
 /** 状态变更选项 */
 const STATUS_OPTIONS: { label: string; value: BcfIssueStatus }[] = [
@@ -47,18 +74,26 @@ const STATUS_OPTIONS: { label: string; value: BcfIssueStatus }[] = [
   { label: "Closed", value: "closed" },
 ];
 
-export function BcfIssueList({ data, loading, onStatusChange, onAssign }: BcfIssueListProps) {
+export function BcfIssueList({
+  data,
+  loading,
+  onStatusChange,
+  onAssign,
+}: BcfIssueListProps) {
   const { message } = App.useApp();
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [activeIssueId, setActiveIssueId] = useState<string | null>(null);
   const [assignForm] = Form.useForm<{ assignee: string }>();
 
   // 打开指派弹窗
-  const handleOpenAssign = useCallback((issueId: string) => {
-    setActiveIssueId(issueId);
-    assignForm.resetFields();
-    setAssignModalOpen(true);
-  }, [assignForm]);
+  const handleOpenAssign = useCallback(
+    (issueId: string) => {
+      setActiveIssueId(issueId);
+      assignForm.resetFields();
+      setAssignModalOpen(true);
+    },
+    [assignForm],
+  );
 
   // 提交指派
   const handleAssignSubmit = useCallback(async () => {
@@ -75,39 +110,62 @@ export function BcfIssueList({ data, loading, onStatusChange, onAssign }: BcfIss
   }, [activeIssueId, onAssign, assignForm, message]);
 
   // 构建操作菜单
-  const buildActionItems = useCallback((record: BcfIssue): MenuProps["items"] => {
-    const items: MenuProps["items"] = [
-      { key: "view", label: "查看详情" },
-      { key: "assign", label: "指派处理人", onClick: () => handleOpenAssign(record.id) },
-      { type: "divider" },
-    ];
+  const buildActionItems = useCallback(
+    (record: BcfIssue): MenuProps["items"] => {
+      const items: MenuProps["items"] = [
+        { key: "view", label: "查看详情" },
+        {
+          key: "assign",
+          label: "指派处理人",
+          onClick: () => handleOpenAssign(record.id),
+        },
+        { type: "divider" },
+      ];
 
-    // 根据当前状态提供可切换的目标状态
-    const transitions: { key: string; label: string; status: BcfIssueStatus }[] = [];
-    if (record.status === "open") {
-      transitions.push({ key: "in_progress", label: "开始处理", status: "in_progress" });
-    }
-    if (record.status === "in_progress") {
-      transitions.push({ key: "resolved", label: "标记已解决", status: "resolved" });
-    }
-    if (record.status === "resolved") {
-      transitions.push({ key: "closed", label: "关闭问题", status: "closed" });
-      transitions.push({ key: "open", label: "重新打开", status: "open" });
-    }
-    if (record.status === "closed") {
-      transitions.push({ key: "open", label: "重新打开", status: "open" });
-    }
+      // 根据当前状态提供可切换的目标状态
+      const transitions: {
+        key: string;
+        label: string;
+        status: BcfIssueStatus;
+      }[] = [];
+      if (record.status === "open") {
+        transitions.push({
+          key: "in_progress",
+          label: "开始处理",
+          status: "in_progress",
+        });
+      }
+      if (record.status === "in_progress") {
+        transitions.push({
+          key: "resolved",
+          label: "标记已解决",
+          status: "resolved",
+        });
+      }
+      if (record.status === "resolved") {
+        transitions.push({
+          key: "closed",
+          label: "关闭问题",
+          status: "closed",
+        });
+        transitions.push({ key: "open", label: "重新打开", status: "open" });
+      }
+      if (record.status === "closed") {
+        transitions.push({ key: "open", label: "重新打开", status: "open" });
+      }
 
-    for (const t of transitions) {
-      items.push({
-        key: t.key,
-        label: t.label,
-        onClick: () => onStatusChange?.(record.id, t.status),
-      });
-    }
+      for (const t of transitions) {
+        items.push({
+          key: t.key,
+          label: t.label,
+          onClick: () => onStatusChange?.(record.id, t.status),
+        });
+      }
 
-    return items;
-  }, [onStatusChange, handleOpenAssign]);
+      return items;
+    },
+    [onStatusChange, handleOpenAssign],
+  );
 
   const columns: ColumnsType<BcfIssue> = [
     {
@@ -130,8 +188,16 @@ export function BcfIssueList({ data, loading, onStatusChange, onAssign }: BcfIss
       key: "priority",
       width: 100,
       render: (priority: BcfIssuePriority) => {
-        const config = PRIORITY_CONFIG[priority];
-        return <Tag color={config.color}>{config.label}</Tag>;
+        const config = getPriorityConfig(priority);
+        const isKnown = isKnownPriority(priority);
+        if (isKnown || !priority) {
+          return <Tag color={config.color}>{config.label}</Tag>;
+        }
+        return (
+          <Tooltip title={`未知优先级：${priority}`}>
+            <Tag color={config.color}>{config.label}</Tag>
+          </Tooltip>
+        );
       },
     },
     {
@@ -189,10 +255,14 @@ export function BcfIssueList({ data, loading, onStatusChange, onAssign }: BcfIss
       render: (iso: string) => {
         try {
           return new Date(iso).toLocaleString(undefined, {
-            month: "2-digit", day: "2-digit",
-            hour: "2-digit", minute: "2-digit",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
           });
-        } catch { return iso; }
+        } catch {
+          return iso;
+        }
       },
     },
     {
@@ -210,7 +280,14 @@ export function BcfIssueList({ data, loading, onStatusChange, onAssign }: BcfIss
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 200,
+        }}
+      >
         <Spin />
       </div>
     );
@@ -226,7 +303,11 @@ export function BcfIssueList({ data, loading, onStatusChange, onAssign }: BcfIss
         columns={columns}
         dataSource={data}
         rowKey="id"
-        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+        pagination={{
+          pageSize: 10,
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 条`,
+        }}
         scroll={{ x: 1000 }}
       />
 
