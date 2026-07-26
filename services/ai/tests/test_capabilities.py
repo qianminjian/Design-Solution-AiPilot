@@ -240,6 +240,89 @@ async def test_embeddings_fallback_to_stub_on_embedding_error(async_client):
 
 
 @pytest.mark.asyncio
+async def test_text_generation_llm_generic_error_returns_502(async_client):
+    """LLM 普通异常（非 Timeout/Auth）应返回 502"""
+    from src.llm.client import LlmError
+
+    mock = MockLlmClient(chat_exception=LlmError("provider 5xx", status_code=500))
+    _override_llm_client(mock)
+
+    try:
+        response = await async_client.post(
+            "/api/v1/capabilities/text-generation",
+            json={"prompt": "hi"},
+        )
+    finally:
+        _clear_overrides()
+
+    assert response.status_code == 502
+    assert "LLM 调用失败" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_vision_llm_timeout_returns_504(async_client):
+    """vision 端点 LLM 超时应返回 504"""
+    mock = MockLlmClient(chat_exception=LlmTimeoutError("timeout"))
+    _override_llm_client(mock)
+
+    try:
+        response = await async_client.post(
+            "/api/v1/capabilities/vision",
+            json={
+                "imageUrl": "https://example.com/image.png",
+                "prompt": "描述这张图",
+            },
+        )
+    finally:
+        _clear_overrides()
+
+    assert response.status_code == 504
+
+
+@pytest.mark.asyncio
+async def test_vision_llm_auth_error_returns_502(async_client):
+    """vision 端点 LLM 鉴权失败应返回 502"""
+    mock = MockLlmClient(chat_exception=LlmAuthError("invalid key", status_code=401))
+    _override_llm_client(mock)
+
+    try:
+        response = await async_client.post(
+            "/api/v1/capabilities/vision",
+            json={
+                "imageUrl": "https://example.com/image.png",
+                "prompt": "描述这张图",
+            },
+        )
+    finally:
+        _clear_overrides()
+
+    assert response.status_code == 502
+
+
+@pytest.mark.asyncio
+async def test_vision_llm_generic_error_returns_502(async_client):
+    """vision 端点 LLM 普通异常应返回 502"""
+    from src.llm.client import LlmError
+
+    mock = MockLlmClient(chat_exception=LlmError("server error", status_code=500))
+    _override_llm_client(mock)
+
+    try:
+        response = await async_client.post(
+            "/api/v1/capabilities/vision",
+            json={
+                "imageUrl": "https://example.com/image.png",
+                "prompt": "描述这张图",
+            },
+        )
+    finally:
+        _clear_overrides()
+
+    assert response.status_code == 502
+    assert "LLM 调用失败" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
 async def test_text_generation_response_has_trace_id_header(async_client):
     """响应应包含 x-trace-id 头"""
     mock = MockLlmClient(chat_result=make_chat_result())
