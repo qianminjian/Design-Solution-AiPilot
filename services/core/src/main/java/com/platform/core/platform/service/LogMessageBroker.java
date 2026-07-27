@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
  * 便于在本地调试时通过日志追踪事件流转。生产环境必须替换为真实 Broker。
  */
 @Component
-@ConditionalOnMissingBean(MessageBroker.class)
 public class LogMessageBroker implements MessageBroker {
 
     private static final Logger log = LoggerFactory.getLogger(LogMessageBroker.class);
