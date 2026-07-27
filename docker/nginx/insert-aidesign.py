@@ -9,8 +9,9 @@ INSERT_MARKER = '        # frp 代理\n'
 
 AIDESIGN_LOCATIONS = """        # === AiDesign 施工图 AI 平台 ===
         # API 代理：去掉 /aidesign 前缀，后端服务不感知子路径
+        # BFF 需要 /api 全局前缀（NestJS setGlobalPrefix("api")）
         location /aidesign/api/bff/ {
-            proxy_pass http://127.0.0.1:18060/;
+            proxy_pass http://127.0.0.1:18060/api/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

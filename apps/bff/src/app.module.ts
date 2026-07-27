@@ -9,6 +9,7 @@ import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { ProxyModule } from "./proxy/proxy.module";
 import { HealthModule } from "./health/health.module";
 import { MetricsModule } from "./metrics/metrics.module";
+import { HealthController } from "./health.controller";
 
 /**
  * 根模块
@@ -41,6 +42,7 @@ import { MetricsModule } from "./metrics/metrics.module";
       useClass: HttpExceptionFilter,
     },
   ],
+  controllers: [HealthController],
 })
 export class AppModule implements NestModule {
   /**
