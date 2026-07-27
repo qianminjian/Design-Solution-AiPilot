@@ -21,7 +21,38 @@ const DEFAULT_REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
  */
 @Injectable()
 export class CookieService {
+  /** access token 默认有效期 15 分钟（与 JWT 对齐，security.md §2.2） */
+  private readonly ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000;
+
   constructor(private readonly configService: ConfigService) {}
+
+  /**
+   * 设置 access token Cookie（httpOnly，短生命周期 15 分钟）
+   * 注意：security.md §2.2 要求 access token 存内存，此处 Cookie 为 BFF 代理模式下
+   * 的兼容方案——Next.js SSR 请求无法访问浏览器内存，需通过 Cookie 传递
+   */
+  setAccessTokenCookie(response: Response, token: string): void {
+    response.cookie("access_token", token, {
+      httpOnly: true,
+      secure: this.isProduction(),
+      sameSite: "strict",
+      path: "/",
+      maxAge: this.ACCESS_TOKEN_MAX_AGE_MS,
+    });
+  }
+
+  /**
+   * 设置 tenant ID Cookie（非 httpOnly，前端 JS 可读取，用于 x-tenant-id header）
+   */
+  setTenantIdCookie(response: Response, tenantId: string): void {
+    response.cookie("tenant_id", tenantId, {
+      httpOnly: false,
+      secure: this.isProduction(),
+      sameSite: "strict",
+      path: "/",
+      maxAge: DEFAULT_REFRESH_TOKEN_MAX_AGE_MS,
+    });
+  }
 
   /**
    * 设置 refresh token Cookie

@@ -122,6 +122,12 @@ export async function apiRequest<T>(
     headers.set(HttpHeader.AUTHORIZATION, `Bearer ${accessToken}`);
   }
 
+  // 租户 ID 从 cookie 读取，设置 x-tenant-id header（Core 多租户隔离必需）
+  const tenantId = readCookie("tenant_id");
+  if (tenantId) {
+    headers.set(HttpHeader.X_TENANT_ID, tenantId);
+  }
+
   // 序列化请求体
   let requestBody: BodyInit | undefined;
   if (body !== undefined && body !== null) {

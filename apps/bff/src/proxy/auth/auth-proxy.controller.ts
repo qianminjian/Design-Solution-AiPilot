@@ -75,6 +75,7 @@ export class AuthProxyController {
     // 错误响应（4xx/5xx）直接透传，不参与 schema 验证
     if (result.status >= 200 && result.status < 300) {
       this.handleRefreshTokenFromResponse(result, response);
+      this.handleAccessTokenFromResponse(result, response);
 
       // 严格验证：Core Service 返回的登录响应必须符合契约
       // 验证发生在 refreshToken 已剥离之后，避免 refreshToken 字段干扰 schema
@@ -122,6 +123,7 @@ export class AuthProxyController {
     if (result.status >= 200 && result.status < 300) {
       // refresh token rotation：设置新 cookie
       this.handleRefreshTokenFromResponse(result, response);
+      this.handleAccessTokenFromResponse(result, response);
 
       // 严格验证：refresh 响应必须符合契约（含 accessToken 字段）
       const businessData = this.schemaValidator.extractBusinessData(result);
@@ -221,6 +223,30 @@ export class AuthProxyController {
     }
 
     return headers;
+  }
+
+  /**
+   * 从下游响应中提取 access token 和 tenant ID 并写入 Cookie
+   * - access_token Cookie（httpOnly, 15min）：供前端 fetch 请求携带
+   * - tenant_id Cookie（非 httpOnly）：供前端读取后设置 x-tenant-id header
+   */
+  private handleAccessTokenFromResponse(
+    result: ProxyResult,
+    response: Response,
+  ): void {
+    const data = this.schemaValidator.extractBusinessData(result) as
+      | (Partial<LoginResponse> & {
+          accessToken?: string;
+          tenant?: { id: string };
+        })
+      | undefined;
+
+    if (data?.accessToken) {
+      this.cookieService.setAccessTokenCookie(response, data.accessToken);
+    }
+    if (data?.tenant?.id) {
+      this.cookieService.setTenantIdCookie(response, data.tenant.id);
+    }
   }
 
   /**
