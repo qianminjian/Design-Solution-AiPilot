@@ -73,6 +73,30 @@ export * from "./contracts/ai-generation-record.contract";
 // ── 合规规则引擎契约 ──
 export * from "./contracts/compliance.contract";
 
+// ── 需求与追踪矩阵契约（V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/requirement.contract";
+
+// ── 工程分析契约（V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/analysis.contract";
+
+// ── 工作项聚合契约（D37.5 P01 我的工作，V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/work-item.contract";
+
+// ── Coordination 域契约（D37.11 P07 协调、碰撞与 Issue 工作台，V0 前端骨架） ──
+export * from "./contracts/coordination.contract";
+
+// ── AI Review 域契约（D37.13 P09 AI/Agent 复核中心，V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/ai-review.contract";
+
+// ── Publication 域契约（D37.15 P11 专业提交、校审与发布向导，V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/publication.contract";
+
+// ── Change 域契约（D37.16 P12 变更影响与闭环工作台，V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/change.contract";
+
+// ── Monitoring & Operations 域契约（D37.17 运营中心，V0 前端骨架，后端 API 待 V1 实现） ──
+export * from "./contracts/monitoring.contract";
+
 // ── Zod Schema（契约测试基础设施，P1-2）──
 // V1 策略：用 zod 共享 schema 替代完整 Pact Broker，后续 V2 可基于
 // schema 自动生成 Pact 契约文件并接入 Pact Broker。
@@ -90,3 +114,9 @@ export * from "./schemas/ai-generation-record.schema";
 export * from "./schemas/compliance.schema";
 export * from "./schemas/review.schema";
 export * from "./schemas/monitoring.schema";
+
+// ── Governance 域 Schema（治理中心：Access Review / AI Release /
+//   Data Governance / Audit / Backup-Restore，D37.17）──
+// V1 策略：从 BFF 透传模式升级为软验证模式，BFF 调用 schema.safeParse
+// 校验响应；失败计数到 monitoring schemaValidation，不阻断用户访问。
+export * from "./schemas/governance.schema";

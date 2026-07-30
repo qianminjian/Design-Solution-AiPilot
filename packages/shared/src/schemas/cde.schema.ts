@@ -61,7 +61,7 @@ export const documentDtoSchema = z.object({
   status: documentStatusSchema,
   /** 内容校验和（SHA-256，当前版本） */
   checksum: z.string().nullable(),
-  createdBy: z.string().uuid().nullable(),
+  createdBy: z.string().uuid().nullable().optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   /** 乐观锁版本号 */

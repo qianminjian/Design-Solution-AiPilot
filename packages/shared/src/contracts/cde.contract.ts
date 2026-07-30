@@ -56,7 +56,8 @@ export interface DocumentDto {
   status: DocumentStatus;
   /** 内容校验和（SHA-256，当前版本） */
   checksum: string | null;
-  createdBy: string | null;
+  /** 创建人（Jackson 可能省略 null，由 created_by 对应） */
+  createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
   /** 乐观锁版本号 */
@@ -188,6 +189,9 @@ export interface UploadVersionRequest {
 export const CdeApiPaths = {
   // 项目下文档列表 + 创建
   documents: (projectId: string) => `/api/v1/projects/${projectId}/documents`,
+  // 文件上传 + 创建文档（多部分表单）
+  upload: (projectId: string) =>
+    `/api/v1/projects/${projectId}/documents/upload`,
   // 文档详情 + 更新 + 删除
   document: (id: string) => `/api/v1/documents/${id}`,
   // 检出

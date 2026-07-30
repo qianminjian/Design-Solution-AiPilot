@@ -62,7 +62,11 @@ export const complianceRuleDtoSchema = z.object({
   owner: z.string().nullable().optional(),
   status: z.string().min(1),
   description: z.string().nullable().optional(),
-  basis: z.record(z.unknown()).nullable().optional(),
+  // basis 在数据库为 TEXT 列，Java 返回字符串；兼容未来可能的结构化对象
+  basis: z
+    .union([z.string(), z.record(z.unknown())])
+    .nullable()
+    .optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   createdBy: z.string().uuid().nullable().optional(),

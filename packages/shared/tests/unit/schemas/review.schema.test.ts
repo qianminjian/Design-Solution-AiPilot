@@ -5,15 +5,12 @@
  *  - schema 与 use-review.ts hooks 中使用的字段对齐
  *  - 正例：合法 fixture 通过校验
  *  - 负例：缺字段、错误枚举值、confidence 越界被拒绝
- *  - AI 安全红线：isAiAssisted=true / requiresHumanReview 必填
+ *  - AI 安全红线（RAG 相关）已迁移至 ai.schema.test.ts
  */
 import { describe, it, expect } from "vitest";
 import {
   complianceCheckResultSchema,
   complianceCheckRunViewSchema,
-  ragSourceSchema,
-  ragQueryRequestSchema,
-  ragQueryResponseSchema,
   findingSeveritySchema,
   findingStatusSchema,
   complianceFindingSchema,
@@ -38,13 +35,6 @@ const validCheckResult = {
   uncertainCount: 0,
   status: "partial",
   lastRunAt: "2026-07-25T08:00:00.000Z",
-};
-
-const validRagSource = {
-  id: "src-001",
-  title: "GB 50016 建筑设计防火规范",
-  url: "https://example.com/gb-50016",
-  snippet: "楼梯净宽不应小于 1.1m",
 };
 
 const validComplianceFinding = {
@@ -168,88 +158,7 @@ describe("complianceCheckRunViewSchema", () => {
   });
 });
 
-// ── ragSourceSchema ──
-
-describe("ragSourceSchema", () => {
-  it("应该接受合法的 RAG 检索来源", () => {
-    const result = ragSourceSchema.safeParse(validRagSource);
-    expect(result.success).toBe(true);
-  });
-
-  it("应该拒绝非 URL 的 url 字段", () => {
-    const result = ragSourceSchema.safeParse({
-      ...validRagSource,
-      url: "not-a-url",
-    });
-    expect(result.success).toBe(false);
-  });
-});
-
-// ── ragQueryRequestSchema ──
-
-describe("ragQueryRequestSchema", () => {
-  it("应该接受合法的 RAG 问答请求", () => {
-    const valid = { projectId: "proj-001", question: "楼梯净宽要求？" };
-    const result = ragQueryRequestSchema.safeParse(valid);
-    expect(result.success).toBe(true);
-  });
-
-  it("应该拒绝空 question", () => {
-    const invalid = { projectId: "proj-001", question: "" };
-    const result = ragQueryRequestSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-});
-
-// ── ragQueryResponseSchema（AI 安全红线） ──
-
-describe("ragQueryResponseSchema", () => {
-  const validResponse = {
-    id: "rag-001",
-    question: "楼梯净宽要求？",
-    answer: "根据 GB 50016，楼梯净宽不应小于 1.1m",
-    sources: [validRagSource],
-    confidence: 0.92,
-    isAiAssisted: true,
-    requiresHumanReview: true,
-    latencyMs: 1200,
-  };
-
-  it("应该接受合法的 RAG 问答响应", () => {
-    const result = ragQueryResponseSchema.safeParse(validResponse);
-    expect(result.success).toBe(true);
-  });
-
-  it("AI 安全红线：应该拒绝 isAiAssisted=false", () => {
-    const invalid = { ...validResponse, isAiAssisted: false };
-    const result = ragQueryResponseSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("AI 安全红线：应该拒绝缺失 isAiAssisted", () => {
-    const { isAiAssisted: _removed, ...invalid } = validResponse;
-    const result = ragQueryResponseSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("AI 安全红线：应该拒绝缺失 requiresHumanReview", () => {
-    const { requiresHumanReview: _removed, ...invalid } = validResponse;
-    const result = ragQueryResponseSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("应该拒绝 confidence 超过 1", () => {
-    const invalid = { ...validResponse, confidence: 1.5 };
-    const result = ragQueryResponseSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-
-  it("应该拒绝 confidence 小于 0", () => {
-    const invalid = { ...validResponse, confidence: -0.1 };
-    const result = ragQueryResponseSchema.safeParse(invalid);
-    expect(result.success).toBe(false);
-  });
-});
+// ── RAG 问答 schema 测试已迁移至 ai.schema.test.ts（aiRagQueryRequestSchema / aiRagQueryResponseSchema） ──
 
 // ── 枚举 schema ──
 

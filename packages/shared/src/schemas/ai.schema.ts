@@ -164,3 +164,79 @@ export const promptTemplateDtoSchema = z.object({
   /** 是否需要人工复核 */
   requiresHumanReview: z.boolean(),
 });
+
+// ── RAG 知识库 DTO ──
+
+/**
+ * 检索问答请求 schema
+ * 对应契约：ai.rag.query（POST /api/v1/rag/query）
+ * 注意：knowledgeBaseId 在 BFF 完成路径转换后传入 AI Service 的 snake_case 形式
+ */
+export const aiRagQueryRequestSchema = z.object({
+  /** 知识库 ID（对应 ChromaDB collection name） */
+  knowledgeBaseId: z.string().min(1),
+  /** 用户问题 */
+  question: z.string().min(1),
+});
+
+/**
+ * 检索引用来源 schema
+ * 对应 Python services/ai/src/rag/router.py:CitationSchema
+ */
+export const aiRagCitationSchema = z.object({
+  chunkId: z.string().min(1),
+  documentId: z.string().min(1),
+  title: z.string().min(1),
+  section: z.string(),
+  content: z.string(),
+  score: z.number().min(0).max(1),
+});
+
+/**
+ * 检索问答响应 schema
+ * 强制 isAiAssisted=true 与 requiresHumanReview 字段（security.md §12 AI 安全红线）
+ */
+export const aiRagQueryResponseSchema = z.object({
+  conclusion: z.string(),
+  citations: z.array(aiRagCitationSchema),
+  uncertainty: z.number().min(0).max(1),
+  modelVersion: z.string().min(1),
+  retrievalTimeMs: z.number().int().nonnegative(),
+  requiresHumanReview: z.boolean(),
+  isAiAssisted: z.literal(true),
+});
+
+/** 创建知识库请求 schema */
+export const createKnowledgeBaseRequestSchema = z.object({
+  knowledgeBaseId: z.string().min(1),
+});
+
+/** 知识库信息 schema */
+export const knowledgeBaseDtoSchema = z.object({
+  id: z.string().min(1),
+  documentCount: z.number().int().nonnegative(),
+});
+
+/** 知识库列表响应 schema（兼容数组与包装形式） */
+export const knowledgeBaseListSchema = z.union([
+  z.array(knowledgeBaseDtoSchema),
+  z.object({ items: z.array(knowledgeBaseDtoSchema) }),
+]);
+
+/** 添加文档请求 schema */
+export const addDocumentsRequestSchema = z.object({
+  documents: z.array(z.record(z.string(), z.string())),
+});
+
+/** 添加文档响应 schema */
+export const addDocumentsResponseSchema = z.object({
+  status: z.string(),
+  knowledgeBaseId: z.string().min(1),
+  chunkCount: z.number().int().nonnegative(),
+});
+
+/** 创建/删除知识库响应 schema */
+export const knowledgeBaseMutationResponseSchema = z.object({
+  status: z.string(),
+  knowledgeBaseId: z.string().min(1),
+});

@@ -114,6 +114,39 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+// ── Step-up 二次认证 ──
+
+/**
+ * Step-up 认证请求
+ *
+ * 用于危险动作（HIGH/IRREVERSIBLE 风险等级）执行前的二次认证。
+ * 业务流程：用户输入当前密码 → 服务端校验 → 签发短期 step-up token（5 分钟）。
+ *
+ * @design D40-信息-物理安全.md §Step-up 认证
+ * @design D37-关键界面-交互状态.md §D37.17 危险动作
+ */
+export interface StepUpTokenRequest {
+  /** 当前密码（用于二次认证校验） */
+  currentPassword: string;
+  /** 申请 step-up token 的用途说明（如"执行 ISOLATE 动作"），进入审计日志 */
+  purpose: string;
+}
+
+/**
+ * Step-up 认证响应
+ *
+ * 返回短期有效的 step-up token，仅可用于 OperationsActionRequest.stepUpToken 字段，
+ * 不可用于普通 API 认证。
+ */
+export interface StepUpTokenResponse {
+  /** step-up token 字符串（短期有效，默认 5 分钟） */
+  stepUpToken: string;
+  /** 有效期（秒） */
+  expiresInSeconds: number;
+  /** 用途说明（回显请求中的 purpose） */
+  purpose: string;
+}
+
 // ── API 端点定义 ──
 
 /**
@@ -126,4 +159,6 @@ export const AuthApiPaths = {
   refresh: "/api/v1/auth/refresh",
   me: "/api/v1/auth/me",
   changePassword: "/api/v1/auth/change-password",
+  /** 申请 step-up token（危险动作二次认证） */
+  stepUp: "/api/v1/auth/step-up",
 } as const;

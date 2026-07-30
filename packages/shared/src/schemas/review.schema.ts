@@ -44,35 +44,11 @@ export const complianceCheckRunViewSchema = z.object({
 });
 
 // ── RAG 问答 ──
-
-/** RAG 检索来源 */
-export const ragSourceSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  url: z.string().url(),
-  snippet: z.string(),
-});
-
-/** RAG 问答响应 schema
- * 强制 isAiAssisted=true（security.md §12 AI 安全红线）
- * requiresHumanReview 必填，前端依据此判断是否进入人工复核流程
- */
-export const ragQueryResponseSchema = z.object({
-  id: z.string().min(1),
-  question: z.string().min(1),
-  answer: z.string(),
-  sources: z.array(ragSourceSchema),
-  confidence: z.number().min(0).max(1),
-  isAiAssisted: z.literal(true),
-  requiresHumanReview: z.boolean(),
-  latencyMs: z.number().int().nonnegative(),
-});
-
-/** RAG 问答请求 schema */
-export const ragQueryRequestSchema = z.object({
-  projectId: z.string().min(1),
-  question: z.string().min(1),
-});
+// 说明：RAG 问答的 schema 与类型已迁移至 ai.schema.ts / ai.contract.ts
+//  - aiRagQueryRequestSchema / aiRagQueryResponseSchema：Zod schema
+//  - RagQueryRequest / RagQueryResponse：DTO 接口
+//  - 路径：POST /api/v1/rag/query（对齐 services/ai/src/rag/router.py）
+// 此处保留占位注释以便 grep 定位迁移历史。
 
 // ── 合规发现 ──
 
@@ -183,12 +159,6 @@ export const assignBcfIssueRequestSchema = z.object({
 export type ComplianceCheckRun = z.infer<typeof complianceCheckRunViewSchema>;
 /** 单条规则检查结果 */
 export type ComplianceCheckResult = z.infer<typeof complianceCheckResultSchema>;
-/** RAG 检索来源 */
-export type RagSource = z.infer<typeof ragSourceSchema>;
-/** RAG 问答响应 */
-export type RagQueryResponse = z.infer<typeof ragQueryResponseSchema>;
-/** RAG 问答请求 */
-export type RagQueryRequest = z.infer<typeof ragQueryRequestSchema>;
 /** 发现严重级别 */
 export type FindingSeverity = z.infer<typeof findingSeveritySchema>;
 /** 发现状态 */

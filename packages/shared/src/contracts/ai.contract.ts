@@ -180,3 +180,140 @@ export interface PromptTemplateDto {
   /** 是否需要人工复核 */
   requiresHumanReview: boolean;
 }
+
+// ── RAG 知识库 DTO ──
+
+/**
+ * RAG API 端点
+ * 基础路径：/api/v1/rag
+ *
+ * 与 services/ai/src/rag/router.py 对齐：
+ *  - POST /api/v1/rag/query：检索问答
+ *  - POST /api/v1/rag/knowledge-bases：创建知识库
+ *  - GET /api/v1/rag/knowledge-bases：列出知识库
+ *  - POST /api/v1/rag/knowledge-bases/{id}/documents：添加文档
+ *  - DELETE /api/v1/rag/knowledge-bases/{id}：删除知识库
+ *
+ * 安全红线：
+ *  - 检索问答响应强制 isAiAssisted=true 与 requiresHumanReview 字段（security.md §12）
+ *  - 检索结果按风险等级进入人工复核流程
+ */
+export const RagApiPaths = {
+  /** 检索问答（同步） */
+  query: "/api/v1/rag/query",
+  /** 创建知识库 */
+  createKnowledgeBase: "/api/v1/rag/knowledge-bases",
+  /** 列出知识库 */
+  listKnowledgeBases: "/api/v1/rag/knowledge-bases",
+  /** 知识库详情（路径生成器） */
+  knowledgeBase: (knowledgeBaseId: string) =>
+    `/api/v1/rag/knowledge-bases/${knowledgeBaseId}`,
+  /** 添加文档到知识库（路径生成器） */
+  addDocuments: (knowledgeBaseId: string) =>
+    `/api/v1/rag/knowledge-bases/${knowledgeBaseId}/documents`,
+} as const;
+
+/**
+ * 检索问答请求
+ * 对应契约：ai.rag.query（POST /api/v1/rag/query）
+ */
+export interface RagQueryRequest {
+  /** 知识库 ID（对应 ChromaDB collection name） */
+  knowledgeBaseId: string;
+  /** 用户问题 */
+  question: string;
+}
+
+/**
+ * 检索引用来源
+ * 对应 Python services/ai/src/rag/router.py:CitationSchema
+ */
+export interface RagCitation {
+  /** 文本块 ID */
+  chunkId: string;
+  /** 文档 ID */
+  documentId: string;
+  /** 引用标题 */
+  title: string;
+  /** 章节/段落定位 */
+  section: string;
+  /** 引用片段内容 */
+  content: string;
+  /** 相关性评分（0-1） */
+  score: number;
+}
+
+/**
+ * 检索问答响应
+ * 标记 isAiAssisted=true，前端须按风险等级进入人工复核（security.md §12）
+ */
+export interface RagQueryResponse {
+  /** 结论/回答文本 */
+  conclusion: string;
+  /** 引用来源列表 */
+  citations: RagCitation[];
+  /** 不确定性评分（0-1，越高越不确定） */
+  uncertainty: number;
+  /** 实际使用的模型名 */
+  modelVersion: string;
+  /** 检索耗时（毫秒） */
+  retrievalTimeMs: number;
+  /** 是否需要人工复核（RAG 查询默认 true） */
+  requiresHumanReview: boolean;
+  /** 是否为 AI 辅助输出（恒为 true，满足安全红线标注） */
+  isAiAssisted: true;
+}
+
+/**
+ * 创建知识库请求
+ */
+export interface CreateKnowledgeBaseRequest {
+  /** 知识库 ID（用户指定，对应 ChromaDB collection name） */
+  knowledgeBaseId: string;
+}
+
+/**
+ * 知识库信息
+ * 对应 Python services/ai/src/rag/router.py:KnowledgeBaseSchema
+ */
+export interface KnowledgeBaseDto {
+  /** 知识库 ID */
+  id: string;
+  /** 文档数量 */
+  documentCount: number;
+}
+
+/**
+ * 添加文档请求
+ * documents 字段为灵活的键值对（如 title / content / source 等）
+ */
+export interface AddDocumentsRequest {
+  /** 文档列表 */
+  documents: Array<Record<string, string>>;
+}
+
+/** 添加文档响应 */
+export interface AddDocumentsResponse {
+  /** 状态 */
+  status: string;
+  /** 知识库 ID */
+  knowledgeBaseId: string;
+  /** 切片数量 */
+  chunkCount: number;
+}
+
+/** 创建知识库响应 */
+export interface CreateKnowledgeBaseResponse {
+  /** 状态 */
+  status: string;
+  /** 知识库 ID */
+  knowledgeBaseId: string;
+}
+
+/** 删除知识库响应 */
+export interface DeleteKnowledgeBaseResponse {
+  /** 状态 */
+  status: string;
+  /** 知识库 ID */
+  knowledgeBaseId: string;
+}
