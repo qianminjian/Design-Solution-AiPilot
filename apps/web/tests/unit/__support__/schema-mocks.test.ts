@@ -26,7 +26,7 @@ import {
   aiGenerationRecordDtoSchema,
   goldenDatasetDtoSchema,
   updateRuleRequestSchema,
-  ragQueryResponseSchema,
+  aiRagQueryResponseSchema,
   complianceFindingSchema,
   gateSummarySchema,
   bcfIssueSchema,
@@ -387,20 +387,20 @@ describe("schema-mocks", () => {
       expect(result.success).toBe(true);
     });
 
-    it("应该为 ragQueryResponseSchema 生成有效 mock，强制 isAiAssisted=true", () => {
-      const mock = generateMockFromSchema(ragQueryResponseSchema);
+    it("应该为 aiRagQueryResponseSchema 生成有效 mock，强制 isAiAssisted=true", () => {
+      const mock = generateMockFromSchema(aiRagQueryResponseSchema);
       expect(mock.isAiAssisted).toBe(true);
       expect(mock.requiresHumanReview).toBe(false);
-      const result = ragQueryResponseSchema.safeParse(mock);
+      const result = aiRagQueryResponseSchema.safeParse(mock);
       expect(result.success).toBe(true);
     });
 
-    it("应该支持覆盖 ragQueryResponseSchema 的 requiresHumanReview 字段", () => {
-      const mock = generateMockFromSchema(ragQueryResponseSchema, {
+    it("应该支持覆盖 aiRagQueryResponseSchema 的 requiresHumanReview 字段", () => {
+      const mock = generateMockFromSchema(aiRagQueryResponseSchema, {
         requiresHumanReview: true,
       });
       expect(mock.requiresHumanReview).toBe(true);
-      const result = ragQueryResponseSchema.safeParse(mock);
+      const result = aiRagQueryResponseSchema.safeParse(mock);
       expect(result.success).toBe(true);
     });
 

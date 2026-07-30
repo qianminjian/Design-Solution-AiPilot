@@ -146,6 +146,9 @@ export async function apiRequest<T>(
     ...restInit,
     headers,
     body: requestBody,
+    // 显式携带 Cookie：BFF 模式下 access_token/tenant_id 存 httpOnly Cookie，
+    // 浏览器同源请求默认携带，但显式声明便于跨端口/子域场景
+    credentials: "include",
   });
 
   // 解析响应：成功为 ApiResponse<T>，错误为 ApiErrorResponse（Problem Details）

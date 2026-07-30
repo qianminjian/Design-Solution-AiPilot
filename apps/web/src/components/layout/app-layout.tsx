@@ -29,6 +29,12 @@ import {
   MonitorOutlined,
   DatabaseOutlined,
   SafetyCertificateOutlined,
+  BranchesOutlined,
+  CloudUploadOutlined,
+  ExperimentOutlined,
+  AuditOutlined,
+  RobotOutlined,
+  CloudSyncOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Logo } from "./logo";
@@ -42,10 +48,12 @@ interface SiderMenuItem {
   key: string;
   icon: ReactNode;
   label: string;
+  children?: SiderMenuItem[];
 }
 
 const SIDER_MENU_ITEMS: SiderMenuItem[] = [
-  { key: "/dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
+  // 路由保持 /dashboard 兼容现有跳转，label 对齐 D37.5 P01 "My Work"
+  { key: "/dashboard", icon: <DashboardOutlined />, label: "My Work" },
   { key: "/projects", icon: <ProjectOutlined />, label: "Projects" },
   { key: "/stage-gate", icon: <GatewayOutlined />, label: "Stage Gate" },
   { key: "/review", icon: <CheckSquareOutlined />, label: "Review" },
@@ -55,9 +63,56 @@ const SIDER_MENU_ITEMS: SiderMenuItem[] = [
     icon: <DatabaseOutlined />,
     label: "Golden Datasets",
   },
-  { key: "/compliance-rules", icon: <SafetyCertificateOutlined />, label: "Compliance Rules" },
-  { key: "/compliance-checks", icon: <SafetyCertificateOutlined />, label: "Compliance Checks" },
+  {
+    key: "/compliance-rules",
+    icon: <SafetyCertificateOutlined />,
+    label: "Compliance Rules",
+  },
+  {
+    key: "/compliance-checks",
+    icon: <SafetyCertificateOutlined />,
+    label: "Compliance Checks",
+  },
+  { key: "/analysis", icon: <ExperimentOutlined />, label: "Analysis" },
+  { key: "/changes", icon: <BranchesOutlined />, label: "Changes" },
+  {
+    key: "/publications",
+    icon: <CloudUploadOutlined />,
+    label: "Publications",
+  },
   { key: "/members", icon: <TeamOutlined />, label: "Members" },
+  {
+    key: "governance",
+    icon: <SafetyCertificateOutlined />,
+    label: "Governance",
+    children: [
+      {
+        key: "/governance/access-review",
+        icon: <TeamOutlined />,
+        label: "Access Review",
+      },
+      {
+        key: "/governance/ai-release",
+        icon: <RobotOutlined />,
+        label: "AI / Rule Release",
+      },
+      {
+        key: "/governance/data-governance",
+        icon: <DatabaseOutlined />,
+        label: "Data Governance",
+      },
+      {
+        key: "/governance/audit",
+        icon: <AuditOutlined />,
+        label: "Audit / Evidence",
+      },
+      {
+        key: "/governance/backup-restore",
+        icon: <CloudSyncOutlined />,
+        label: "Backup / Restore",
+      },
+    ],
+  },
   { key: "/monitoring", icon: <MonitorOutlined />, label: "Monitoring" },
   { key: "/settings", icon: <SettingOutlined />, label: "Settings" },
 ];
@@ -75,8 +130,21 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [searchValue, setSearchValue] = useState("");
 
   const selectedKey = useMemo(() => {
+    // 先在子菜单中查找精确匹配
+    for (const item of SIDER_MENU_ITEMS) {
+      if (item.children) {
+        const childMatch = item.children.find(
+          (child) =>
+            pathname === child.key || pathname.startsWith(`${child.key}/`),
+        );
+        if (childMatch) return childMatch.key;
+      }
+    }
+    // 再在顶级菜单中查找
     const match = SIDER_MENU_ITEMS.find(
-      (item) => pathname === item.key || pathname.startsWith(`${item.key}/`),
+      (item) =>
+        !item.children &&
+        (pathname === item.key || pathname.startsWith(`${item.key}/`)),
     );
     return match?.key ?? "/dashboard";
   }, [pathname]);

@@ -3,10 +3,15 @@
  *
  * 验证：
  *  - 加载中状态：渲染 Spin
- *  - 错误状态：渲染 Alert 并显示错误消息
+ *  - 错误状态：渲染 DataErrorAlert 并显示错误消息
  *  - 成功状态（UP）：渲染整体状态 ALL UP 标签、5 个服务卡片、检测时间
  *  - 部分降级状态：渲染 DEGRADED 标签、DOWN 服务显示错误信息
  *  - 服务卡片：UP 显示绿色，DOWN 显示红色与错误 tag
+ *
+ * 注：页面已对齐 D37.17 运营中心（含 SLO/Queue/Worker/Connector Tabs），
+ *  - useHealth 提供整体健康状态
+ *  - useOperationsOverview/useSlos/useQueueTasks/useWorkers/useConnectors
+ *    通过 Operations API 实时查询；测试中统一 mock 为空数据
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -15,8 +20,56 @@ const { mockUseHealth } = vi.hoisted(() => ({
   mockUseHealth: vi.fn(),
 }));
 
+const { mockOperationsHooks } = vi.hoisted(() => ({
+  mockOperationsHooks: {
+    useOperationsOverview: vi.fn(() => ({
+      data: undefined,
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+      isError: false,
+    })),
+    useSlos: vi.fn(() => ({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+      isError: false,
+    })),
+    useQueueTasks: vi.fn((_params?: unknown) => ({
+      data: undefined,
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+      isError: false,
+    })),
+    useWorkers: vi.fn((_params?: unknown) => ({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+      isError: false,
+    })),
+    useConnectors: vi.fn((_params?: unknown) => ({
+      data: [],
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+      isError: false,
+    })),
+  },
+}));
+
 vi.mock("@/hooks/use-monitoring", () => ({
   useHealth: (...args: unknown[]) => mockUseHealth(...args),
+}));
+
+vi.mock("@/hooks/use-monitoring-operations", () => ({
+  useOperationsOverview: () => mockOperationsHooks.useOperationsOverview(),
+  useSlos: () => mockOperationsHooks.useSlos(),
+  useQueueTasks: (params: unknown) => mockOperationsHooks.useQueueTasks(params),
+  useWorkers: (params: unknown) => mockOperationsHooks.useWorkers(params),
+  useConnectors: (params: unknown) => mockOperationsHooks.useConnectors(params),
 }));
 
 // 全局 antd App mock（与 setup.ts 一致）
@@ -106,12 +159,13 @@ describe("MonitoringPage", () => {
 
     const { container } = render(<MonitoringPage />);
 
-    // Spin 组件渲染（Ant Design 5 的 tip 文案可能被 aria 包裹）
+    // 页面使用 <Spin spinning={healthLoading}> 包裹 Tabs；
+    // Ant Design 5 默认 size 不渲染 .ant-spin-lg，验证 spinning 状态类即可
     expect(container.querySelector(".ant-spin")).toBeInTheDocument();
-    expect(container.querySelector(".ant-spin-lg")).toBeInTheDocument();
+    expect(container.querySelector(".ant-spin-spinning")).toBeInTheDocument();
   });
 
-  it("错误状态应该渲染 Alert 并显示错误消息", () => {
+  it("错误状态应该渲染 DataErrorAlert 并显示错误消息", () => {
     mockUseHealth.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -120,11 +174,12 @@ describe("MonitoringPage", () => {
 
     render(<MonitoringPage />);
 
-    expect(screen.getByText("无法获取系统健康状态")).toBeInTheDocument();
+    // DataErrorAlert 在 context="系统健康状态" 时渲染 "系统健康状态加载失败"
+    expect(screen.getByText("系统健康状态加载失败")).toBeInTheDocument();
     expect(screen.getByText("网络断开")).toBeInTheDocument();
   });
 
-  it("非 Error 对象应显示未知错误", () => {
+  it("非 Error 对象应显示通用错误提示", () => {
     mockUseHealth.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -133,7 +188,9 @@ describe("MonitoringPage", () => {
 
     render(<MonitoringPage />);
 
-    expect(screen.getByText("未知错误")).toBeInTheDocument();
+    // DataErrorAlert 对非 Error 对象渲染通用提示
+    expect(screen.getByText("系统健康状态加载失败")).toBeInTheDocument();
+    expect(screen.getByText("请稍后重试")).toBeInTheDocument();
   });
 
   it("所有服务 UP 时应渲染 ALL UP 标签", async () => {

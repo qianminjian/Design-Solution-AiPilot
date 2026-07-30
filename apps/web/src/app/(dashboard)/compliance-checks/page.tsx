@@ -16,6 +16,7 @@ import {
   Statistic,
   Row,
   Col,
+  Alert,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,8 +25,10 @@ import {
   CloseCircleOutlined,
   ExclamationCircleOutlined,
   EyeOutlined,
+  FileSearchOutlined,
 } from "@ant-design/icons";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type {
   ComplianceCheckRunDto,
   CheckResultDto,
@@ -129,6 +132,7 @@ interface CheckRunFormValues {
 
 export default function ComplianceChecksPage() {
   const { message } = App.useApp();
+  const router = useRouter();
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -226,7 +230,7 @@ export default function ComplianceChecksPage() {
     {
       title: "操作",
       key: "actions",
-      width: 200,
+      width: 280,
       render: (_: unknown, record: ComplianceCheckRunDto) => (
         <Space>
           {(record.status === "PENDING" || record.status === "FAILED") && (
@@ -253,6 +257,15 @@ export default function ComplianceChecksPage() {
             }}
           >
             详情
+          </Button>
+          <Button
+            size="small"
+            type="link"
+            icon={<FileSearchOutlined />}
+            onClick={() => router.push(`/compliance-results/${record.id}`)}
+            title="打开 P08 规则检查与规范证据审阅器"
+          >
+            P08 审阅
           </Button>
         </Space>
       ),
@@ -290,6 +303,20 @@ export default function ComplianceChecksPage() {
           创建检查运行
         </Button>
       </div>
+
+      <Alert
+        type="info"
+        showIcon
+        style={{ marginBottom: 16 }}
+        message="P08 规则检查与规范证据审阅器已就绪"
+        description={
+          <span>
+            点击列表行的「P08 审阅」按钮可打开 D37.12 P08
+            完整审阅器，包含覆盖率面板、结果树、结果详情、Exception
+            草稿表单等核心组件。
+          </span>
+        }
+      />
 
       <Card>
         <Spin spinning={isLoading}>
@@ -371,7 +398,23 @@ export default function ComplianceChecksPage() {
           setDetailModalVisible(false);
           setSelectedRunId(undefined);
         }}
-        footer={null}
+        footer={
+          <Space>
+            <Button
+              type="primary"
+              icon={<FileSearchOutlined />}
+              onClick={() => {
+                if (selectedRunId) {
+                  setDetailModalVisible(false);
+                  router.push(`/compliance-results/${selectedRunId}`);
+                }
+              }}
+            >
+              打开 P08 审阅器
+            </Button>
+            <Button onClick={() => setDetailModalVisible(false)}>关闭</Button>
+          </Space>
+        }
         width={900}
       >
         {selectedRun && (

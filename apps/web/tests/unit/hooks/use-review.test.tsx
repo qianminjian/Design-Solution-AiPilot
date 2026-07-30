@@ -3,28 +3,29 @@
  *
  * 覆盖核心 hooks：
  *  - useComplianceCheck / useFindings / useGateSummary / useBcfIssues（查询）
- *  - useRagQuery（mutation，请求体软验证）
  *  - useUpdateBcfIssueStatus / useAssignBcfIssue（mutation + 缓存失效）
  *
  * 验证：
- *  - apiGet/apiPost/apiPatch 调用契约
+ *  - apiGet/apiPatch 调用契约
  *  - schema 软验证配置（context 与 schema 字段）
  *  - enabled 守卫
  *  - 缓存失效行为
+ *
+ * 说明：RAG 检索问答 hook（useRagQuery）已迁移至 @/hooks/use-rag.ts
+ *  - 路径：POST /api/v1/rag/query（对齐 services/ai/src/rag/router.py）
+ *  - 测试见 tests/unit/hooks/use-rag.test.ts
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const { mockApiGet, mockApiPost, mockApiPatch } = vi.hoisted(() => ({
+const { mockApiGet, mockApiPatch } = vi.hoisted(() => ({
   mockApiGet: vi.fn(),
-  mockApiPost: vi.fn(),
   mockApiPatch: vi.fn(),
 }));
 vi.mock("@/lib/api-client", () => ({
   apiGet: (...args: unknown[]) => mockApiGet(...args),
-  apiPost: (...args: unknown[]) => mockApiPost(...args),
   apiPatch: (...args: unknown[]) => mockApiPatch(...args),
 }));
 
@@ -40,7 +41,6 @@ import {
   useFindings,
   useGateSummary,
   useBcfIssues,
-  useRagQuery,
   useUpdateBcfIssueStatus,
   useAssignBcfIssue,
 } from "@/hooks/use-review";
@@ -251,44 +251,6 @@ describe("useBcfIssues hook", () => {
 
     expect(result.current.fetchStatus).toBe("idle");
     expect(mockApiGet).not.toHaveBeenCalled();
-  });
-});
-
-describe("useRagQuery hook", () => {
-  beforeEach(() => {
-    mockApiPost.mockReset();
-  });
-
-  it("应该调用 apiPost 并传入 schema 软验证配置", async () => {
-    const mockResponse = {
-      answer: "建议采用框架结构...",
-      sources: [{ id: "doc-1", title: "规范文档", score: 0.95 }],
-      isAiAssisted: true,
-      requiresHumanReview: true,
-      riskLevel: "medium",
-    };
-    mockApiPost.mockResolvedValue(mockResponse);
-
-    const { Wrapper } = createWrapper();
-    const { result } = renderHook(() => useRagQuery(), {
-      wrapper: Wrapper,
-    });
-
-    await result.current.mutateAsync({
-      question: "请推荐结构方案",
-      projectId: "proj-001",
-    });
-
-    expect(mockApiPost).toHaveBeenCalledTimes(1);
-    const [path, payload, options] = mockApiPost.mock.calls[0] as [
-      string,
-      unknown,
-      { validate: { schema: unknown; context: string } },
-    ];
-    expect(path).toBe("/api/v1/capabilities/rag-query");
-    expect(payload).toMatchObject({ question: "请推荐结构方案" });
-    expect(options.validate.schema).toBeDefined();
-    expect(options.validate.context).toBe("useReview.ragQuery");
   });
 });
 

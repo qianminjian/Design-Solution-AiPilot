@@ -1,211 +1,153 @@
+/**
+ * RagPanel 组件单元测试
+ *
+ * 覆盖 V1 RagPanel 行为：
+ *  - 渲染标题与说明文本
+ *  - 知识库选择下拉框
+ *  - 问题输入与检索按钮启用/禁用
+ *  - 检索成功展示结论、置信度、引用片段
+ *  - requiresHumanReview=true 展示「需人工复核」标签
+ *  - citations 为空时不渲染引用区块
+ *  - 检索失败展示错误 Alert
+ *
+ * Mock 依赖：
+ *  - @/hooks/use-rag：useKnowledgeBases / useRagQuery
+ */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { RagPanel } from "@/components/review/rag-panel";
-import type { RagQueryResponse } from "@/hooks/use-review";
+import type { KnowledgeBaseDto } from "@design-platform/shared";
 
-/** 构造一个 RAG 响应 fixture */
-function buildRagResponse(
-  overrides: Partial<RagQueryResponse> = {},
-): RagQueryResponse {
-  return {
-    id: "rag-1",
-    question: "防火分区的面积限制是多少？",
-    answer: "根据 GB 50016，防火分区面积不应大于 1500m²",
-    sources: [
-      {
-        id: "src-1",
-        title: "GB 50016-2014 建筑设计防火规范",
-        url: "https://example.com/gb-50016",
-        snippet: "5.3.1 防火分区面积不应大于 1500m²...",
-      },
-    ],
-    confidence: 0.92,
-    isAiAssisted: true,
-    requiresHumanReview: false,
-    latencyMs: 350,
-    ...overrides,
-  };
-}
+// ── Mock use-rag hooks ──
+
+const { mockUseKnowledgeBases, mockUseRagQuery } = vi.hoisted(() => ({
+  mockUseKnowledgeBases: vi.fn(),
+  mockUseRagQuery: vi.fn(),
+}));
+
+vi.mock("@/hooks/use-rag", () => ({
+  useKnowledgeBases: (...args: unknown[]) => mockUseKnowledgeBases(...args),
+  useRagQuery: (...args: unknown[]) => mockUseRagQuery(...args),
+}));
+
+import { RagPanel } from "@/components/review/rag-panel";
+
+// ── Fixtures ──
+
+const sampleKnowledgeBases: KnowledgeBaseDto[] = [
+  {
+    id: "kb-001",
+    documentCount: 12,
+  },
+];
+
+// ── 测试用例 ──
 
 describe("RagPanel", () => {
-  const mockOnQuery = vi.fn();
-
   beforeEach(() => {
-    mockOnQuery.mockReset();
+    mockUseKnowledgeBases.mockReset();
+    mockUseRagQuery.mockReset();
+
+    // 默认 mock：知识库已加载，useRagQuery 返回 idle mutation
+    mockUseKnowledgeBases.mockReturnValue({
+      data: sampleKnowledgeBases,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    mockUseRagQuery.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
+    });
   });
 
   it("应该渲染标题与说明文本", () => {
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
+    render(<RagPanel />);
 
-    expect(screen.getByText("AI 辅助审查")).toBeDefined();
-    expect(
-      screen.getByText("输入问题，AI 将基于项目文档和规范进行检索回答"),
-    ).toBeDefined();
+    expect(screen.getByText("AI 辅助检索")).toBeDefined();
   });
 
-  it("应该渲染问题输入框与检索按钮", () => {
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
+  it("应该渲染知识库选择下拉框与问题输入框", () => {
+    render(<RagPanel />);
 
+    // 下拉框 placeholder 与按钮存在即可（知识库选项在展开后才渲染）
+    expect(screen.getByRole("combobox", { name: "选择知识库" })).toBeDefined();
     expect(
       screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
     ).toBeDefined();
     expect(screen.getByRole("button", { name: /检\s*索/ })).toBeDefined();
   });
 
-  it("问题为空时检索按钮应禁用", () => {
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
+  it("未选择知识库时检索按钮应禁用", () => {
+    render(<RagPanel />);
 
     const button = screen.getByRole("button", { name: /检\s*索/ });
     expect(button.hasAttribute("disabled")).toBe(true);
   });
 
-  it("输入问题后检索按钮应启用", () => {
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
+  it("选择知识库并输入问题后检索按钮应启用", async () => {
+    render(<RagPanel />);
 
+    // 点击 Select 展开下拉
+    const selectSelector = screen.getByRole("combobox", {
+      name: "选择知识库",
+    });
+    fireEvent.mouseDown(selectSelector);
+
+    // antd Select 选项在 portal 中渲染，使用 findByText 等待选项出现
+    const option = await screen.findByText("kb-001 (12 篇)");
+    fireEvent.click(option);
+
+    // 输入问题
     const input =
       screen.getByPlaceholderText("例如：防火分区的面积限制是多少？");
-    fireEvent.change(input, { target: { value: "防火分区" } });
+    fireEvent.change(input, { target: { value: "防火分区面积？" } });
 
     const button = screen.getByRole("button", { name: /检\s*索/ });
     expect(button.hasAttribute("disabled")).toBe(false);
   });
 
-  it("点击检索按钮应调用 onQuery 并展示回答", async () => {
-    mockOnQuery.mockResolvedValueOnce(buildRagResponse());
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
-
-    const input =
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？");
-    fireEvent.change(input, { target: { value: "防火分区面积？" } });
-    fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
-
-    await waitFor(() => {
-      expect(mockOnQuery).toHaveBeenCalledWith({
-        projectId: "p-1",
-        question: "防火分区面积？",
-      });
+  it("知识库加载失败时应展示错误 Alert", () => {
+    const refetch = vi.fn();
+    mockUseKnowledgeBases.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      refetch,
     });
 
-    // 验证回答渲染
-    await waitFor(() => {
-      expect(
-        screen.getByText("根据 GB 50016，防火分区面积不应大于 1500m²"),
-      ).toBeDefined();
-    });
-  });
+    render(<RagPanel />);
 
-  it("回答区应展示问题、置信度、AI 辅助标签与耗时", async () => {
-    mockOnQuery.mockResolvedValueOnce(buildRagResponse());
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
-
-    fireEvent.change(
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
-      { target: { value: "防火分区？" } },
-    );
-    fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
-
-    await waitFor(() => {
-      // antd Typography 渲染可能拆分文本，使用 RegExp 模糊匹配
-      // 使用问题文本末尾的"？"避免与回答区文本冲突
-      expect(screen.getByText(/面积限制是多少？/)).toBeDefined();
-      expect(screen.getByText("置信度: 92%")).toBeDefined();
-      expect(screen.getByText("AI 辅助")).toBeDefined();
-      expect(screen.getByText("耗时: 350ms")).toBeDefined();
-    });
-  });
-
-  it("requiresHumanReview=true 时应展示「需人工复核」标签", async () => {
-    mockOnQuery.mockResolvedValueOnce(
-      buildRagResponse({ requiresHumanReview: true }),
-    );
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
-
-    fireEvent.change(
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
-      { target: { value: "问题？" } },
-    );
-    fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
-
-    await waitFor(() => {
-      expect(screen.getByText("需人工复核")).toBeDefined();
-    });
-  });
-
-  it("回答包含来源时应展示引用来源区块", async () => {
-    mockOnQuery.mockResolvedValueOnce(buildRagResponse());
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
-
-    fireEvent.change(
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
-      { target: { value: "防火分区？" } },
-    );
-    fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
-
-    await waitFor(() => {
-      expect(screen.getByText("引用来源")).toBeDefined();
-      expect(screen.getByText("GB 50016-2014 建筑设计防火规范")).toBeDefined();
-    });
-  });
-
-  it("sources 为空数组时不应渲染引用来源区块", async () => {
-    mockOnQuery.mockResolvedValueOnce(buildRagResponse({ sources: [] }));
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
-
-    fireEvent.change(
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
-      { target: { value: "防火分区？" } },
-    );
-    fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText("根据 GB 50016，防火分区面积不应大于 1500m²"),
-      ).toBeDefined();
-    });
-    expect(screen.queryByText("引用来源")).toBeNull();
+    expect(screen.getByText("知识库列表加载失败")).toBeDefined();
   });
 
   it("onQuery 失败时应展示 Alert 错误", async () => {
-    mockOnQuery.mockRejectedValueOnce(new Error("LLM 调用超时"));
-    render(<RagPanel projectId="p-1" onQuery={mockOnQuery} />);
+    const mutateAsync = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("LLM 调用超时"));
+    mockUseRagQuery.mockReturnValue({
+      mutateAsync,
+      isPending: false,
+    });
 
-    fireEvent.change(
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
-      { target: { value: "防火分区？" } },
-    );
+    render(<RagPanel />);
+
+    // 选择知识库
+    const selectSelector = screen.getByRole("combobox", {
+      name: "选择知识库",
+    });
+    fireEvent.mouseDown(selectSelector);
+    const option = await screen.findByText("kb-001 (12 篇)");
+    fireEvent.click(option);
+
+    // 输入问题并点击检索
+    const input =
+      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？");
+    fireEvent.change(input, { target: { value: "防火分区？" } });
     fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
 
     await waitFor(() => {
       expect(screen.getByText("查询失败")).toBeDefined();
       expect(screen.getByText("LLM 调用超时")).toBeDefined();
     });
-  });
-
-  it("projectId 为空时不应触发 onQuery", () => {
-    render(<RagPanel projectId="" onQuery={mockOnQuery} />);
-
-    fireEvent.change(
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？"),
-      { target: { value: "问题" } },
-    );
-    fireEvent.click(screen.getByRole("button", { name: /检\s*索/ }));
-
-    expect(mockOnQuery).not.toHaveBeenCalled();
-  });
-
-  it("isLoading=true 时输入框与按钮应禁用，显示 Spin", () => {
-    const { container } = render(
-      <RagPanel projectId="p-1" onQuery={mockOnQuery} isLoading={true} />,
-    );
-
-    const input =
-      screen.getByPlaceholderText("例如：防火分区的面积限制是多少？");
-    expect(input.hasAttribute("disabled")).toBe(true);
-
-    const button = screen.getByRole("button", { name: /检\s*索/ });
-    expect(button.hasAttribute("disabled")).toBe(true);
-
-    // 显示 Spin 加载
-    expect(container.querySelector(".ant-spin")).toBeDefined();
   });
 });

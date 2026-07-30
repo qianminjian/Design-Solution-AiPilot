@@ -86,8 +86,9 @@ describe("AppLayout", () => {
   it("应该渲染 Logo 和侧边栏菜单项", () => {
     render(<AppLayout>Children Content</AppLayout>);
 
+    // 菜单项对齐 app-layout.tsx SIDER_MENU_ITEMS（D37.5 P01 "My Work"）
     expect(screen.getByText("AI Pilot")).toBeDefined();
-    expect(screen.getByText("Dashboard")).toBeDefined();
+    expect(screen.getByText("My Work")).toBeDefined();
     expect(screen.getByText("Projects")).toBeDefined();
     expect(screen.getByText("Stage Gate")).toBeDefined();
     expect(screen.getByText("Documents")).toBeDefined();

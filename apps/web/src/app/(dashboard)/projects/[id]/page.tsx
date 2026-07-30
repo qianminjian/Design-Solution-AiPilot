@@ -12,6 +12,7 @@ import {
 import { useProjectDetail } from "@/hooks/use-project-detail";
 import { useGates } from "@/hooks/use-gates";
 import { ProjectHeader } from "@/components/project/project-header";
+import { ReadinessDashboard } from "@/components/project/readiness-dashboard";
 import { StageTimeline } from "@/components/project/stage-timeline";
 import { GateDecisionList } from "@/components/project/gate-decision-list";
 import { DataErrorAlert } from "@/components/common/data-error-alert";
@@ -120,6 +121,9 @@ export default function ProjectDetailPage({
 
       {/* 项目头部 */}
       <ProjectHeader project={project} />
+
+      {/* 项目驾驶舱（D37.7 P02 Readiness 仪表盘） */}
+      <ReadinessDashboard stages={stages} projectId={projectId} />
 
       {/* 阶段时间线 */}
       <StageTimeline stages={stages} />

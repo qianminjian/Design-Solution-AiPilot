@@ -22,7 +22,6 @@ import {
 } from "@ant-design/icons";
 import {
   useComplianceCheck,
-  useRagQuery,
   useFindings,
   useGateSummary,
   useBcfIssues,
@@ -97,8 +96,6 @@ export default function AiReviewPage({
     isError: checkError,
     refetch: refetchCheck,
   } = useComplianceCheck(projectId);
-
-  const { mutateAsync: ragQuery, isPending: ragLoading } = useRagQuery();
 
   const {
     data: findings,
@@ -426,11 +423,7 @@ export default function AiReviewPage({
         </Col>
         <Col span={8}>
           <div style={{ height: "100%", minHeight: 500 }}>
-            <RagPanel
-              projectId={projectId}
-              onQuery={ragQuery}
-              isLoading={ragLoading}
-            />
+            <RagPanel projectId={projectId} />
           </div>
         </Col>
       </Row>

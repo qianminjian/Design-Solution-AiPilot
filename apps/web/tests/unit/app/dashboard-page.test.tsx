@@ -42,26 +42,20 @@ describe("DashboardPage", () => {
     expect(screen.getByText("V1 技术试点")).toBeInTheDocument();
   });
 
-  it("应该渲染欢迎标题", () => {
+  it("应该渲染欢迎标题（我的工作台）", () => {
     render(<DashboardPage />);
-    expect(
-      screen.getByText("欢迎使用施工图全流程 AI 平台"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("我的工作台")).toBeInTheDocument();
   });
 
-  it("应该渲染项目定位说明", () => {
+  it("应该渲染建筑专业纵向闭环 Tag", () => {
     render(<DashboardPage />);
-    expect(
-      screen.getByText("建筑专业纵向闭环 — 境外主创草图到方案深化"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("建筑专业纵向闭环")).toBeInTheDocument();
   });
 
   it("应该渲染全流程覆盖说明", () => {
     render(<DashboardPage />);
     expect(
-      screen.getByText(
-        /覆盖前期策划、概念设计、方案设计、扩初设计、施工图设计/,
-      ),
+      screen.getByText(/覆盖前期策划、概念设计、方案设计、扩初设计、施工图/),
     ).toBeInTheDocument();
   });
 });

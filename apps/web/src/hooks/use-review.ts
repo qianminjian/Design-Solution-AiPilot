@@ -2,8 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
-  RagQueryResponse,
-  RagQueryRequest,
   ComplianceFinding,
   GateSummary,
   BcfIssue,
@@ -17,8 +15,6 @@ import type {
   AssignBcfIssueRequest,
 } from "@design-platform/shared";
 import {
-  ragQueryResponseSchema,
-  ragQueryRequestSchema,
   complianceFindingSchema,
   gateSummarySchema,
   bcfIssueSchema,
@@ -27,7 +23,7 @@ import {
   complianceCheckRunViewSchema,
 } from "@design-platform/shared";
 import { z } from "zod";
-import { apiGet, apiPost, apiPatch } from "@/lib/api-client";
+import { apiGet, apiPatch } from "@/lib/api-client";
 
 // ── 查询键常量 ──
 
@@ -36,8 +32,6 @@ const REVIEW_QUERY_KEY = ["review"] as const;
 // ── 类型再导出（向后兼容组件层导入） ──
 
 export type {
-  RagQueryResponse,
-  RagQueryRequest,
   ComplianceFinding,
   GateSummary,
   BcfIssue,
@@ -57,7 +51,6 @@ const ReviewApiPaths = {
   complianceCheck: (projectId: string) =>
     `/api/v1/projects/${projectId}/compliance-check`,
   findings: (projectId: string) => `/api/v1/projects/${projectId}/findings`,
-  ragQuery: "/api/v1/capabilities/rag-query",
   gateSummary: (projectId: string) =>
     `/api/v1/projects/${projectId}/review/gate-summary`,
   bcfIssues: (projectId: string) =>
@@ -92,42 +85,6 @@ export function useComplianceCheck(projectId: string | null | undefined) {
           },
         },
       ),
-  });
-}
-
-/**
- * RAG 检索问答
- * 对应 POST /api/v1/capabilities/rag-query
- *
- * 契约验证：软验证模式
- *  - 强制 isAiAssisted=true 与 requiresHumanReview 字段存在（security.md §12 AI 安全红线）
- *  - 验证失败仍透传数据，console.warn 记录便于排查
- */
-export function useRagQuery() {
-  const queryClient = useQueryClient();
-
-  return useMutation<RagQueryResponse, Error, RagQueryRequest>({
-    mutationFn: (payload) => {
-      // 请求体软验证（防御性校验，避免缺失关键字段）
-      const parsed = ragQueryRequestSchema.safeParse(payload);
-      if (!parsed.success) {
-        console.warn(
-          "[useReview.ragQuery] 请求体校验失败",
-          parsed.error.flatten(),
-        );
-      }
-      return apiPost<RagQueryResponse>(ReviewApiPaths.ragQuery, payload, {
-        validate: {
-          schema: ragQueryResponseSchema,
-          context: "useReview.ragQuery",
-        },
-      });
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: [...REVIEW_QUERY_KEY, "rag"],
-      });
-    },
   });
 }
 
