@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
@@ -149,16 +149,20 @@ public class ComplianceCheckService {
     }
 
     private RuleExecution executeRule(UUID tenantId, UUID runId, UUID revisionId) {
+        // 先保存 execution 以获取数据库生成的 ID
         RuleExecution execution = new RuleExecution();
         execution.setTenantId(tenantId);
         execution.setRunId(runId);
         execution.setRevisionId(revisionId);
-        execution.setStatus("RUNNING");
+        execution.setStatus("PENDING");
+        execution = ruleExecutionRepository.save(execution);
+        UUID executionId = execution.getId();
 
+        execution.setStatus("RUNNING");
         long startTime = System.currentTimeMillis();
 
         try {
-            List<CheckResult> results = executeRuleEngine(tenantId, revisionId, execution.getId());
+            List<CheckResult> results = executeRuleEngine(tenantId, revisionId, executionId);
 
             execution.setApplicabilityCount((long) results.size());
             execution.setPassCount(results.stream().filter(r -> "PASS".equals(r.getOutcome())).count());
@@ -193,6 +197,7 @@ public class ComplianceCheckService {
                     case "PROPERTY_CHECK" -> results.addAll(executePropertyCheck(tenantId, executionId, dslNode));
                     case "COUNT_CHECK" -> results.addAll(executeCountCheck(tenantId, executionId, dslNode));
                     case "RANGE_CHECK" -> results.addAll(executeRangeCheck(tenantId, executionId, dslNode));
+                    case "EXISTENCE_CHECK" -> results.addAll(executeExistenceCheck(tenantId, executionId, dslNode));
                     default -> results.addAll(executeDefaultCheck(tenantId, executionId, dslNode));
                 }
             } catch (JsonProcessingException e) {
@@ -208,79 +213,200 @@ public class ComplianceCheckService {
         return results;
     }
 
-    private List<CheckResult> executePropertyCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
-        List<CheckResult> results = new ArrayList<>();
-        String propertyName = dslNode.has("propertyName") ? dslNode.get("propertyName").asText() : "unknown";
-        String expectedValue = dslNode.has("expectedValue") ? dslNode.get("expectedValue").asText() : null;
+    /**
+ * 属性检查引擎：读取对象属性值与阈值比较
+ *
+ * DSL 字段（对应种子数据格式）：
+ *   targetProperty: 目标属性名（area/clearHeight/…）
+ *   operator: 比较操作符（GREATER_THAN_OR_EQUAL/LESS_THAN_OR_EQUAL/EQUAL）
+ *   threshold: 阈值
+ *   unit: 单位（m2/mm/…）
+ *   objectType: 对象类型（Space/Level/…）
+ *
+ * 为每个测试对象生成随机属性值，根据操作符判定 PASS/FAIL。
+ */
+private List<CheckResult> executePropertyCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
+    List<CheckResult> results = new ArrayList<>();
+    String targetProperty = dslNode.has("targetProperty") ? dslNode.get("targetProperty").asText() : "area";
+    String operator = dslNode.has("operator") ? dslNode.get("operator").asText() : "GREATER_THAN_OR_EQUAL";
+    double threshold = dslNode.has("threshold") ? dslNode.get("threshold").asDouble() : 10.0;
+    String unit = dslNode.has("unit") ? dslNode.get("unit").asText() : "m2";
+    String objectType = dslNode.has("objectType") ? dslNode.get("objectType").asText() : "Space";
 
-        int testObjectCount = dslNode.has("testObjectCount") ? dslNode.get("testObjectCount").asInt(3) : 3;
-        for (int i = 1; i <= testObjectCount; i++) {
-            CheckResult result = new CheckResult();
-            result.setTenantId(tenantId);
-            result.setExecutionId(executionId);
-            result.setObjectId(UUID.randomUUID());
-            result.setObjectType("TestObject");
-            result.setMeasuredValue("value-" + i);
-            result.setThreshold(expectedValue);
-            result.setExplanation("属性检查: " + propertyName);
+    // 为每个对象类型生成 4-8 个测试对象（模拟建筑楼层/空间）
+    int objectCount = 4 + ThreadLocalRandom.current().nextInt(5);
+    for (int i = 1; i <= objectCount; i++) {
+        // 在阈值的 60%-140% 范围内随机生成值
+        double measuredValue = threshold * (0.6 + ThreadLocalRandom.current().nextDouble() * 0.8);
+        measuredValue = Math.round(measuredValue * 100.0) / 100.0;
 
-            if (expectedValue == null || ("value-" + i).equals(expectedValue)) {
-                result.setOutcome("PASS");
-            } else {
-                result.setOutcome("FAIL");
+        boolean pass = switch (operator) {
+            case "GREATER_THAN_OR_EQUAL" -> measuredValue >= threshold;
+            case "LESS_THAN_OR_EQUAL" -> measuredValue <= threshold;
+            case "EQUAL" -> Math.abs(measuredValue - threshold) < 0.001;
+            case "NOT_EQUAL" -> Math.abs(measuredValue - threshold) >= 0.001;
+            default -> measuredValue >= threshold; // 默认不小于
+        };
+
+        CheckResult result = new CheckResult();
+        result.setTenantId(tenantId);
+        result.setExecutionId(executionId);
+        result.setObjectId(UUID.randomUUID());
+        result.setObjectType(objectType);
+        result.setMeasuredValue(measuredValue + " " + unit);
+        result.setThreshold(operator + " " + threshold + " " + unit);
+        result.setOutcome(pass ? "PASS" : "FAIL");
+        result.setExplanation(String.format(
+                "%s 检查: %s=%.2f%s 要求 %s %.0f%s -> %s",
+                objectType, targetProperty, measuredValue, unit, operator, threshold, unit,
+                pass ? "通过" : "不通过"));
+        results.add(result);
+    }
+    return results;
+}
+
+/**
+ * 数量检查引擎：统计符合条件的对象数量并与最小/最大数量比较
+ *
+ * DSL 字段：
+ *   filterProperty: 筛选属性名（spaceType/stairType/…）
+ *   filterValue: 筛选值（RESTROOM/EGRESS/…）
+ *   minCount: 最小数量要求
+ *   maxCount: 最大数量（可选）
+ *   perLevel: 是否按层统计
+ *   condition: 前置条件（如 aboveGroundFloors>=5）
+ *   objectType: 对象类型
+ *
+ * 生成随机数量的对象，按筛选条件统计后判定。
+ */
+private List<CheckResult> executeCountCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
+    List<CheckResult> results = new ArrayList<>();
+    String filterProperty = dslNode.has("filterProperty") ? dslNode.get("filterProperty").asText() : "spaceType";
+    String filterValue = dslNode.has("filterValue") ? dslNode.get("filterValue").asText() : "UNKNOWN";
+    long minCount = dslNode.has("minCount") ? dslNode.get("minCount").asLong(1) : 1;
+    Long maxCount = dslNode.has("maxCount") && !dslNode.get("maxCount").isNull() ? dslNode.get("maxCount").asLong() : null;
+    boolean perLevel = dslNode.has("perLevel") && dslNode.get("perLevel").asBoolean(false);
+    String objectType = dslNode.has("objectType") ? dslNode.get("objectType").asText() : "Space";
+
+    // 检查前置条件（如 >5 层建筑）
+    if (dslNode.has("condition")) {
+        JsonNode cond = dslNode.get("condition");
+        if (cond.has("threshold")) {
+            double condThreshold = cond.get("threshold").asDouble();
+            // 模拟项目实际值：80% 概率满足条件
+            boolean condMet = ThreadLocalRandom.current().nextDouble() > 0.2;
+            if (!condMet) {
+                CheckResult na = new CheckResult();
+                na.setTenantId(tenantId);
+                na.setExecutionId(executionId);
+                na.setObjectId(UUID.randomUUID());
+                na.setObjectType(objectType);
+                na.setOutcome("NOT_APPLICABLE");
+                na.setExplanation("前置条件不满足: " + cond.get("targetProperty").asText()
+                        + " " + cond.get("operator").asText() + " " + condThreshold);
+                results.add(na);
+                return results;
             }
-            results.add(result);
         }
-        return results;
     }
 
-    private List<CheckResult> executeCountCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
-        List<CheckResult> results = new ArrayList<>();
-        long expectedCount = dslNode.has("expectedCount") ? dslNode.get("expectedCount").asLong(5) : 5;
-        long actualCount = dslNode.has("actualCount") ? dslNode.get("actualCount").asLong(5) : 5;
+    // 按层或整体统计
+    int levelCount = perLevel ? 3 + ThreadLocalRandom.current().nextInt(10) : 1;
+    for (int level = 0; level < levelCount; level++) {
+        long actualCount = minCount + ThreadLocalRandom.current().nextLong(-2, 4);
+        if (actualCount < 0) actualCount = 0;
+
+        boolean pass = true;
+        if (maxCount != null) {
+            pass = actualCount >= minCount && actualCount <= maxCount;
+        } else {
+            pass = actualCount >= minCount;
+        }
 
         CheckResult result = new CheckResult();
         result.setTenantId(tenantId);
         result.setExecutionId(executionId);
         result.setObjectId(UUID.randomUUID());
-        result.setObjectType("CountCheck");
-        result.setMeasuredValue(String.valueOf(actualCount));
-        result.setThreshold(String.valueOf(expectedCount));
-        result.setExplanation("数量检查: 期望 " + expectedCount + ", 实际 " + actualCount);
-
-        if (actualCount >= expectedCount) {
-            result.setOutcome("PASS");
-        } else {
-            result.setOutcome("FAIL");
-        }
+        result.setObjectType(objectType);
+        result.setMeasuredValue("数量=" + actualCount);
+        result.setThreshold("要求 " + filterValue + " 最少 " + minCount + (maxCount != null ? " 最多 " + maxCount : ""));
+        result.setOutcome(pass ? "PASS" : "FAIL");
+        String levelLabel = perLevel ? " (第" + (level + 1) + "层)" : "";
+        result.setExplanation(String.format(
+                "数量检查%s: %s=%s 实际=%d 最少=%d%s -> %s",
+                levelLabel, filterProperty, filterValue, actualCount, minCount,
+                maxCount != null ? " 最多=" + maxCount : "",
+                pass ? "通过" : "不通过"));
         results.add(result);
-        return results;
     }
+    return results;
+}
 
-    private List<CheckResult> executeRangeCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
-        List<CheckResult> results = new ArrayList<>();
-        double minValue = dslNode.has("minValue") ? dslNode.get("minValue").asDouble(0) : 0;
-        double maxValue = dslNode.has("maxValue") ? dslNode.get("maxValue").asDouble(100) : 100;
+/**
+ * 范围检查引擎：检查数值是否在允许范围内
+ *
+ * DSL 字段：
+ *   targetProperty: 目标属性名（netWidth/grossArea/…）
+ *   minValue: 最小值下限（null 表示无下限）
+ *   maxValue: 最大值上限（null 表示无上限）
+ *   unit: 单位
+ *   objectType: 对象类型
+ *
+ * 生成多个测试对象，随机值在边界的 80%-120% 范围内，判定 PASS/FAIL。
+ */
+private List<CheckResult> executeRangeCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
+    List<CheckResult> results = new ArrayList<>();
+    String targetProperty = dslNode.has("targetProperty") ? dslNode.get("targetProperty").asText() : "value";
+    Double minValue = dslNode.has("minValue") && !dslNode.get("minValue").isNull() ? dslNode.get("minValue").asDouble() : null;
+    Double maxValue = dslNode.has("maxValue") && !dslNode.get("maxValue").isNull() ? dslNode.get("maxValue").asDouble() : null;
+    String unit = dslNode.has("unit") ? dslNode.get("unit").asText() : "mm";
+    String objectType = dslNode.has("objectType") ? dslNode.get("objectType").asText() : "Element";
 
-        double testValue = dslNode.has("testValue") ? dslNode.get("testValue").asDouble(50) : 50;
+    // 生成 5-8 个测试对象
+    int objectCount = 5 + ThreadLocalRandom.current().nextInt(4);
+    for (int i = 1; i <= objectCount; i++) {
+        // 在边界附近生成值：70% 在范围内，30% 在范围外
+        double measuredValue;
+        boolean inRange = ThreadLocalRandom.current().nextDouble() < 0.7;
+        if (inRange || (minValue == null && maxValue == null)) {
+            double low = minValue != null ? minValue : 0;
+            double high = maxValue != null ? maxValue : low * 2;
+            measuredValue = low + ThreadLocalRandom.current().nextDouble() * (high - low);
+        } else {
+            // 故意生成边界外值
+            if (minValue != null && ThreadLocalRandom.current().nextBoolean()) {
+                measuredValue = minValue * (0.5 + ThreadLocalRandom.current().nextDouble() * 0.4);
+            } else if (maxValue != null) {
+                measuredValue = maxValue * (1.05 + ThreadLocalRandom.current().nextDouble() * 0.3);
+            } else {
+                measuredValue = 0;
+            }
+        }
+        measuredValue = Math.round(measuredValue * 10.0) / 10.0;
+
+        boolean pass = true;
+        if (minValue != null && measuredValue < minValue) pass = false;
+        if (maxValue != null && measuredValue > maxValue) pass = false;
+
+        String rangeDesc = "[" + (minValue != null ? minValue.toString() : "无下限") + ", "
+                + (maxValue != null ? maxValue.toString() : "无上限") + "]";
 
         CheckResult result = new CheckResult();
         result.setTenantId(tenantId);
         result.setExecutionId(executionId);
         result.setObjectId(UUID.randomUUID());
-        result.setObjectType("RangeCheck");
-        result.setMeasuredValue(String.valueOf(testValue));
-        result.setThreshold(minValue + " to " + maxValue);
-        result.setExplanation("范围检查: 值 " + testValue + " 应在 [" + minValue + ", " + maxValue + "]");
-
-        if (testValue >= minValue && testValue <= maxValue) {
-            result.setOutcome("PASS");
-        } else {
-            result.setOutcome("FAIL");
-        }
+        result.setObjectType(objectType);
+        result.setMeasuredValue(measuredValue + " " + unit);
+        result.setThreshold(rangeDesc + " " + unit);
+        result.setOutcome(pass ? "PASS" : "FAIL");
+        result.setExplanation(String.format(
+                "范围检查: %s=%.1f%s 要求范围 %s%s -> %s",
+                targetProperty, measuredValue, unit, rangeDesc, unit,
+                pass ? "通过" : "不通过"));
         results.add(result);
-        return results;
     }
+    return results;
+}
 
     private List<CheckResult> executeDefaultCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
         List<CheckResult> results = new ArrayList<>();
@@ -292,6 +418,58 @@ public class ComplianceCheckService {
         result.setOutcome("NOT_APPLICABLE");
         result.setExplanation("默认规则类型，未配置具体检查逻辑");
         results.add(result);
+        return results;
+    }
+
+    /**
+     * 存在性检查引擎：检查必需的空间/元素是否存在于建筑模型中
+     *
+     * DSL 字段：
+     *   requiredItems: 必需项列表 [{type, name, minCount}]
+     *   objectType: 对象类型（Space/Element/Facility）
+     *
+     * 模拟检查每个必需项是否存在，70% 概率通过。
+     */
+    private List<CheckResult> executeExistenceCheck(UUID tenantId, UUID executionId, JsonNode dslNode) {
+        List<CheckResult> results = new ArrayList<>();
+        String objectType = dslNode.has("objectType") ? dslNode.get("objectType").asText() : "Space";
+
+        if (dslNode.has("requiredItems") && dslNode.get("requiredItems").isArray()) {
+            for (JsonNode item : dslNode.get("requiredItems")) {
+                String itemName = item.has("name") ? item.get("name").asText() : "Unknown";
+                String itemType = item.has("type") ? item.get("type").asText() : objectType;
+                long minCount = item.has("minCount") ? item.get("minCount").asLong(1) : 1;
+
+                // 模拟 70% 概率存在
+                boolean exists = ThreadLocalRandom.current().nextDouble() < 0.7;
+                long actualCount = exists ? (minCount + ThreadLocalRandom.current().nextLong(0, 3)) : 0;
+
+                CheckResult result = new CheckResult();
+                result.setTenantId(tenantId);
+                result.setExecutionId(executionId);
+                result.setObjectId(UUID.randomUUID());
+                result.setObjectType(itemType);
+                result.setMeasuredValue("存在=" + (exists ? "是" : "否") + " 数量=" + actualCount);
+                result.setThreshold("要求最少 " + minCount + " 个");
+                result.setOutcome(exists ? "PASS" : "FAIL");
+                result.setExplanation(String.format(
+                        "存在性检查: %s(%s) 要求至少%d个, 实际%d个 -> %s",
+                        itemName, itemType, minCount, actualCount,
+                        exists ? "通过" : "不通过"));
+                results.add(result);
+            }
+        } else {
+            // 无 requiredItems 时做通用检查
+            CheckResult na = new CheckResult();
+            na.setTenantId(tenantId);
+            na.setExecutionId(executionId);
+            na.setObjectId(UUID.randomUUID());
+            na.setObjectType(objectType);
+            na.setOutcome("NOT_APPLICABLE");
+            na.setExplanation("存在性检查未配置必需项列表");
+            results.add(na);
+        }
+
         return results;
     }
 

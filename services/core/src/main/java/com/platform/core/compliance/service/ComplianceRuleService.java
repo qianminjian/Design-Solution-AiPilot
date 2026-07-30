@@ -139,7 +139,7 @@ public class ComplianceRuleService {
         revision.setRevisionNo(nextRevisionNo);
         revision.setDslJson(request.dslJson());
         revision.setParametersJson(serializeJson(request.parametersJson()));
-        revision.setBasis(serializeJson(request.basis()));
+        revision.setBasis(request.basis());
         revision.setEngineProfile(request.engineProfile());
         revision.setStatus("DRAFT");
 

@@ -1,5 +1,7 @@
 package com.platform.core.health;
 
+import com.platform.core.governance.auditlog.service.AsyncAuditWriter;
+import com.platform.core.governance.auditlog.support.AuditActionEvaluator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   <li>/health/live Liveness 探针</li>
  *   <li>/health/ready Readiness 探针正常与异常路径</li>
  * </ul>
+ *
+ * <p>注意：@WebMvcTest 切片会自动扫描 @Configuration 类（如 AuditWebMvcConfig），
+ * 但不会加载 @Service/@Component，因此需通过 @MockBean 提供 AsyncAuditWriter / AuditActionEvaluator。
  */
 @DisplayName("HealthController 健康检查端点")
 @WebMvcTest(HealthController.class)
@@ -45,6 +50,13 @@ class HealthControllerTest {
 
     @MockBean
     private BuildProperties buildProperties;
+
+    /** AuditWebMvcConfig 是 @Configuration 类，会被 @WebMvcTest 自动扫描，需 Mock 其依赖 */
+    @MockBean
+    private AsyncAuditWriter asyncAuditWriter;
+
+    @MockBean
+    private AuditActionEvaluator auditActionEvaluator;
 
     @Nested
     @DisplayName("/health 完整健康检查")

@@ -7,6 +7,8 @@ import com.platform.core.auth.dto.LoginResponse;
 import com.platform.core.auth.dto.LogoutRequest;
 import com.platform.core.auth.dto.LogoutResponse;
 import com.platform.core.auth.dto.RefreshTokenResponse;
+import com.platform.core.auth.dto.StepUpTokenRequest;
+import com.platform.core.auth.dto.StepUpTokenResponse;
 import com.platform.core.auth.jwt.JwtTokenProvider;
 import com.platform.core.auth.security.AuthenticatedPrincipal;
 import com.platform.core.auth.token.RefreshTokenStore;
@@ -83,7 +85,7 @@ public class AuthService {
     }
 
     /**
-     * 登录
+     * 登录（携带 tenantId）
      *
      * 业务流程：
      * 1. 根据 tenantId + email 查找 Principal
@@ -103,11 +105,43 @@ public class AuthService {
                 .findByTenantIdAndEmailAndDeletedAtIsNull(tenantId, request.email())
                 .orElseThrow(() -> badCredentials());
 
+        return doLogin(principal, tenantId, request.password());
+    }
+
+    /**
+     * 登录（不携带 tenantId，V0 回退路径）
+     *
+     * V0 阶段：前端登录前无法携带 x-tenant-id，按邮箱反查租户
+     * V1 阶段：接入正式认证流程后移除，强制要求前端先解析租户
+     *
+     * 业务流程：
+     * 1. 按 email 查找 Principal（取首个未软删记录）
+     * 2. 校验主体存在
+     * 3. 委托 doLogin 完成密码校验、token 生成、上下文构建
+     *
+     * @param request 登录请求
+     * @return 登录响应（含 access token + refresh token 标记）
+     */
+    @Transactional
+    public LoginResult loginWithoutTenant(LoginRequest request) {
+        Principal principal = principalRepository
+                .findFirstByEmailAndDeletedAtIsNull(request.email())
+                .orElseThrow(() -> badCredentials());
+        // 从 Principal 反查 tenantId
+        UUID tenantId = principal.getTenantId();
+        return doLogin(principal, tenantId, request.password());
+    }
+
+    /**
+     * 登录核心逻辑：密码校验、token 生成、上下文构建
+     * 由 login / loginWithoutTenant 共享
+     */
+    private LoginResult doLogin(Principal principal, UUID tenantId, String password) {
         if (principal.getPasswordHash() == null) {
             log.warn("主体未设置密码 principalId={}", principal.getId());
             throw badCredentials();
         }
-        if (!passwordEncoder.matches(request.password(), principal.getPasswordHash())) {
+        if (!passwordEncoder.matches(password, principal.getPasswordHash())) {
             log.warn("密码校验失败 principalId={}", principal.getId());
             throw badCredentials();
         }
@@ -271,6 +305,58 @@ public class AuthService {
         principal.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         principalRepository.save(principal);
         log.info("修改密码成功 principalId={}", auth.principalId());
+    }
+
+    /**
+     * 签发 step-up token（用于危险动作二次认证）
+     *
+     * <p>业务流程（见 D40 §Step-up 认证 / security.md §12）：
+     * <ul>
+     *   <li>1. 从 SecurityContext 读取当前认证主体（必须已登录）</li>
+     *   <li>2. 校验当前密码正确（BCrypt 比对）</li>
+     *   <li>3. 调用 JwtTokenProvider.generateStepUpToken 签发短期 token（5 分钟）</li>
+     *   <li>4. 记录审计日志（principalId + purpose，不含密码）</li>
+     *   <li>5. 返回 step-up token + expiresInSeconds + purpose</li>
+     * </ul>
+     *
+     * <p>安全约束：
+     * <ul>
+     *   <li>校验失败统一返回"密码错误"（防枚举）</li>
+     *   <li>密码不打印到日志</li>
+     *   <li>step-up token 不存储在 RefreshTokenStore（无状态 JWT）</li>
+     *   <li>principal 状态非 ACTIVE 拒绝签发</li>
+     * </ul>
+     *
+     * @param request 二次认证请求（含密码 + 用途说明）
+     * @return step-up token 响应（含 token + 有效期 + 用途）
+     */
+    public StepUpTokenResponse issueStepUpToken(StepUpTokenRequest request) {
+        AuthenticatedPrincipal auth = currentAuthenticated();
+        Principal principal = principalRepository.findById(auth.principalId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRINCIPAL_NOT_FOUND,
+                        HttpStatus.UNAUTHORIZED, "主体不存在"));
+
+        if (principal.getPasswordHash() == null
+                || !passwordEncoder.matches(request.currentPassword(), principal.getPasswordHash())) {
+            log.warn("Step-up 认证失败：密码错误 principalId={}", auth.principalId());
+            throw new BusinessException(ErrorCode.BAD_CREDENTIALS, HttpStatus.UNAUTHORIZED,
+                    "密码错误");
+        }
+        if (!STATUS_ACTIVE.equals(principal.getStatus())) {
+            log.warn("Step-up 认证失败：主体状态非 ACTIVE principalId={} status={}",
+                    auth.principalId(), principal.getStatus());
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, HttpStatus.UNAUTHORIZED,
+                    "主体已被禁用");
+        }
+
+        String stepUpToken = jwtTokenProvider.generateStepUpToken(
+                auth.principalId(), auth.tenantId(), request.purpose());
+        long expiresIn = jwtTokenProvider.getStepUpTokenExpiresInSeconds();
+
+        log.info("Step-up token 签发成功 tenantId={} principalId={} purpose={}",
+                auth.tenantId(), auth.principalId(), request.purpose());
+
+        return new StepUpTokenResponse(stepUpToken, expiresIn, request.purpose());
     }
 
     // ── 内部辅助 ──

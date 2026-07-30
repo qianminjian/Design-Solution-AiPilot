@@ -173,7 +173,7 @@ class ComplianceRuleServiceTest {
         CreateRuleRevisionRequest request = new CreateRuleRevisionRequest(
                 "{\"condition\": \"exit_width >= 1.2\"}",
                 Map.of("param", "value"),
-                Map.of(),
+                "{}",
                 "default-engine",
                 "初始化版本");
 

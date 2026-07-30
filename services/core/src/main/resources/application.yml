@@ -41,6 +41,9 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
+        # Hibernate 6 + PostgreSQL: jsonb 列为 String 类型，使用 TEXT JDBC 类型避免类型转换错误
+        type:
+          preferred_jsonb_jdbc_type: TEXT
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   # Flyway 数据库迁移

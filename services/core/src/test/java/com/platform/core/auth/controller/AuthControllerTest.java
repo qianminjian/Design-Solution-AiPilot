@@ -71,7 +71,8 @@ class AuthControllerTest {
     @DisplayName("POST /login 应该返回登录响应并设置 refresh token cookie")
     void loginShouldReturnResponseAndSetCookie() {
         // Arrange
-        when(tenantResolver.resolveTenantId(httpRequest)).thenReturn(tenantId);
+        // AuthController.login 实际调用 resolveTenantIdOptional（允许 null，走 V0 回退）
+        when(tenantResolver.resolveTenantIdOptional(httpRequest)).thenReturn(tenantId);
         when(jwtTokenProvider.getRefreshTokenExpiresInSeconds()).thenReturn(604800L);
         LoginRequest request = new LoginRequest("admin@example.com", "password123", false);
         LoginResponse response = buildLoginResponse();

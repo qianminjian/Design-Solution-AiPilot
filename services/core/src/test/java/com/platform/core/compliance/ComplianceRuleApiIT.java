@@ -96,11 +96,12 @@ class ComplianceRuleApiIT extends AbstractIntegrationTest {
         String ruleId = createRule(ctx, "REVISION_RULE_001");
 
         // 文本块中 \\" 解析为 JSON 字符串内的 \"，确保 dslJson 字段值是合法 JSON 字符串
+        // 注意：V16 迁移将 basis 列从 JSONB 改为 TEXT，CreateRuleRevisionRequest.basis 是 String 类型
         String body = """
                 {
                     "dslJson": "{\\"ruleType\\":\\"RANGE_CHECK\\",\\"propertyName\\":\\"floors\\",\\"minValue\\":5,\\"maxValue\\":15}",
                     "parametersJson": {"unit": "floors"},
-                    "basis": {"source": "OD-02"},
+                    "basis": "ISO 19650 / OD-02",
                     "engineProfile": "DEFAULT"
                 }
                 """;

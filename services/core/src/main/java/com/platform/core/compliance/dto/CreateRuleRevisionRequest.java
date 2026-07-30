@@ -10,7 +10,8 @@ public record CreateRuleRevisionRequest(
 
         Map<String, Object> parametersJson,
 
-        Map<String, Object> basis,
+        // basis 在数据库为 TEXT 列，接受规范依据字符串（如 "ISO 19650 / NFPA 101"）
+        String basis,
 
         String engineProfile,
 

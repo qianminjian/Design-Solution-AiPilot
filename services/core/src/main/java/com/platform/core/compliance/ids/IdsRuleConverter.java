@@ -115,12 +115,13 @@ public class IdsRuleConverter {
     private CreateRuleRevisionRequest toRevisionRequest(IdsRule idsRule, IdsSpecification spec) {
         String dslJson = buildDslJson(idsRule);
         Map<String, Object> parameters = buildParameters(idsRule);
-        Map<String, Object> basis = buildRevisionBasis(idsRule, spec);
+        // basis 在数据库为 TEXT，序列化为 JSON 字符串
+        String basisJson = toJson(buildRevisionBasis(idsRule, spec));
         
         return new CreateRuleRevisionRequest(
                 dslJson,
                 parameters,
-                basis,
+                basisJson,
                 "IDS_ENGINE",
                 "从 IDS 规范导入"
         );

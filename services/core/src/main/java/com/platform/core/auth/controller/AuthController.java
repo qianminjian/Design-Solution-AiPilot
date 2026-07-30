@@ -7,6 +7,8 @@ import com.platform.core.auth.dto.LoginResponse;
 import com.platform.core.auth.dto.LogoutRequest;
 import com.platform.core.auth.dto.LogoutResponse;
 import com.platform.core.auth.dto.RefreshTokenResponse;
+import com.platform.core.auth.dto.StepUpTokenRequest;
+import com.platform.core.auth.dto.StepUpTokenResponse;
 import com.platform.core.auth.jwt.JwtTokenProvider;
 import com.platform.core.auth.service.AuthService;
 import com.platform.core.auth.util.CookieUtil;
@@ -35,6 +37,7 @@ import java.util.UUID;
  * - POST /refresh         刷新 token（公开，refresh token 从 cookie 读取）
  * - GET  /me              获取当前用户信息（已认证）
  * - POST /change-password 修改密码（已认证）
+ * - POST /step-up         申请 step-up token（已认证，危险动作二次认证）
  */
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -60,14 +63,23 @@ public class AuthController {
      * 成功后：
      * - 响应体返回 access token + principal/tenant/roles 信息
      * - refresh token 通过 httpOnly Cookie 设置
+     *
+     * V0 回退：前端登录前无法携带 x-tenant-id，按邮箱反查租户
+     * V1 阶段：接入正式认证流程后移除回退路径
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
-        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
-        AuthService.LoginResult result = authService.login(tenantId, request);
+        UUID tenantId = tenantResolver.resolveTenantIdOptional(httpRequest);
+        AuthService.LoginResult result;
+        if (tenantId != null) {
+            result = authService.login(tenantId, request);
+        } else {
+            // V0 回退：按邮箱反查租户（V1 移除）
+            result = authService.loginWithoutTenant(request);
+        }
         cookieUtil.setRefreshTokenCookie(httpResponse, result.refreshToken(),
                 jwtTokenProvider.getRefreshTokenExpiresInSeconds());
         return ResponseEntity.ok(ApiResponse.success(result.response()));
@@ -117,5 +129,28 @@ public class AuthController {
         authService.changePassword(request);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)
                 .body(ApiResponse.success(null, "密码修改成功"));
+    }
+
+    /**
+     * 申请 step-up token（危险动作二次认证）
+     *
+     * <p>调用方：前端在执行 OperationsAction（HIGH/IRREVERSIBLE 风险等级）前调用本端点，
+     * 用户输入当前密码后服务端签发短期 step-up token（5 分钟），后续 OperationsAction 请求
+     * 携带此 token 才能执行危险动作。
+     *
+     * <p>安全约束（见 D40 §Step-up 认证 / security.md §12）：
+     * <ul>
+     *   <li>必须已登录（携带 access token）</li>
+     *   <li>密码校验失败统一返回"密码错误"（防枚举）</li>
+     *   <li>step-up token 短期有效（≤5 分钟），不存储在 cookie</li>
+     * </ul>
+     *
+     * @design D40-信息-物理安全.md §Step-up 认证
+     * @design D37-关键界面-交互状态.md §D37.17 危险动作
+     */
+    @PostMapping("/step-up")
+    public ApiResponse<StepUpTokenResponse> stepUp(@Valid @RequestBody StepUpTokenRequest request) {
+        StepUpTokenResponse response = authService.issueStepUpToken(request);
+        return ApiResponse.success(response);
     }
 }

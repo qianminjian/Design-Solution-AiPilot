@@ -70,6 +70,8 @@ public class AppProperties {
         private String jwtSecret;
         private String accessTokenExpire;
         private String refreshTokenExpire;
+        /** step-up token 有效期（默认 5m，security.md §12 / D40 §Step-up 认证） */
+        private String stepUpTokenExpire;
 
         public String getJwtSecret() {
             return jwtSecret;
@@ -93,6 +95,14 @@ public class AppProperties {
 
         public void setRefreshTokenExpire(String refreshTokenExpire) {
             this.refreshTokenExpire = refreshTokenExpire;
+        }
+
+        public String getStepUpTokenExpire() {
+            return stepUpTokenExpire;
+        }
+
+        public void setStepUpTokenExpire(String stepUpTokenExpire) {
+            this.stepUpTokenExpire = stepUpTokenExpire;
         }
     }
 

@@ -29,6 +29,8 @@ public final class ErrorCode {
     public static final int TOKEN_EXPIRED = 4013;
     /** refresh token 无效或已撤销 */
     public static final int REFRESH_TOKEN_INVALID = 4014;
+    /** step-up token 无效或已过期（危险动作二次认证失败） */
+    public static final int STEP_UP_TOKEN_INVALID = 4015;
 
     // ── 权限不足段（403）──
     /** 已登录但无权限 */

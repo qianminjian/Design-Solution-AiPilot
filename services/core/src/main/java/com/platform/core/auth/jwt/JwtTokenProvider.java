@@ -41,20 +41,26 @@ public class JwtTokenProvider {
 
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    /** Token 类型：access / refresh */
+    /** Token 类型：access / refresh / step_up */
     public static final String TYPE_ACCESS = "access";
     public static final String TYPE_REFRESH = "refresh";
+    /** step-up token：用于危险动作二次认证，短期（≤5 分钟）有效 */
+    public static final String TYPE_STEP_UP = "step_up";
 
     /** claims key */
     private static final String CLAIM_TENANT_ID = "tenant_id";
     private static final String CLAIM_EMAIL = "email";
     private static final String CLAIM_ROLES = "roles";
     private static final String CLAIM_TYPE = "type";
+    /** step-up token 用途说明（如"执行 ISOLATE 动作"），进入审计日志 */
+    private static final String CLAIM_PURPOSE = "purpose";
 
     /** access token 默认有效期：15 分钟（security.md §2.2 上限） */
     private static final Duration DEFAULT_ACCESS_EXPIRE = Duration.ofMinutes(15);
     /** refresh token 默认有效期：7 天（security.md §2.2 上限） */
     private static final Duration DEFAULT_REFRESH_EXPIRE = Duration.ofDays(7);
+    /** step-up token 默认有效期：5 分钟（security.md §12 / D40 §Step-up 认证） */
+    private static final Duration DEFAULT_STEP_UP_EXPIRE = Duration.ofMinutes(5);
 
     /** HS256 密钥最小字节数（RFC 7518 §3.2 要求 ≥ 256 位 = 32 字节） */
     private static final int MIN_SECRET_BYTES = 32;
@@ -64,6 +70,7 @@ public class JwtTokenProvider {
     private JWSVerifier verifier;
     private Duration accessExpire;
     private Duration refreshExpire;
+    private Duration stepUpExpire;
 
     public JwtTokenProvider(AppProperties appProperties) {
         this.appProperties = appProperties;
@@ -88,6 +95,8 @@ public class JwtTokenProvider {
                     DEFAULT_ACCESS_EXPIRE);
             this.refreshExpire = parseDuration(appProperties.getSecurity().getRefreshTokenExpire(),
                     DEFAULT_REFRESH_EXPIRE);
+            this.stepUpExpire = parseDuration(appProperties.getSecurity().getStepUpTokenExpire(),
+                    DEFAULT_STEP_UP_EXPIRE);
         } catch (JOSEException ex) {
             throw new IllegalStateException("初始化 JWT 签名器失败", ex);
         }
@@ -134,6 +143,85 @@ public class JwtTokenProvider {
                 .expirationTime(Date.from(now.plus(refreshExpire)))
                 .build();
         return sign(claims);
+    }
+
+    /**
+     * 生成 step-up token
+     *
+     * <p>用于危险动作（HIGH/IRREVERSIBLE）执行前的二次认证（见 security.md §12 / D40 §Step-up 认证）。
+     *
+     * <p>特性：
+     * <ul>
+     *   <li>短期有效（默认 5 分钟），过期后需重新申请</li>
+     *   <li>无状态 JWT，不存储在 RefreshTokenStore</li>
+     *   <li>不可用于普通 API 认证（JwtAuthenticationFilter 仅接受 access token 类型）</li>
+     *   <li>包含 purpose claim，记录申请用途，进入审计日志</li>
+     * </ul>
+     *
+     * @param principalId 主体 ID（写入 sub）
+     * @param tenantId    租户 ID
+     * @param purpose     申请用途说明（如"执行 ISOLATE 动作"），进入审计日志
+     * @return 已签名的 step-up JWT 字符串
+     */
+    public String generateStepUpToken(UUID principalId, UUID tenantId, String purpose) {
+        Instant now = Instant.now();
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
+                .subject(principalId.toString())
+                .jwtID(UUID.randomUUID().toString())
+                .claim(CLAIM_TENANT_ID, tenantId.toString())
+                .claim(CLAIM_TYPE, TYPE_STEP_UP)
+                .issueTime(Date.from(now))
+                .expirationTime(Date.from(now.plus(stepUpExpire)));
+        if (purpose != null && !purpose.isBlank()) {
+            builder.claim(CLAIM_PURPOSE, purpose);
+        }
+        return sign(builder.build());
+    }
+
+    /**
+     * 验证 step-up token 有效性（签名 + 有效期 + 类型）
+     *
+     * <p>校验失败抛 STEP_UP_TOKEN_INVALID 业务异常（4015），统一错误码避免暴露具体原因。
+     *
+     * @param token step-up token 字符串
+     * @throws com.platform.core.common.response.BusinessException token 无效或已过期
+     */
+    public void validateStepUpToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new BusinessException(ErrorCode.STEP_UP_TOKEN_INVALID, HttpStatus.UNAUTHORIZED,
+                    "Step-up token 无效或已过期");
+        }
+        try {
+            validateToken(token);
+            String type = getTokenType(token);
+            if (!TYPE_STEP_UP.equals(type)) {
+                throw new BusinessException(ErrorCode.STEP_UP_TOKEN_INVALID, HttpStatus.UNAUTHORIZED,
+                        "Step-up token 无效或已过期");
+            }
+        } catch (BusinessException ex) {
+            // 将 TOKEN_INVALID(4012) / TOKEN_EXPIRED(4013) 等统一转换为 STEP_UP_TOKEN_INVALID(4015)
+            // 避免暴露具体失败原因（防枚举）
+            if (ex.getErrorCode() == ErrorCode.TOKEN_INVALID
+                    || ex.getErrorCode() == ErrorCode.TOKEN_EXPIRED) {
+                throw new BusinessException(ErrorCode.STEP_UP_TOKEN_INVALID, HttpStatus.UNAUTHORIZED,
+                        "Step-up token 无效或已过期");
+            }
+            throw ex;
+        }
+    }
+
+    /**
+     * 从 step-up token 提取 purpose claim（申请用途）
+     */
+    public String getPurposeFromToken(String token) {
+        return getClaim(token, c -> c.getStringClaim(CLAIM_PURPOSE));
+    }
+
+    /**
+     * 获取 step-up token 有效期（秒），用于响应体回传给客户端
+     */
+    public long getStepUpTokenExpiresInSeconds() {
+        return stepUpExpire.toSeconds();
     }
 
     /**

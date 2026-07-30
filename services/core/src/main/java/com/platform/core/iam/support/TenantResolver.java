@@ -38,4 +38,23 @@ public class TenantResolver {
                     "请求头 " + TENANT_HEADER + " 不是有效的 UUID");
         }
     }
+
+    /**
+     * 可选解析：返回请求头中的 tenant ID，缺失或为空时返回 null
+     * 用于登录/刷新等"未登录"端点，调用方需自行兜底（按邮箱反查或使用默认租户）
+     */
+    public UUID resolveTenantIdOptional(HttpServletRequest request) {
+        String headerValue = request.getHeader(TENANT_HEADER);
+        if (headerValue == null || headerValue.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(headerValue);
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(
+                    ErrorCode.PARAM_INVALID,
+                    HttpStatus.BAD_REQUEST,
+                    "请求头 " + TENANT_HEADER + " 不是有效的 UUID");
+        }
+    }
 }

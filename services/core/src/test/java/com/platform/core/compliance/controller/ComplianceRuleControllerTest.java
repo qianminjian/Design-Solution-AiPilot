@@ -158,7 +158,7 @@ class ComplianceRuleControllerTest {
     void createRevisionShouldReturn201() {
         // Arrange
         CreateRuleRevisionRequest request = new CreateRuleRevisionRequest(
-                "{\"check\":\"width>=1.1\"}", Map.of(), Map.of("code", "GB50016"), "DEFAULT", "新增宽度校验");
+                "{\"check\":\"width>=1.1\"}", Map.of(), "{\"code\":\"GB50016\"}", "DEFAULT", "新增宽度校验");
         RuleRevisionDto dto = buildRevisionDto();
         when(ruleService.createRevision(eq(tenantId), eq(ruleId), eq(request))).thenReturn(dto);
 

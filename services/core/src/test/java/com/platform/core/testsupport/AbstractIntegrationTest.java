@@ -126,15 +126,40 @@ public abstract class AbstractIntegrationTest {
             // 已初始化过，跳过，避免重复 clean 导致 OID 变化
             return;
         }
+        // Flyway 9.x 对 PostgreSQL 的 clean 仅清理 defaultSchema 中的对象，
+        // schemas 列表中其他 schema 不会自动清理。若旧测试遗留 governance 等业务 schema 中的表，
+        // V17 重跑 CREATE TABLE governance.access_grant 会报 42P07 "relation already exists"。
+        // 解决方案：先用 JdbcTemplate 手动 DROP 所有业务 schema（CASCADE），再 Flyway clean + migrate。
+        org.springframework.jdbc.core.JdbcTemplate cleanup = new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+        try {
+            cleanup.execute("""
+                    DROP SCHEMA IF EXISTS operations CASCADE;
+                    DROP SCHEMA IF EXISTS change CASCADE;
+                    DROP SCHEMA IF EXISTS governance CASCADE;
+                    DROP SCHEMA IF EXISTS compliance CASCADE;
+                    DROP SCHEMA IF EXISTS ai CASCADE;
+                    DROP SCHEMA IF EXISTS platform CASCADE;
+                    DROP SCHEMA IF EXISTS cde CASCADE;
+                    DROP SCHEMA IF EXISTS workflow CASCADE;
+                    DROP SCHEMA IF EXISTS requirement CASCADE;
+                    DROP SCHEMA IF EXISTS portfolio CASCADE;
+                    DROP SCHEMA IF EXISTS iam CASCADE;
+                    """);
+        } catch (Exception e) {
+            // 忽略：可能 schema 不存在
+            System.err.println("[AbstractIntegrationTest] DROP SCHEMA warning: " + e.getMessage());
+        }
         // 显式指定所有 schema 进行 clean：Flyway 默认只清理 default-schema
         // defaultSchema=public：让 V8/V9 等迁移脚本中无 schema 前缀的 CREATE TABLE 创建在 public 下
+        // schemas 列表必须包含所有业务 schema，clean 才会全部清理
+        // 缺少 governance 会导致 V17 重跑时 access_grant 表已存在而报 42P07
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
                 .baselineVersion("0")
                 .cleanDisabled(false)
                 .defaultSchema("public")
-                .schemas("iam", "portfolio", "requirement", "workflow", "cde", "ai", "platform", "compliance", "public")
+                .schemas("iam", "portfolio", "requirement", "workflow", "cde", "ai", "platform", "compliance", "governance", "change", "operations", "public")
                 .load();
         // clean 会删除所有指定 schema 及其中的对象（包括 flyway_schema_history 表）
         flyway.clean();
@@ -228,6 +253,24 @@ public abstract class AbstractIntegrationTest {
                     requirement.trace_link,
                     requirement.requirement_revision,
                     requirement.source,
+                    governance.restore_drill,
+                    governance.backup_point,
+                    governance.evidence_item,
+                    governance.evidence_package,
+                    governance.audit_log,
+                    governance.data_asset,
+                    governance.releases,
+                    governance.access_grant,
+                    change.change_operation,
+                    change.closure_evidence,
+                    change.task_plan_item,
+                    change.affected_item,
+                    change.change_request,
+                    operations.operations_action,
+                    operations.connector_status,
+                    operations.worker_status,
+                    operations.queue_task,
+                    operations.slo_target,
                     iam.role_binding,
                     iam.access_grant,
                     iam.membership,
