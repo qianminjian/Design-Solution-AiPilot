@@ -25,6 +25,8 @@ describe("Gate 6 — 全链路端到端验证", () => {
   let mockForward: vi.Mock;
   let cookieServiceMock: {
     setRefreshTokenCookie: ReturnType<typeof vi.fn>;
+    setAccessTokenCookie: ReturnType<typeof vi.fn>;
+    setTenantIdCookie: ReturnType<typeof vi.fn>;
     clearRefreshTokenCookie: ReturnType<typeof vi.fn>;
     getRefreshTokenFromCookie: ReturnType<typeof vi.fn>;
   };
@@ -34,6 +36,8 @@ describe("Gate 6 — 全链路端到端验证", () => {
     // CookieService mock：避免测试中依赖 ConfigService（isProduction 判定）
     cookieServiceMock = {
       setRefreshTokenCookie: vi.fn(),
+      setAccessTokenCookie: vi.fn(),
+      setTenantIdCookie: vi.fn(),
       clearRefreshTokenCookie: vi.fn(),
       getRefreshTokenFromCookie: vi.fn().mockReturnValue(null),
     };

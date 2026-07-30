@@ -23,6 +23,8 @@ function createCookieServiceMock(
 ): CookieService {
   return {
     setRefreshTokenCookie: vi.fn(),
+    setAccessTokenCookie: vi.fn(),
+    setTenantIdCookie: vi.fn(),
     clearRefreshTokenCookie: vi.fn(),
     getRefreshTokenFromCookie: vi.fn().mockReturnValue(refreshToken),
   } as unknown as CookieService;

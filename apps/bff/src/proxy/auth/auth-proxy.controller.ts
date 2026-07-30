@@ -20,6 +20,7 @@ import {
   LoginResponse,
   LogoutRequest,
   RefreshTokenResponse,
+  StepUpTokenRequest,
   loginResponseSchema,
   refreshTokenResponseSchema,
 } from "@design-platform/shared";
@@ -189,6 +190,36 @@ export class AuthProxyController {
     return this.proxyService.forward({
       method: "POST",
       path: AuthApiPaths.changePassword,
+      body,
+      headers: this.extractForwardHeaders(request),
+    });
+  }
+
+  /**
+   * 申请 step-up token（危险动作二次认证）
+   *
+   * 业务流程：
+   * - 已登录用户携带 access token 调用本端点
+   * - 服务端校验当前密码后签发短期 step-up token（5 分钟）
+   * - 前端将 step-up token 保存在内存中（不写入 localStorage / cookie）
+   * - 后续 OperationsAction 请求携带 step-up token
+   *
+   * 安全约束（见 security.md §12 / D40 §Step-up 认证）：
+   * - 不做 schema 严格验证（响应结构简单，且需要快速返回给前端）
+   * - access token 通过 Cookie 携带，无需手动设置
+   *
+   * @design D40-信息-物理安全.md §Step-up 认证
+   * @design D37-关键界面-交互状态.md §D37.17 危险动作
+   */
+  @Post("step-up")
+  @HttpCode(HttpStatus.OK)
+  stepUp(
+    @Req() request: Request,
+    @Body() body: StepUpTokenRequest,
+  ): Promise<ProxyResult> {
+    return this.proxyService.forward({
+      method: "POST",
+      path: AuthApiPaths.stepUp,
       body,
       headers: this.extractForwardHeaders(request),
     });

@@ -5,6 +5,7 @@ import { APP_FILTER } from "@nestjs/core";
 import appConfig from "./config/app.config";
 import { TraceIdMiddleware } from "./middleware/trace-id.middleware";
 import { LoggingMiddleware } from "./middleware/logging.middleware";
+import { AuthTokenMiddleware } from "./middleware/auth-token.middleware";
 import { HttpExceptionFilter } from "./filters/http-exception.filter";
 import { ProxyModule } from "./proxy/proxy.module";
 import { HealthModule } from "./health/health.module";
@@ -48,11 +49,14 @@ export class AppModule implements NestModule {
   /**
    * 注册全局中间件
    * - TraceIdMiddleware 必须先执行：写入 traceId 到 request + AsyncLocalStorage
+   * - AuthTokenMiddleware 次之：从 httpOnly Cookie 提取 access_token/tenant_id
+   *   注入到 request.headers，使后续 extractForwardHeaders 能正常转发到 Core Service
    * - LoggingMiddleware 后执行：依赖 traceId 输出结构化请求日志
    * - MetricsMiddleware 由 MetricsModule 内部注册（采集 HTTP RED 指标）
-   * - 健康检查与指标路由同样启用中间件，便于可观测性
    */
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(TraceIdMiddleware, LoggingMiddleware).forRoutes("*");
+    consumer
+      .apply(TraceIdMiddleware, AuthTokenMiddleware, LoggingMiddleware)
+      .forRoutes("*");
   }
 }

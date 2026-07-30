@@ -37,6 +37,10 @@ export class AiProxyService {
     return this.forward(options);
   }
 
+  async forwardRag(options: AiForwardOptions): Promise<ProxyResult> {
+    return this.forward(options);
+  }
+
   private async forward(options: AiForwardOptions): Promise<ProxyResult> {
     const url = this.buildDownstreamUrl(options.path);
     const requestConfig = this.buildRequestConfig(options, url);
