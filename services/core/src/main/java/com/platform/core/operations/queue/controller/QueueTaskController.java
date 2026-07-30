@@ -6,6 +6,7 @@ import com.platform.core.iam.support.TenantResolver;
 import com.platform.core.operations.domain.enums.QueueTaskPriority;
 import com.platform.core.operations.domain.enums.QueueTaskStatus;
 import com.platform.core.operations.domain.enums.QueueTaskType;
+import com.platform.core.operations.queue.dto.FailTaskRequest;
 import com.platform.core.operations.queue.dto.ListQueueTasksRequest;
 import com.platform.core.operations.queue.dto.QueueTaskDto;
 import com.platform.core.operations.queue.service.QueueTaskService;
@@ -29,6 +30,9 @@ import java.util.UUID;
  *   <li>GET    /                       列表查询（支持 status/type/priority/workerId/keyword 过滤）</li>
  *   <li>GET    /{id}                   详情查询</li>
  *   <li>POST   /                       创建任务</li>
+ *   <li>POST   /{id}/claim             Worker 领取任务（QUEUED → RUNNING）</li>
+ *   <li>POST   /{id}/complete          Worker 完成任务（RUNNING → COMPLETED）</li>
+ *   <li>POST   /{id}/fail              Worker 上报失败（RUNNING → FAILED）</li>
  *   <li>POST   /{id}/pause             暂停任务</li>
  *   <li>POST   /{id}/resume            恢复任务</li>
  *   <li>POST   /{id}/retry             重试任务（检测 retry storm）</li>
@@ -98,6 +102,38 @@ public class QueueTaskController {
     ) {
         UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
         QueueTaskDto dto = queueTaskService.createQueueTask(tenantId, request);
+        return ApiResponse.success(dto);
+    }
+
+    @PostMapping("/{id}/claim")
+    public ApiResponse<QueueTaskDto> claim(
+            @PathVariable UUID id,
+            @RequestParam UUID workerId,
+            HttpServletRequest httpRequest
+    ) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        QueueTaskDto dto = queueTaskService.claimTask(tenantId, id, workerId);
+        return ApiResponse.success(dto);
+    }
+
+    @PostMapping("/{id}/complete")
+    public ApiResponse<QueueTaskDto> complete(
+            @PathVariable UUID id,
+            HttpServletRequest httpRequest
+    ) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        QueueTaskDto dto = queueTaskService.completeTask(tenantId, id);
+        return ApiResponse.success(dto);
+    }
+
+    @PostMapping("/{id}/fail")
+    public ApiResponse<QueueTaskDto> fail(
+            @PathVariable UUID id,
+            @RequestBody FailTaskRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        QueueTaskDto dto = queueTaskService.failTask(tenantId, id, request.errorMessage());
         return ApiResponse.success(dto);
     }
 

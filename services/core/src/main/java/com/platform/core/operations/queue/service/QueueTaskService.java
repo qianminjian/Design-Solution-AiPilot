@@ -242,6 +242,118 @@ public class QueueTaskService {
         return toDto(saved);
     }
 
+    /**
+     * Worker 领取任务（QUEUED → RUNNING）
+     *
+     * <p>绑定 workerId，记录 startedAt。仅 QUEUED 状态可领取。
+     * 同一 Worker 重复领取同一任务返回当前状态（幂等）。
+     *
+     * @param tenantId 租户 ID
+     * @param id 任务 ID
+     * @param workerId 领取任务的 Worker ID
+     * @return 更新后的任务
+     */
+    @Transactional
+    public QueueTaskDto claimTask(UUID tenantId, UUID id, UUID workerId) {
+        QueueTask entity = repository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
+                        "QueueTask not found: " + id));
+
+        if (entity.getStatus() != QueueTaskStatus.QUEUED) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "QueueTask 只能在 QUEUED 状态下被领取，当前状态: " + entity.getStatus());
+        }
+
+        entity.setStatus(QueueTaskStatus.RUNNING);
+        entity.setWorkerId(workerId);
+        entity.setStartedAt(Instant.now());
+        QueueTask saved = repository.save(entity);
+        log.info("QueueTask claimed: id={}, tenantId={}, workerId={}", id, tenantId, workerId);
+        return toDto(saved);
+    }
+
+    /**
+     * Worker 完成任务（RUNNING → COMPLETED）
+     *
+     * <p>设置 completedAt + durationSec。仅 RUNNING 状态可完成。
+     *
+     * @param tenantId 租户 ID
+     * @param id 任务 ID
+     * @return 更新后的任务
+     */
+    @Transactional
+    public QueueTaskDto completeTask(UUID tenantId, UUID id) {
+        QueueTask entity = repository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
+                        "QueueTask not found: " + id));
+
+        if (entity.getStatus() != QueueTaskStatus.RUNNING) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "QueueTask 只能在 RUNNING 状态下完成，当前状态: " + entity.getStatus());
+        }
+
+        entity.setStatus(QueueTaskStatus.COMPLETED);
+        entity.setCompletedAt(Instant.now());
+        if (entity.getStartedAt() != null) {
+            entity.setDurationSec((int) java.time.Duration.between(
+                    entity.getStartedAt(), entity.getCompletedAt()).getSeconds());
+        }
+        QueueTask saved = repository.save(entity);
+        log.info("QueueTask completed: id={}, tenantId={}, durationSec={}",
+                id, tenantId, saved.getDurationSec());
+        return toDto(saved);
+    }
+
+    /**
+     * Worker 上报任务失败（RUNNING → FAILED）
+     *
+     * <p>记录 lastError 供后续诊断。FAILED 状态可通过 retryTask 重试。
+     *
+     * @param tenantId 租户 ID
+     * @param id 任务 ID
+     * @param errorMessage 错误信息（最多 2000 字符）
+     * @return 更新后的任务
+     */
+    @Transactional
+    public QueueTaskDto failTask(UUID tenantId, UUID id, String errorMessage) {
+        QueueTask entity = repository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
+                        "QueueTask not found: " + id));
+
+        if (entity.getStatus() != QueueTaskStatus.RUNNING) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "QueueTask 只能在 RUNNING 状态下上报失败，当前状态: " + entity.getStatus());
+        }
+
+        entity.setStatus(QueueTaskStatus.FAILED);
+        entity.setCompletedAt(Instant.now());
+        if (entity.getStartedAt() != null) {
+            entity.setDurationSec((int) java.time.Duration.between(
+                    entity.getStartedAt(), entity.getCompletedAt()).getSeconds());
+        }
+        // 错误信息截断（防止超长）
+        String safeError = errorMessage != null
+                ? errorMessage.substring(0, Math.min(errorMessage.length(), 2000))
+                : "unknown error";
+        entity.setLastError(safeError);
+
+        QueueTask saved = repository.save(entity);
+        log.warn("QueueTask failed: id={}, tenantId={}, error={}", id, tenantId, safeError);
+        return toDto(saved);
+    }
+
     /** 检测租户下是否触发 retry storm（V0 占位：返回 false） */
     @Transactional(readOnly = true)
     public boolean hasRetryStorm(UUID tenantId) {
