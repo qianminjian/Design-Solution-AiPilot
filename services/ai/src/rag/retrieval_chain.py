@@ -108,7 +108,8 @@ class RetrievalChain:
             ChatMessage(role="user", content=prompt),
         ]
 
-        result = await self._llm.chat(messages, temperature=0.3, max_tokens=1024)
+        # deepseek-v4-pro 等 reasoning 模型需要更大 max_tokens（reasoning_content 占用部分配额）
+        result = await self._llm.chat(messages, temperature=0.3, max_tokens=2048)
 
         uncertainty = self._calculate_uncertainty(distances[0])
 

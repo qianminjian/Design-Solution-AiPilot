@@ -86,7 +86,11 @@ def get_knowledge_base_service() -> KnowledgeBaseService:
     """获取知识库服务实例（单例模式）"""
     if "knowledge_base_service" not in _rag_services:
         vector_store = ChromaVectorStore(settings.chromadb_persist_directory)
-        embedding_service = EmbeddingService(settings.embedding_model)
+        # 优先从配置的绝对路径加载模型（容器内预下载），避免运行时联网
+        embedding_service = EmbeddingService(
+            model_name=settings.embedding_model,
+            model_path=settings.embedding_model_path,
+        )
         document_processor = DocumentProcessor(settings.chunk_size, settings.chunk_overlap)
         llm_client = create_llm_client()
 
@@ -104,7 +108,10 @@ def get_knowledge_base_service() -> KnowledgeBaseService:
 def get_embedding_service() -> EmbeddingService:
     """获取 Embedding 服务实例（单例模式）"""
     if "embedding_service" not in _rag_services:
-        _rag_services["embedding_service"] = EmbeddingService(settings.embedding_model)
+        _rag_services["embedding_service"] = EmbeddingService(
+            model_name=settings.embedding_model,
+            model_path=settings.embedding_model_path,
+        )
     return _rag_services["embedding_service"]
 
 

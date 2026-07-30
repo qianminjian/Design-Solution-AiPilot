@@ -44,7 +44,12 @@ def get_embedding_service(request: Request) -> EmbeddingService:
     """依赖注入：获取 EmbeddingService 实例"""
     embedding = getattr(request.app.state, "embedding_service", None)
     if embedding is None:
-        embedding = EmbeddingService()
+        # 优先从配置的绝对路径加载（容器内预下载模型），避免运行时联网
+        from src.config import settings
+        embedding = EmbeddingService(
+            model_name=settings.embedding_model,
+            model_path=settings.embedding_model_path,
+        )
         request.app.state.embedding_service = embedding
     return embedding
 

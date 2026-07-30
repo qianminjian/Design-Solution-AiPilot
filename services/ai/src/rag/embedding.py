@@ -16,11 +16,26 @@ class EmbeddingService:
     使用 sentence-transformers 生成文本向量，支持懒加载模型。
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+    def __init__(
+        self,
+        model_name: str = "all-MiniLM-L6-v2",
+        model_path: str = "",
+    ):
+        """初始化 Embedding 服务
+
+        Args:
+            model_name: 模型名称（用于日志和默认加载）
+            model_path: 模型绝对路径。非空时直接从路径加载，避免 huggingface_hub 缓存查找
+        """
         self._model_name = model_name
+        # 路径优先：设置后直接从路径加载，绕过 huggingface_hub 缓存机制
+        self._model_path = model_path
         self._model = None
         self._dimensions = None
-        logger.info("[RAG] EmbeddingService 初始化", {"model_name": model_name})
+        logger.info(
+            "[RAG] EmbeddingService 初始化",
+            {"model_name": model_name, "model_path": model_path or "(none)"},
+        )
 
     def _ensure_model(self) -> None:
         """确保模型已加载（懒加载）"""
@@ -28,8 +43,13 @@ class EmbeddingService:
             try:
                 from sentence_transformers import SentenceTransformer
 
-                logger.info("[RAG] 加载 Embedding 模型", {"model_name": self._model_name})
-                self._model = SentenceTransformer(self._model_name)
+                # 路径优先：避免 huggingface_hub 在离线模式下找不到模型缓存
+                load_target = self._model_path or self._model_name
+                logger.info(
+                    "[RAG] 加载 Embedding 模型",
+                    {"load_target": load_target, "from_path": bool(self._model_path)},
+                )
+                self._model = SentenceTransformer(load_target)
                 self._dimensions = self._model.get_sentence_embedding_dimension()
                 logger.info("[RAG] Embedding 模型加载完成", {"dimensions": self._dimensions})
             except Exception as exc:

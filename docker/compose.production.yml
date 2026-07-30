@@ -97,9 +97,10 @@ services:
     mem_limit: 512m
     memswap_limit: 512m
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v2/heartbeat"]
+      # chromadb/chroma:latest 镜像不含 curl/wget/python3，使用 bash /dev/tcp 检查端口
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/8000' || exit 1"]
       interval: 5s
-      timeout: 30s
+      timeout: 10s
       retries: 5
       start_period: 15s
     restart: unless-stopped
@@ -176,8 +177,16 @@ services:
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_API_BASE: ${LLM_API_BASE:-https://api.deepseek.com/v1}
       LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
-      LLM_TIMEOUT: "30"
+      # reasoning 模型（如 deepseek-v4-pro）推理时间长，超时从 30s 调到 120s
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-120}
       CORS_ORIGINS: '["https://yun.gxjugu.com"]'
+      # HuggingFace 国内镜像，加速 sentence-transformers 模型下载
+      HF_ENDPOINT: https://hf-mirror.com
+      # 模型已预下载并缓存到镜像内，禁用运行时联网检查（hf-mirror.com 在容器内不可达）
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      # Embedding 模型路径（容器内预下载，绕过 huggingface_hub 缓存机制）
+      EMBEDDING_MODEL_PATH: /app/models/all-MiniLM-L6-v2
     ports:
       - "127.0.0.1:18050:8000"
     depends_on:
@@ -187,16 +196,25 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+    volumes:
+      # 挂载主机预下载的 sentence-transformers 模型，避免容器重建后丢失
+      - /home/AiDesign/models/all-MiniLM-L6-v2:/app/models/all-MiniLM-L6-v2:ro
     networks:
       - aidesign-net
-    mem_limit: 384m
-    memswap_limit: 384m
+    # sentence-transformers 加载 all-MiniLM-L6-v2 模型约需 500MB，V1 调研后回降
+    mem_limit: 1g
+    memswap_limit: 1g
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/live || exit 1"]
+      # python:3.12-slim 镜像不含 curl，使用 python3 + urllib 检查 HTTP 端点
+      test:
+        [
+          "CMD-SHELL",
+          'python3 -c ''import urllib.request; urllib.request.urlopen("http://localhost:8000/health/live").read()'' || exit 1',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
+      start_period: 30s
     restart: unless-stopped
 
   # ── BFF（NestJS 11） ──
@@ -208,13 +226,18 @@ services:
     environment:
       NODE_ENV: production
       PORT: "3001"
-      CORE_SERVICE_URL: http://core-service:8080
-      AI_SERVICE_URL: http://ai-service:8000
+      CORE_SERVICE_URL: http://aidesign-core:8080
+      AI_SERVICE_URL: http://aidesign-ai:8000
       CORS_ORIGIN: https://yun.gxjugu.com
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TOKEN_EXPIRES_IN: ${JWT_ACCESS_TOKEN_EXPIRES_IN:-15m}
       JWT_REFRESH_TOKEN_EXPIRES_IN: ${JWT_REFRESH_TOKEN_EXPIRES_IN:-7d}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # V0 文件存储根目录（V1 迁移至 MinIO 后移除）
+      FILE_STORAGE_ROOT: /data/files
+    volumes:
+      # 持久化上传文件（容器重建后文件不丢失）
+      - /home/AiDesign/data/files:/data/files
     ports:
       - "127.0.0.1:18060:3001"
     depends_on:

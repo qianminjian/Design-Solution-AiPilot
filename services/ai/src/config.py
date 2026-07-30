@@ -40,6 +40,9 @@ class Settings(BaseSettings):
 
     # RAG 配置
     embedding_model: str = "all-MiniLM-L6-v2"
+    # 模型绝对路径（容器内预下载模型，避免运行时联网下载）
+    # 设置后 SentenceTransformer 直接从此路径加载，不再走 huggingface_hub 缓存
+    embedding_model_path: str = ""
     chromadb_url: str = "http://localhost:8000"
     chromadb_auth_credentials: str = ""
     chromadb_persist_directory: str = "./data/chroma"
