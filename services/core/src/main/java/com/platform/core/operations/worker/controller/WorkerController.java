@@ -6,13 +6,17 @@ import com.platform.core.iam.support.TenantResolver;
 import com.platform.core.operations.domain.enums.WorkerRuntimeStatus;
 import com.platform.core.operations.domain.enums.WorkerType;
 import com.platform.core.operations.worker.dto.ListWorkersRequest;
+import com.platform.core.operations.worker.dto.WorkerHeartbeatRequest;
+import com.platform.core.operations.worker.dto.WorkerRegisterRequest;
 import com.platform.core.operations.worker.dto.WorkerStatusDto;
 import com.platform.core.operations.worker.service.WorkerService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +29,8 @@ import java.util.UUID;
  *
  * <p>路由：/api/v1/operations/workers
  * <ul>
+ *   <li>POST   /register               Worker 注册（启动时调用，幂等）</li>
+ *   <li>POST   /{id}/heartbeat         心跳上报</li>
  *   <li>GET    /                       列表查询（支持 type/status/region/keyword 过滤）</li>
  *   <li>GET    /{id}                   详情查询</li>
  *   <li>POST   /{id}/pause             暂停 Worker</li>
@@ -32,6 +38,7 @@ import java.util.UUID;
  * </ul>
  *
  * @design D37-关键界面-交互状态.md §D37.17
+ * @design D44-部署拓扑-Hybrid-Site.md
  */
 @RestController
 @RequestMapping("/api/v1/operations/workers")
@@ -43,6 +50,32 @@ public class WorkerController {
     public WorkerController(WorkerService workerService, TenantResolver tenantResolver) {
         this.workerService = workerService;
         this.tenantResolver = tenantResolver;
+    }
+
+    @PostMapping("/register")
+    public ApiResponse<WorkerStatusDto> register(
+            @Valid @RequestBody WorkerRegisterRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        WorkerStatusDto dto = workerService.register(tenantId, request);
+        return ApiResponse.success(dto);
+    }
+
+    @PostMapping("/{id}/heartbeat")
+    public ApiResponse<WorkerStatusDto> heartbeat(
+            @PathVariable UUID id,
+            @Valid @RequestBody WorkerHeartbeatRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        // 路径 id 与 body id 必须一致（防止误传）
+        if (!id.equals(request.id())) {
+            throw new IllegalArgumentException(
+                    "Path id 与 body id 不一致: path=" + id + ", body=" + request.id());
+        }
+        WorkerStatusDto dto = workerService.heartbeat(tenantId, request);
+        return ApiResponse.success(dto);
     }
 
     @GetMapping

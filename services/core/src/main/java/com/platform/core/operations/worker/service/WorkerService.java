@@ -3,8 +3,11 @@ package com.platform.core.operations.worker.service;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import com.platform.core.operations.domain.enums.WorkerRuntimeStatus;
+import com.platform.core.operations.domain.enums.WorkerType;
 import com.platform.core.operations.worker.domain.WorkerStatus;
 import com.platform.core.operations.worker.dto.ListWorkersRequest;
+import com.platform.core.operations.worker.dto.WorkerHeartbeatRequest;
+import com.platform.core.operations.worker.dto.WorkerRegisterRequest;
 import com.platform.core.operations.worker.dto.WorkerStatusDto;
 import com.platform.core.operations.worker.repository.WorkerStatusRepository;
 import org.slf4j.Logger;
@@ -18,13 +21,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Worker 服务（D37.17 运营中心）
  *
  * 核心操作：
+ *  - register：Worker 启动时注册（幂等：同一 workerCode 已存在则更新）
+ *  - heartbeat：周期性心跳上报（更新状态/资源占用/任务进度）
  *  - listWorkers：按租户/类型/状态/Region/关键字查询
  *  - getWorker：单条详情
  *  - pauseWorker：暂停 Worker（RUNNING/IDLE → STOPPED）
@@ -43,10 +50,105 @@ public class WorkerService {
 
     private static final Logger log = LoggerFactory.getLogger(WorkerService.class);
 
+    /** 心跳超时阈值：超过 90s 未上报视为 stale */
+    public static final int HEARTBEAT_TIMEOUT_SEC = 90;
+
     private final WorkerStatusRepository repository;
 
     public WorkerService(WorkerStatusRepository repository) {
         this.repository = repository;
+    }
+
+    /**
+     * 注册 Worker（幂等：同一 workerCode 已存在则更新）
+     *
+     * <p>Worker 启动时调用，注册成功后状态为 IDLE，等待调度器分配任务。
+     *
+     * @param tenantId 租户 ID
+     * @param request 注册请求
+     * @return Worker 状态
+     */
+    @Transactional
+    public WorkerStatusDto register(UUID tenantId, WorkerRegisterRequest request) {
+        Optional<WorkerStatus> existing = repository.findByTenantIdAndWorkerCode(
+                tenantId, request.workerCode());
+
+        WorkerStatus entity = existing.orElseGet(WorkerStatus::new);
+        if (existing.isEmpty()) {
+            entity.setTenantId(tenantId);
+            entity.setWorkerCode(request.workerCode());
+        }
+        entity.setType(request.type());
+        entity.setRegion(request.region());
+        entity.setCustomerSiteWorker(request.isCustomerSiteWorker());
+        // 首次注册：状态置 IDLE；已存在则保留原状态（避免重启清空 isolation）
+        if (existing.isEmpty()) {
+            entity.setStatus(WorkerRuntimeStatus.IDLE);
+        }
+        entity.setLastHeartbeat(Instant.now());
+        // 资源占用初值（请求未提供时默认 0）
+        BigDecimal cpu = request.cpuPercent() != null ? request.cpuPercent() : BigDecimal.ZERO;
+        BigDecimal mem = request.memoryPercent() != null ? request.memoryPercent() : BigDecimal.ZERO;
+        entity.setCpuPercent(cpu);
+        entity.setMemoryPercent(mem);
+        if (entity.getProcessedCount() == 0 && entity.getFailedCount() == 0) {
+            entity.setProcessedCount(0);
+            entity.setFailedCount(0);
+            entity.setAvgDurationSec(0);
+        }
+
+        WorkerStatus saved = repository.save(entity);
+        log.info("Worker registered: id={}, workerCode={}, tenantId={}",
+                saved.getId(), saved.getWorkerCode(), tenantId);
+        return toDto(saved);
+    }
+
+    /**
+     * Worker 心跳上报
+     *
+     * <p>更新状态为 RUNNING（有任务时）或 IDLE（无任务时），刷新资源占用与统计。
+     * 已隔离 Worker 心跳仅刷新 lastHeartbeat，不改变状态。
+     *
+     * @param tenantId 租户 ID
+     * @param request 心跳请求
+     * @return 更新后的 Worker 状态
+     */
+    @Transactional
+    public WorkerStatusDto heartbeat(UUID tenantId, WorkerHeartbeatRequest request) {
+        WorkerStatus entity = repository.findByIdAndTenantId(request.id(), tenantId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
+                        "WorkerStatus not found: " + request.id()));
+
+        entity.setLastHeartbeat(Instant.now());
+        if (request.currentTaskId() != null) {
+            entity.setCurrentTaskId(request.currentTaskId());
+            entity.setCurrentTaskPayload(request.currentTaskPayload());
+            if (!entity.isIsolated()) {
+                entity.setStatus(WorkerRuntimeStatus.RUNNING);
+            }
+        } else {
+            entity.setCurrentTaskId(null);
+            entity.setCurrentTaskPayload(null);
+            if (!entity.isIsolated() && entity.getStatus() == WorkerRuntimeStatus.RUNNING) {
+                entity.setStatus(WorkerRuntimeStatus.IDLE);
+            }
+        }
+        entity.setProcessedCount(request.processedCount());
+        entity.setFailedCount(request.failedCount());
+        entity.setAvgDurationSec(request.avgDurationSec());
+        if (request.cpuPercent() != null) {
+            entity.setCpuPercent(request.cpuPercent());
+        }
+        if (request.memoryPercent() != null) {
+            entity.setMemoryPercent(request.memoryPercent());
+        }
+
+        WorkerStatus saved = repository.save(entity);
+        log.debug("Worker heartbeat: id={}, status={}, processedCount={}",
+                saved.getId(), saved.getStatus(), saved.getProcessedCount());
+        return toDto(saved);
     }
 
     @Transactional(readOnly = true)
