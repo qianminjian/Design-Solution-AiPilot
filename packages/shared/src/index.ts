@@ -137,3 +137,24 @@ export * from "./schemas/governance.schema";
 // 使其在 SLO 报表自动排除或单独计量，避免污染业务指标。
 // 多语言共享：TypeScript（BFF/前端）+ Java（Core）+ Python（AI）使用相同常量。
 export * from "./testing/test-run-id";
+
+// ── 事件契约（P0-2.2 Event/AsyncAPI 契约，对齐 D35.13/14/22/24）──
+// CloudEvent 信封 + Change/Operations/Governance 域事件 schema
+// + 事件校验工具（去重/顺序/缺口检测/有界重试/DLQ/upcast）。
+// V1 策略：共享 zod schema 软校验 + 事件语义工具函数，
+// V2 演进：基于 schema 生成 AsyncAPI 文档并接入 Schema Registry。
+export * from "./events";
+
+// ── 文件契约（P0-2.3 File/Manifest 契约，对齐 security.md §4 + D35.10）──
+// 文件校验工具（扩展名白名单/MIME/魔数/大小/路径穿越/哈希/polyglot）
+// + FileManifest 证据契约（对象元数据 + 保留策略 + 签名）。
+// V1 策略：共享校验工具供 BFF 上传链路与 CDE 文档服务调用，
+// V2 演进：Sandbox 深度扫描（polyglot/macro/parser crash/CDR bypass）。
+export * from "./files";
+
+// ── Provider 契约（P0-2.4 AI/通知/分析 Provider 契约，对齐 D40 + D35.10）──
+// Provider 能力目录/统一响应（含 request id）/错误分类/降级策略
+// + 降级决策工具（错误分类/可重试/退避/部分响应检测）。
+// V1 策略：共享契约供 AI Service（Python）与 BFF 降级决策使用，
+// V2 演进：WireMock/MockServer stub 模拟 Provider 故障做集成验证。
+export * from "./providers";

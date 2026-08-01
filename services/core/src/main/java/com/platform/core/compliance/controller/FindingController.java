@@ -3,6 +3,7 @@ package com.platform.core.compliance.controller;
 import com.platform.core.common.response.ApiResponse;
 import com.platform.core.common.response.PageResponse;
 import com.platform.core.compliance.dto.ComplianceFindingDto;
+import com.platform.core.compliance.dto.CreateFindingRequest;
 import com.platform.core.compliance.dto.FindingCommandRequest;
 import com.platform.core.compliance.service.FindingService;
 import com.platform.core.iam.support.TenantResolver;
@@ -15,13 +16,26 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.UUID;
 
+/**
+ * 合规发现 Controller（D45.22 缺陷治理 / D45.25 Finding API，SIT P0-13.1）
+ *
+ * 路由：/api/v1/compliance-findings/**
+ *  - GET /                列表（severity/status/assignedTo 过滤）
+ *  - POST /               创建 Finding
+ *  - GET /{id}            详情
+ *  - PATCH /{id}          命令与属性更新
+ *  - POST /{id}:retest    独立复测（CRITICAL 强制独立复测）
+ *  - GET /release-blocked 4 等级发布规则阻断判定
+ */
 @RestController
 @RequestMapping("/api/v1/compliance-findings")
 public class FindingController {
@@ -66,6 +80,15 @@ public class FindingController {
         return PageResponse.success(result.getContent(), result.getTotalElements(), safePage, safeSize);
     }
 
+    @PostMapping
+    public ApiResponse<ComplianceFindingDto> create(
+            @Valid @RequestBody CreateFindingRequest request,
+            HttpServletRequest httpRequest) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        ComplianceFindingDto dto = findingService.create(tenantId, request);
+        return ApiResponse.success(dto);
+    }
+
     @PatchMapping("/{id}")
     public ApiResponse<ComplianceFindingDto> update(
             @PathVariable UUID id,
@@ -74,5 +97,24 @@ public class FindingController {
         UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
         ComplianceFindingDto dto = findingService.updateFinding(tenantId, id, request);
         return ApiResponse.success(dto);
+    }
+
+    /** 独立复测（D45.25：POST /findings/{id}:retest） */
+    @PostMapping("/{id}:retest")
+    public ApiResponse<ComplianceFindingDto> retest(
+            @PathVariable UUID id,
+            @Valid @RequestBody FindingCommandRequest request,
+            HttpServletRequest httpRequest) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        ComplianceFindingDto dto = findingService.retest(tenantId, id, request);
+        return ApiResponse.success(dto);
+    }
+
+    /** 4 等级发布规则阻断判定（D45.22：CRITICAL 未关闭 / HIGH 活跃阻断发布） */
+    @GetMapping("/release-blocked")
+    public ApiResponse<Map<String, Boolean>> releaseBlocked(HttpServletRequest httpRequest) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        boolean blocked = findingService.isReleaseBlocked(tenantId);
+        return ApiResponse.success(Map.of("blocked", blocked));
     }
 }

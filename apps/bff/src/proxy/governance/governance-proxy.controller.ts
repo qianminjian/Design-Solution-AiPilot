@@ -21,6 +21,9 @@ import {
   governanceAuditLogListResponseSchema,
   governanceEvidencePackageSchema,
   governanceEvidencePackageListResponseSchema,
+  governanceTestEvidenceSchema,
+  governanceTestEvidenceListResponseSchema,
+  governanceTestEvidenceVerifyResultSchema,
   governanceBackupPointSchema,
   governanceBackupListResponseSchema,
   governanceRestoreDrillSchema,
@@ -118,6 +121,58 @@ export class GovernanceProxyController {
     );
   }
 
+  // ── TestEvidence：/v1/test-evidence/**（P0-1.4 测试报告与证据存储） ──
+
+  @All("test-evidence")
+  @All("test-evidence/*")
+  proxyTestEvidence(@Req() request: Request): Promise<ProxyResult> {
+    return proxyWithSoftValidation(
+      request,
+      this.proxyService,
+      this.schemaValidator,
+      TEST_EVIDENCE_RULES,
+    );
+  }
+
+  // ── TestException：/v1/test-exceptions/**（P0-13.3 例外治理） ──
+
+  @All("test-exceptions")
+  @All("test-exceptions/*")
+  proxyTestExceptions(@Req() request: Request): Promise<ProxyResult> {
+    return proxyWithSoftValidation(
+      request,
+      this.proxyService,
+      this.schemaValidator,
+      EMPTY_RULES,
+    );
+  }
+
+  // ── FlakyCase：/v1/flaky-cases/**（P0-13.2 Flaky 治理） ──
+
+  @All("flaky-cases")
+  @All("flaky-cases/*")
+  proxyFlakyCases(@Req() request: Request): Promise<ProxyResult> {
+    return proxyWithSoftValidation(
+      request,
+      this.proxyService,
+      this.schemaValidator,
+      EMPTY_RULES,
+    );
+  }
+
+  // ── QualityGate：/v1/quality-gates/**（P0-13.4 质量门禁签署） ──
+
+  @All("quality-gates")
+  @All("quality-gates/*")
+  proxyQualityGates(@Req() request: Request): Promise<ProxyResult> {
+    return proxyWithSoftValidation(
+      request,
+      this.proxyService,
+      this.schemaValidator,
+      EMPTY_RULES,
+    );
+  }
+
   // ── Backup/Restore：/v1/backups/** + /v1/restore-drills/** ──
 
   @All("backups")
@@ -148,6 +203,9 @@ export class GovernanceProxyController {
 // 路径正则使用 ^ 与 $ 精确匹配，避免误匹配子路径。
 // 列表响应 schema 验证整个 { items, total } 结构。
 // 详情响应 schema 验证单个 DTO。
+
+/** 空规则：纯透传不验证（P0-13.2/13.3/13.4 域 V1 zod schema 待补齐） */
+const EMPTY_RULES: readonly GovernanceSchemaMatchRule[] = [];
 
 const ACCESS_GRANT_RULES: readonly GovernanceSchemaMatchRule[] = [
   // GET /v1/access-grants（列表）
@@ -223,6 +281,37 @@ const EVIDENCE_PACKAGE_RULES: readonly GovernanceSchemaMatchRule[] = [
     pathRegex: /^\/v1\/evidence-packages\/[^/]+$/,
     schema: governanceEvidencePackageSchema,
     operation: "getEvidencePackage",
+  },
+];
+
+const TEST_EVIDENCE_RULES: readonly GovernanceSchemaMatchRule[] = [
+  // GET /v1/test-evidence（列表）
+  {
+    method: "GET",
+    pathRegex: /^\/v1\/test-evidence$/,
+    schema: governanceTestEvidenceListResponseSchema,
+    operation: "listTestEvidence",
+  },
+  // GET /v1/test-evidence/:id（详情）
+  {
+    method: "GET",
+    pathRegex: /^\/v1\/test-evidence\/[^/]+$/,
+    schema: governanceTestEvidenceSchema,
+    operation: "getTestEvidence",
+  },
+  // POST /v1/test-evidence（创建）
+  {
+    method: "POST",
+    pathRegex: /^\/v1\/test-evidence$/,
+    schema: governanceTestEvidenceSchema,
+    operation: "createTestEvidence",
+  },
+  // POST /v1/test-evidence/verify（hash 校验）
+  {
+    method: "POST",
+    pathRegex: /^\/v1\/test-evidence\/verify$/,
+    schema: governanceTestEvidenceVerifyResultSchema,
+    operation: "verifyTestEvidence",
   },
 ];
 

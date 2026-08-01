@@ -105,6 +105,15 @@ app:
       initial-delay-seconds: ${TOKEN_CLEANUP_INITIAL_DELAY_SECONDS:60}
       # 单批最大处理量，默认 500 条（防止内存峰值）
       batch-size: ${TOKEN_CLEANUP_BATCH_SIZE:500}
+    # P0-13.3 测试例外到期自动撤销任务配置（D45.22 验收：Conditional Pass 到期自动撤销）
+    # 定时扫描 status=ACTIVE 且 expiry < NOW() 的测试例外，批量更新为 status=EXPIRED
+    test-exception-cleanup:
+      # 调度间隔（秒），默认 1 小时（3600s）
+      fixed-delay-seconds: ${TEST_EXCEPTION_CLEANUP_FIXED_DELAY_SECONDS:3600}
+      # 应用启动后首次执行延迟（秒），默认 60s（避免启动峰值叠加）
+      initial-delay-seconds: ${TEST_EXCEPTION_CLEANUP_INITIAL_DELAY_SECONDS:60}
+      # 单批最大处理量，默认 500 条（防止内存峰值）
+      batch-size: ${TEST_EXCEPTION_CLEANUP_BATCH_SIZE:500}
   cors:
     allowed-origins: ${CORS_ORIGIN:http://localhost:3000}
   object-storage:

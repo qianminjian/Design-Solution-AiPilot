@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,4 +25,10 @@ public interface ComplianceFindingRepository extends JpaRepository<ComplianceFin
     List<ComplianceFinding> findByResultId(UUID resultId);
 
     long countByTenantIdAndStatus(UUID tenantId, String status);
+
+    /** 4 等级发布规则：CRITICAL 未关闭数量（D45.22） */
+    long countByTenantIdAndSeverityAndStatusNot(UUID tenantId, String severity, String status);
+
+    /** 4 等级发布规则：HIGH 处于指定状态集合数量（D45.22） */
+    long countByTenantIdAndSeverityAndStatusIn(UUID tenantId, String severity, Collection<String> statuses);
 }

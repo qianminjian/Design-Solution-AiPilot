@@ -469,3 +469,90 @@ export type GovernanceRestoreDrill = z.infer<
 export type GovernanceRestoreDrillCreateRequest = z.infer<
   typeof governanceRestoreDrillCreateRequestSchema
 >;
+
+// ── TestEvidence（D45.10 TestEvidence，P0-1.4 测试报告与证据存储） ──
+
+export const governanceTestEvidenceTypeSchema = z.enum([
+  "UNIT",
+  "INTEGRATION",
+  "E2E",
+  "PERFORMANCE",
+  "SECURITY",
+  "ACCEPTANCE",
+  "CONTRACT",
+]);
+
+export const governanceTestEvidenceRetentionSchema = z.enum([
+  "PROJECT_LIFETIME",
+  "LEGAL_HOLD",
+  "DAYS_30",
+  "DAYS_90",
+  "YEAR_1",
+]);
+
+export const governanceTestEvidenceSchema = z.object({
+  id: z.string().uuid(),
+  evidenceType: governanceTestEvidenceTypeSchema,
+  objectUri: z.string().min(1).max(512),
+  hash: z.string().regex(/^[a-f0-9]{64}$/, "hash must be SHA-256 hex"),
+  tool: z.string().min(1).max(100),
+  version: z.string().min(1).max(32),
+  rawSummary: z.string().min(1).max(512),
+  retention: governanceTestEvidenceRetentionSchema,
+  classification: z.enum(["L1", "L2", "L3", "L4", "L5"]),
+  signatureAlgorithm: z.string().max(32).optional(),
+  signatureValue: z.string().max(1024).optional(),
+  objectId: z.string().max(200).optional(),
+  objectType: z.string().max(100).optional(),
+  testRunId: z.string().max(64).optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const governanceTestEvidenceListResponseSchema = z.object({
+  items: z.array(governanceTestEvidenceSchema),
+  total: z.number().int().nonnegative(),
+});
+
+export const governanceTestEvidenceCreateRequestSchema = z.object({
+  evidenceType: governanceTestEvidenceTypeSchema,
+  objectUri: z.string().min(1).max(512),
+  hash: z.string().regex(/^[a-f0-9]{64}$/, "hash must be SHA-256 hex"),
+  tool: z.string().min(1).max(100),
+  version: z.string().min(1).max(32),
+  rawSummary: z.string().min(1).max(512),
+  retention: governanceTestEvidenceRetentionSchema,
+  classification: z.enum(["L1", "L2", "L3", "L4", "L5"]),
+  signatureAlgorithm: z.string().max(32).optional(),
+  signatureValue: z.string().max(1024).optional(),
+  objectId: z.string().max(200).optional(),
+  objectType: z.string().max(100).optional(),
+  testRunId: z.string().max(64).optional(),
+});
+
+export const governanceTestEvidenceVerifyRequestSchema = z.object({
+  evidenceId: z.string().uuid(),
+  actualHash: z
+    .string()
+    .regex(/^[a-f0-9]{64}$/, "actualHash must be SHA-256 hex"),
+});
+
+export const governanceTestEvidenceVerifyResultSchema = z.object({
+  evidenceId: z.string().uuid(),
+  verified: z.boolean(),
+  storedHash: z.string().regex(/^[a-f0-9]{64}$/),
+  actualHash: z.string().regex(/^[a-f0-9]{64}$/),
+});
+
+export type GovernanceTestEvidence = z.infer<
+  typeof governanceTestEvidenceSchema
+>;
+export type GovernanceTestEvidenceCreateRequest = z.infer<
+  typeof governanceTestEvidenceCreateRequestSchema
+>;
+export type GovernanceTestEvidenceVerifyRequest = z.infer<
+  typeof governanceTestEvidenceVerifyRequestSchema
+>;
+export type GovernanceTestEvidenceVerifyResult = z.infer<
+  typeof governanceTestEvidenceVerifyResultSchema
+>;
