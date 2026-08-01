@@ -11,6 +11,11 @@ COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 COPY packages/shared/ packages/shared/
 COPY apps/web/ apps/web/
 
+# NEXT_PUBLIC_* 变量在 next build 时内联进客户端 bundle，必须通过构建参数注入
+# compose.production.yml 的 build.args.NEXT_PUBLIC_BFF_URL 在这里生效
+ARG NEXT_PUBLIC_BFF_URL=""
+ENV NEXT_PUBLIC_BFF_URL=${NEXT_PUBLIC_BFF_URL}
+
 RUN echo "shamefully-hoist=true" > .npmrc && \
     echo "registry=https://registry.npmmirror.com" >> .npmrc && \
     pnpm install && \
