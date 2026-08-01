@@ -193,6 +193,126 @@ export interface CreateRoleBindingRequest {
 
 // ── API 端点定义 ──
 
+// ── 用户偏好设置（V1） ──
+
+/** 单位制 */
+export type UnitSystem = "metric" | "imperial";
+
+/** 主题模式 */
+export type ThemeMode = "light" | "dark" | "system";
+
+/** 用户偏好设置 DTO（不含 locale/timezone，已存在 Principal 中） */
+export interface UserPreferencesDto {
+  id: string | null;
+  principalId: string;
+  /** 单位制 */
+  unitSystem: UnitSystem;
+  /** 币种代码 */
+  currency: string;
+  /** 主题模式 */
+  theme: ThemeMode;
+  /** 邮件通知 */
+  emailNotify: boolean;
+  /** 应用内通知 */
+  inAppNotify: boolean;
+  /** 每日摘要 */
+  dailyDigest: boolean;
+  /** @提及通知 */
+  mentionNotify: boolean;
+  /** 显示 AI 安全 Banner（仅影响 UI） */
+  showAiSafetyBanner: boolean;
+  /** 高亮显示人工复核徽章（仅影响 UI） */
+  requireHumanReviewBadge: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+  rowVersion: number | null;
+}
+
+/** 更新用户偏好设置请求（PUT 全量替换） */
+export interface UpdateUserPreferencesRequest {
+  unitSystem: UnitSystem;
+  currency: string;
+  theme: ThemeMode;
+  emailNotify: boolean;
+  inAppNotify: boolean;
+  dailyDigest: boolean;
+  mentionNotify: boolean;
+  showAiSafetyBanner: boolean;
+  requireHumanReviewBadge: boolean;
+}
+
+// ── API Token（V1 IAM Token API） ──
+
+/** API Token 状态：active（生效中）/ expired（已过期）/ revoked（已撤销） */
+export type ApiTokenStatus = "active" | "expired" | "revoked";
+
+/**
+ * API Token DTO（列表/详情查询用，不含 token 明文）
+ *
+ * 安全约束：明文 token 仅在 CreateApiTokenResponse 中返回一次。
+ */
+export interface ApiTokenDto {
+  id: string;
+  principalId: string;
+  /** Token 名称（用户可读，租户+主体范围内唯一） */
+  name: string;
+  /** 前缀（仅展示前 12 位用于识别） */
+  prefix: string;
+  /** 权限范围（最小权限原则） */
+  scopes: string[];
+  status: ApiTokenStatus;
+  /** 过期时间（ISO-8601） */
+  expiresAt: string;
+  /** 最后使用时间（首次使用后填充，可能为 null） */
+  lastUsedAt: string | null;
+  /** 撤销时间（仅 status=revoked 时填充，可能为 null） */
+  revokedAt: string | null;
+  /** 撤销原因（可选，用于审计追溯） */
+  revokedReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  rowVersion: number;
+}
+
+/**
+ * 创建 API Token 请求
+ *
+ * 安全约束：
+ *  - name：3-100 字符，租户+主体范围内唯一
+ *  - scopes：至少 1 个，遵循最小权限原则
+ *  - expiresAt：必须晚于当前时间，且 ≤ 当前时间 + 90 天
+ */
+export interface CreateApiTokenRequest {
+  name: string;
+  scopes: string[];
+  /** 过期时间（ISO-8601 字符串，由后端解析为 Instant） */
+  expiresAt: string;
+}
+
+/**
+ * 创建 API Token 响应
+ *
+ * 安全约束：包含 plainToken 字段，仅在创建时返回一次。
+ * 前端必须立即复制保存，关闭对话框后无法再次获取。
+ */
+export interface CreateApiTokenResponse {
+  id: string;
+  principalId: string;
+  name: string;
+  prefix: string;
+  /** 完整明文 token（仅本次响应返回，之后不可获取） */
+  plainToken: string;
+  scopes: string[];
+  status: ApiTokenStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/** 撤销 API Token 请求（reason 可选，用于审计追溯） */
+export interface RevokeApiTokenRequest {
+  reason?: string;
+}
+
 /**
  * IAM API 端点
  * 基础路径：/api/v1
@@ -201,6 +321,11 @@ export const IamApiPaths = {
   // 主体
   principals: "/api/v1/principals",
   principal: (id: string) => `/api/v1/principals/${id}`,
+  // 当前用户偏好设置（V1）
+  myPreferences: "/api/v1/users/me/preferences",
+  // API Tokens（V1）
+  apiTokens: "/api/v1/iam/tokens",
+  apiToken: (id: string) => `/api/v1/iam/tokens/${id}`,
   // 组织
   organizations: "/api/v1/organizations",
   organization: (id: string) => `/api/v1/organizations/${id}`,

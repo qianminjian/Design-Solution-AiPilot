@@ -106,6 +106,7 @@ export class ChangeProxyController {
       HttpHeader.IDEMPOTENCY_KEY,
       "content-type",
       HttpHeader.ACCEPT_LANGUAGE,
+      HttpHeader.X_TEST_RUN_ID,
     ];
 
     for (const name of forwardHeaderNames) {

@@ -14,16 +14,16 @@ V1 技术试点聚焦：通用英文境外、中小型办公建筑、建筑专�
 
 ## 技术栈
 
-| 层 | 技术 | 语言 |
-|----|------|------|
-| Web 工作台 | Next.js 15 + React 19 + Ant Design 5 + TanStack Query | TypeScript |
-| API BFF | NestJS 11 | TypeScript |
-| 核心业务服务 | Java 21 + Spring Boot 3.4 | Java |
-| AI 服务 | Python 3.12 + FastAPI | Python |
-| 数据库 | PostgreSQL 16 + Flyway | — |
-| 对象存储 | S3 API（MinIO 开发环境） | — |
-| 容器编排 | Docker Compose（V0）→ K8s（V2+） | — |
-| Monorepo 工具 | pnpm workspace + Turborepo | — |
+| 层            | 技术                                                  | 语言       |
+| ------------- | ----------------------------------------------------- | ---------- |
+| Web 工作台    | Next.js 15 + React 19 + Ant Design 5 + TanStack Query | TypeScript |
+| API BFF       | NestJS 11                                             | TypeScript |
+| 核心业务服务  | Java 21 + Spring Boot 3.4                             | Java       |
+| AI 服务       | Python 3.12 + FastAPI                                 | Python     |
+| 数据库        | PostgreSQL 16 + Flyway                                | —          |
+| 对象存储      | S3 API（MinIO 开发环境）                              | —          |
+| 容器编排      | Docker Compose（V0）→ K8s（V2+）                      | —          |
+| Monorepo 工具 | pnpm workspace + Turborepo                            | —          |
 
 ## 项目结构
 
@@ -78,3 +78,13 @@ pnpm format                 # Prettier 格式化
 
 条件性设计基线（Conditional Design Baseline），尚未达到 Implementation Ready。
 R1 业务决策已冻结（OD-01 至 OD-06），R2 技术基线实例化主体完成，R3 GoldenDataset 待启动。
+
+## 远程验证环境（2026-08-01 起）
+
+本项目已部署远程验证环境，所有验证类专题统一在远程服务器实施。
+
+- **远程环境**：7 个服务（postgres、minio、chromadb、core、ai、bff、web）+ Nginx 反向代理
+- **本地职责**：代码编辑、单元测试、lint、typecheck、git 操作
+- **远程职责**：集成测试、E2E、性能、安全、Chaos、UAT 等所有验证类专题
+- **资源策略**：远程资源充足，不限制内存，可并行 3-5 个子 agent
+- **详细规则**：见 `.trae/rules/remote-verification.md`

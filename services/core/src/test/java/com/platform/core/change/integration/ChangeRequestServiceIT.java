@@ -307,7 +307,7 @@ class ChangeRequestServiceIT extends AbstractIntegrationTest {
 
         // Act
         ChangeRequestDto dto = changeRequestService.submitImpactAssessment(
-                tenantId, submitted.getId(), "initiator@platform.local", request);
+                tenantId, submitted.getId(), "initiator@platform.local", null, request);
 
         // Assert
         assertAll(
@@ -333,7 +333,7 @@ class ChangeRequestServiceIT extends AbstractIntegrationTest {
 
         // Act
         ChangeRequestDto dto = changeRequestService.submitImpactAssessment(
-                tenantId, inAssessment.getId(), "initiator@platform.local", request);
+                tenantId, inAssessment.getId(), "initiator@platform.local", null, request);
 
         // Assert
         assertAll(
@@ -360,7 +360,7 @@ class ChangeRequestServiceIT extends AbstractIntegrationTest {
         // Act + Assert
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> changeRequestService.submitImpactAssessment(
-                        tenantId, critical.getId(), "initiator@platform.local", request));
+                        tenantId, critical.getId(), "initiator@platform.local", null, request));
         assertEquals(400, ex.getHttpStatus().value());
         assertTrue(ex.getMessage().contains("stepUpToken"));
     }
@@ -381,7 +381,7 @@ class ChangeRequestServiceIT extends AbstractIntegrationTest {
 
         // Act
         ChangeRequestDto dto = changeRequestService.submitImpactAssessment(
-                tenantId, critical.getId(), "initiator@platform.local", request);
+                tenantId, critical.getId(), "initiator@platform.local", null, request);
 
         // Assert
         assertEquals(ChangeStatus.PENDING_APPROVAL, dto.status());
@@ -404,7 +404,7 @@ class ChangeRequestServiceIT extends AbstractIntegrationTest {
         // Act + Assert
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> changeRequestService.submitImpactAssessment(
-                        tenantId, draft.getId(), "initiator@platform.local", request));
+                        tenantId, draft.getId(), "initiator@platform.local", null, request));
         assertEquals(409, ex.getHttpStatus().value()); // CONFLICT
     }
 

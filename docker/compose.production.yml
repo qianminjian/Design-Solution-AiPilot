@@ -131,6 +131,9 @@ services:
       JWT_REFRESH_TOKEN_EXPIRES_IN: ${JWT_REFRESH_TOKEN_EXPIRES_IN:-7d}
       CORS_ORIGIN: https://yun.gxjugu.com
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Sprint V1.8：AI Service 调用配置（AI 辅助影响分析）
+      AI_SERVICE_URL: http://aidesign-ai:8000
+      AI_TIMEOUT_SECONDS: ${LLM_TIMEOUT:-120}
     ports:
       - "127.0.0.1:18040:8080"
     depends_on:

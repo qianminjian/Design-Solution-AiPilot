@@ -1,0 +1,203 @@
+# CI / Integration Environment Override
+# 对齐 D44.5 测试环境分级：Integration 环境（合并候选 / 沙箱 Provider / 虚拟 Worker / 契约-迁移-兼容测试）
+#
+# 用法：
+#   docker compose -f docker/compose.yml -f docker/compose.ci.yml -p platform-ci up -d
+#
+# 设计原则（D44.5 + security.md）：
+#   1. 独立账号/订阅/Cluster/KMS Root/数据库/Bucket/Topic/域名/身份信任域
+#   2. 禁止把生产数据复制到非生产环境（合成数据 + 脱敏快照）
+#   3. CI 环境使用镜像 digest 锁定（image: 字段），不在 CI 内重新 build
+#   4. CI 环境不暴露公网端口，仅通过 internal 网络通信
+#   5. CI 环境禁用 restart 策略（容器退出后不自动重启，避免卡死 CI 流水线）
+#   6. CI 环境日志级别 verbose（debug）便于排查
+#   7. CI 环境使用 TEST_RUN_ID 标记测试数据，便于 P0-1.2 数据隔离清理
+#
+# 与基础 compose.yml 的差异：
+#   - 资源限制更小（CI 并行多任务，单任务资源压缩）
+#   - health check 间隔更短（快速发现失败）
+#   - 启动等待时间更短（CI 流水线总时长控制）
+#   - 不暴露端口（仅通过 internal 网络访问）
+#   - SPRING_PROFILES_ACTIVE=ci（启用 CI 专用配置）
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: ${DB_NAME:-design_platform_ci}
+      POSTGRES_USER: ${DB_USER:-platform_ci}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-platform_ci_pass}
+    mem_limit: 192m
+    memswap_limit: 192m
+    healthcheck:
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    restart: "no"
+    ports: !reset []
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin_ci}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin_ci_pass}
+    mem_limit: 192m
+    memswap_limit: 192m
+    healthcheck:
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: "no"
+    ports: !reset []
+
+  minio-init:
+    environment:
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data-ci}
+    restart: "no"
+
+  chromadb:
+    environment:
+      CHROMA_SERVER_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:-chroma:chromasecret_ci}
+    mem_limit: 384m
+    memswap_limit: 384m
+    healthcheck:
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    restart: "no"
+    ports: !reset []
+
+  core-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: ci
+      DB_NAME: ${DB_NAME:-design_platform_ci}
+      DB_USER: ${DB_USER:-platform_ci}
+      DB_PASSWORD: ${DB_PASSWORD:-platform_ci_pass}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin_ci}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin_ci_pass}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data-ci}
+      LOG_LEVEL: debug
+      # P0-1.2 测试数据隔离标记（由 CI 流水线注入唯一 ID）
+      TEST_RUN_ID: ${TEST_RUN_ID:-ci-unknown}
+      # CI 环境 LLM 调用强制 Mock（避免付费 API 调用）
+      LLM_API_KEY: ""
+      LLM_API_BASE: "http://ai-service:8000/mock"
+    mem_limit: 256m
+    memswap_limit: 256m
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    restart: "no"
+    ports: !reset []
+
+  ai-service:
+    environment:
+      ENVIRONMENT: ci
+      LOG_LEVEL: debug
+      DB_NAME: ${DB_NAME:-design_platform_ci}
+      DB_USER: ${DB_USER:-platform_ci}
+      DB_PASSWORD: ${DB_PASSWORD:-platform_ci_pass}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin_ci}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin_ci_pass}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data-ci}
+      CHROMADB_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:-chroma:chromasecret_ci}
+      # CI 环境强制禁用真实 LLM 调用（对齐 testing.md §4.2 LLM Mock 红线）
+      LLM_API_KEY: ""
+      LLM_API_BASE: "http://localhost:9999/mock-llm"
+      TEST_RUN_ID: ${TEST_RUN_ID:-ci-unknown}
+    mem_limit: 192m
+    memswap_limit: 192m
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: "no"
+    ports: !reset []
+
+  bff:
+    environment:
+      NODE_ENV: test
+      LOG_LEVEL: debug
+      TEST_RUN_ID: ${TEST_RUN_ID:-ci-unknown}
+    mem_limit: 96m
+    memswap_limit: 96m
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: "no"
+    ports: !reset []
+
+  web:
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_BFF_URL: ""
+      TEST_RUN_ID: ${TEST_RUN_ID:-ci-unknown}
+    mem_limit: 192m
+    memswap_limit: 192m
+    healthcheck:
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    restart: "no"
+    ports: !reset []
+
+  # ─────────────────────────────────────────────────────────────
+  # Pact Broker（P0-1.3 契约测试基础设施）
+  #
+  # 对齐：
+  # - @design/D45-测试-验收体系.md §D45.11 HTTP/OpenAPI 契约
+  # - SIT-IMPLEMENTATION-ROADMAP.md §1.3 契约测试基础设施
+  #
+  # V1 策略：用 zod 共享 schema 替代完整 Pact Broker
+  # （见 packages/shared/src/schemas/*.schema.ts + contracts/pact/）
+  # V2 演进：基于 zod schema 自动生成 Pact 契约文件并 push 到此 Broker
+  #
+  # 默认禁用（PACT_BROKER_ENABLED=false），启用时通过环境变量覆盖
+  # ─────────────────────────────────────────────────────────────
+  pact-broker:
+    # 使用官方 Pact Broker 镜像，tag 在 docker/.env.example 中可调整
+    # V1 默认禁用（profiles: ["pact"]），启用命令：
+    #   docker compose -f docker/compose.yml -f docker/compose.ci.yml --profile pact up -d pact-broker
+    image: pactfoundation/pact-broker:${PACT_BROKER_VERSION:-2.111.0.1}
+    profiles: ["pact"]
+    environment:
+      # CI 环境使用 sqlite 简化部署（生产用 postgresql，见官方文档）
+      PACT_BROKER_DATABASE_ADAPTER: sqlite
+      PACT_BROKER_DATABASE_NAME: /data/pact_broker.sqlite
+      # 基础认证（CI 流水线访问凭证）
+      PACT_BROKER_BASIC_AUTH_USERNAME: ${PACT_BROKER_USERNAME:-pact_ci}
+      PACT_BROKER_BASIC_AUTH_PASSWORD: ${PACT_BROKER_PASSWORD:-pact_ci_pass}
+      # 写权限校验（仅允许 CI 流水线写入，读权限开放给所有 CI 任务）
+      PACT_BROKER_BASIC_AUTH_WRITE_USERNAME: ${PACT_BROKER_WRITE_USERNAME:-pact_ci_writer}
+      PACT_BROKER_BASIC_AUTH_WRITE_PASSWORD: ${PACT_BROKER_WRITE_PASSWORD:-pact_ci_writer_pass}
+      # CI 环境日志级别 verbose
+      PACT_BROKER_LOG_LEVEL: DEBUG
+    volumes:
+      - pact-broker-data:/data:rw
+    mem_limit: 192m
+    memswap_limit: 192m
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-qO-",
+          "http://localhost:9292/diagnostic/status/heartbeat",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: "no"
+    ports: !reset []
+
+volumes:
+  pact-broker-data:
+    name: ${COMPOSE_PROJECT_NAME:-platform-ci}-pact-broker-data

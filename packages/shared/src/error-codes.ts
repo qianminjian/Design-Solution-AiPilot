@@ -122,6 +122,8 @@ export const HttpHeader = {
   X_TRACE_ID: "x-trace-id",
   /** 租户 ID 路由提示 */
   X_TENANT_ID: "x-tenant-id",
+  /** 用户 ID 路由提示（A-61 P0-1 修复：由 BFF 从 JWT 解析后强制注入，禁止客户端直接传入） */
+  X_USER_ID: "x-user-id",
   /** 项目上下文提示 */
   X_PROJECT_ID: "x-project-id",
   /** 幂等键 */
@@ -137,6 +139,19 @@ export const HttpHeader = {
   CONTENT_LANGUAGE: "content-language",
   /** 重试建议 */
   RETRY_AFTER: "retry-after",
+  /**
+   * 测试运行 ID（P0-1.2 测试数据隔离）
+   *
+   * 用途：CI 流水线注入唯一标识，标记测试产生的审计日志、通知、计量数据，
+   * 使其在 SLO 报表自动排除或单独计量，避免污染业务指标。
+   *
+   * 取值：
+   *  - 未设置或 "untracked"：未标记（生产或本地开发默认值）
+   *  - UUID 或 `${github.run_id}-${github.run_attempt}` 格式：CI 流水线注入
+   *
+   * 权威源：@design/D43-SLO-运营报表.md §测试数据排除规则
+   */
+  X_TEST_RUN_ID: "x-test-run-id",
 } as const;
 
 export type HttpHeader = (typeof HttpHeader)[keyof typeof HttpHeader];

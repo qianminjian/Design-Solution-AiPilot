@@ -22,7 +22,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.never;
 
 /**
  * AsyncAuditWriter 单元测试
@@ -32,6 +31,7 @@ import static org.mockito.Mockito.never;
  *   <li>正常写入: 调用 repository.save 并填充所有字段</li>
  *   <li>异常容错: repository 抛异常不应传播</li>
  *   <li>traceId / ipAddress / userAgent / details null 兜底为 "unknown"/""</li>
+ *   <li>P0-1.2: testRunId 写入策略（null/blank/untracked 不写入，真实 ID 写入）</li>
  *   <li>systemActor / anonymousActor 静态工厂方法</li>
  * </ul>
  */
@@ -68,7 +68,8 @@ class AsyncAuditWriterTest {
                     GovernanceAuditCategory.DATA, object, "trace-abc-123",
                     GovernanceResult.SUCCESS, GovernanceRiskLevel.MEDIUM,
                     true, "203.0.113.10", "Mozilla/5.0",
-                    "{\"method\":\"POST\",\"path\":\"/api/v1/projects\"}"
+                    "{\"method\":\"POST\",\"path\":\"/api/v1/projects\"}",
+                    null
             );
 
             // Assert
@@ -88,6 +89,8 @@ class AsyncAuditWriterTest {
             assertThat(saved.getIpAddress()).isEqualTo("203.0.113.10");
             assertThat(saved.getUserAgent()).isEqualTo("Mozilla/5.0");
             assertThat(saved.getDetails()).isEqualTo("{\"method\":\"POST\",\"path\":\"/api/v1/projects\"}");
+            // P0-1.2：null testRunId 不应写入字段（保持 NULL）
+            assertThat(saved.getTestRunId()).isNull();
         }
 
         @Test
@@ -99,7 +102,8 @@ class AsyncAuditWriterTest {
                     "action", GovernanceAuditCategory.ADMIN,
                     new AuditObject("o", "i", "n"),
                     null, GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
-                    true, "127.0.0.1", "UA", "{}"
+                    true, "127.0.0.1", "UA", "{}",
+                    null
             );
 
             ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
@@ -116,7 +120,8 @@ class AsyncAuditWriterTest {
                     "action", GovernanceAuditCategory.ADMIN,
                     new AuditObject("o", "i", "n"),
                     "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
-                    true, null, "UA", "{}"
+                    true, null, "UA", "{}",
+                    null
             );
 
             ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
@@ -133,7 +138,8 @@ class AsyncAuditWriterTest {
                     "action", GovernanceAuditCategory.ADMIN,
                     new AuditObject("o", "i", "n"),
                     "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
-                    true, "127.0.0.1", null, "{}"
+                    true, "127.0.0.1", null, "{}",
+                    null
             );
 
             ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
@@ -150,12 +156,112 @@ class AsyncAuditWriterTest {
                     "action", GovernanceAuditCategory.ADMIN,
                     new AuditObject("o", "i", "n"),
                     "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
-                    true, "127.0.0.1", "UA", null
+                    true, "127.0.0.1", "UA", null,
+                    null
             );
 
             ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
             verify(repository).save(logCaptor.capture());
             assertThat(logCaptor.getValue().getDetails()).isEqualTo("");
+        }
+    }
+
+    @Nested
+    @DisplayName("P0-1.2 testRunId 写入策略")
+    class TestRunIdPolicy {
+
+        @Test
+        @DisplayName("testRunId 为 null 时不应写入字段")
+        void shouldNotSetTestRunIdWhenNull() {
+            writer.writeAsync(
+                    UUID.randomUUID(), Instant.now(),
+                    new AuditActor("u", "u", GovernanceAuditActorType.USER),
+                    "action", GovernanceAuditCategory.ADMIN,
+                    new AuditObject("o", "i", "n"),
+                    "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
+                    true, "127.0.0.1", "UA", "{}",
+                    null
+            );
+
+            ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
+            verify(repository).save(logCaptor.capture());
+            assertThat(logCaptor.getValue().getTestRunId()).isNull();
+        }
+
+        @Test
+        @DisplayName("testRunId 为空字符串时不应写入字段")
+        void shouldNotSetTestRunIdWhenBlank() {
+            writer.writeAsync(
+                    UUID.randomUUID(), Instant.now(),
+                    new AuditActor("u", "u", GovernanceAuditActorType.USER),
+                    "action", GovernanceAuditCategory.ADMIN,
+                    new AuditObject("o", "i", "n"),
+                    "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
+                    true, "127.0.0.1", "UA", "{}",
+                    "   "
+            );
+
+            ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
+            verify(repository).save(logCaptor.capture());
+            assertThat(logCaptor.getValue().getTestRunId()).isNull();
+        }
+
+        @Test
+        @DisplayName("testRunId 为 'untracked' 时不应写入字段（保持 NULL 便于 SLO 报表查询）")
+        void shouldNotSetTestRunIdWhenUntracked() {
+            writer.writeAsync(
+                    UUID.randomUUID(), Instant.now(),
+                    new AuditActor("u", "u", GovernanceAuditActorType.USER),
+                    "action", GovernanceAuditCategory.ADMIN,
+                    new AuditObject("o", "i", "n"),
+                    "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
+                    true, "127.0.0.1", "UA", "{}",
+                    "untracked"
+            );
+
+            ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
+            verify(repository).save(logCaptor.capture());
+            assertThat(logCaptor.getValue().getTestRunId()).isNull();
+        }
+
+        @Test
+        @DisplayName("testRunId 为真实测试运行 ID 时应写入字段")
+        void shouldSetTestRunIdWhenRealTestRun() {
+            String testRunId = "github-run-12345-1";
+
+            writer.writeAsync(
+                    UUID.randomUUID(), Instant.now(),
+                    new AuditActor("u", "u", GovernanceAuditActorType.USER),
+                    "action", GovernanceAuditCategory.ADMIN,
+                    new AuditObject("o", "i", "n"),
+                    "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
+                    true, "127.0.0.1", "UA", "{}",
+                    testRunId
+            );
+
+            ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
+            verify(repository).save(logCaptor.capture());
+            assertThat(logCaptor.getValue().getTestRunId()).isEqualTo(testRunId);
+        }
+
+        @Test
+        @DisplayName("testRunId 为 UUID 格式时应写入字段")
+        void shouldSetTestRunIdWhenUuidFormat() {
+            String testRunId = "550e8400-e29b-41d4-a716-446655440000";
+
+            writer.writeAsync(
+                    UUID.randomUUID(), Instant.now(),
+                    new AuditActor("u", "u", GovernanceAuditActorType.USER),
+                    "action", GovernanceAuditCategory.ADMIN,
+                    new AuditObject("o", "i", "n"),
+                    "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
+                    true, "127.0.0.1", "UA", "{}",
+                    testRunId
+            );
+
+            ArgumentCaptor<AuditLog> logCaptor = ArgumentCaptor.forClass(AuditLog.class);
+            verify(repository).save(logCaptor.capture());
+            assertThat(logCaptor.getValue().getTestRunId()).isEqualTo(testRunId);
         }
     }
 
@@ -177,7 +283,8 @@ class AsyncAuditWriterTest {
                     "action", GovernanceAuditCategory.ADMIN,
                     new AuditObject("o", "i", "n"),
                     "trace", GovernanceResult.SUCCESS, GovernanceRiskLevel.LOW,
-                    true, "127.0.0.1", "UA", "{}"
+                    true, "127.0.0.1", "UA", "{}",
+                    null
             );
 
             // 仍尝试调用 save

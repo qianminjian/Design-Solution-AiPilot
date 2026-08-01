@@ -10,6 +10,7 @@ import {
   Input,
   Modal,
   Select,
+  Skeleton,
   Space,
   Table,
   Tag,
@@ -22,12 +23,14 @@ import {
   CopyOutlined,
   DeleteOutlined,
   PlusOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-import type { AuthContext } from "@design-platform/shared";
+import type { AuthContext, ApiTokenDto } from "@design-platform/shared";
+import {
+  useApiTokens,
+  useCreateApiToken,
+  useRevokeApiToken,
+} from "@/hooks/use-iam";
 
 const { Text, Paragraph } = Typography;
 
@@ -35,157 +38,93 @@ interface ApiTokensPanelProps {
   auth?: AuthContext;
 }
 
-interface ApiToken {
-  id: string;
-  name: string;
-  prefix: string; // 仅展示前 8 位
-  scopes: string[];
-  createdAt: string;
-  expiresAt: string;
-  lastUsedAt?: string;
-  status: "active" | "expired" | "revoked";
-}
-
-/** 仅创建时返回一次的完整 Token（V0：mock 生成） */
-interface CreatedToken {
-  id: string;
-  token: string; // 完整 token，仅本次展示
-  name: string;
-  expiresAt: string;
-}
-
-const MOCK_TOKENS: ApiToken[] = [
-  {
-    id: "tok-001",
-    name: "CI/CD Pipeline",
-    prefix: "dp_live_8a3f",
-    scopes: ["read:projects", "read:documents", "write:publications"],
-    createdAt: "2026-06-01T10:00:00Z",
-    expiresAt: "2026-09-30T23:59:59Z",
-    lastUsedAt: "2026-07-28T08:15:00Z",
-    status: "active",
-  },
-  {
-    id: "tok-002",
-    name: "Local Dev Tool",
-    prefix: "dp_live_2c1b",
-    scopes: ["read:projects", "read:documents"],
-    createdAt: "2026-07-15T14:00:00Z",
-    expiresAt: "2026-08-15T23:59:59Z",
-    lastUsedAt: "2026-07-27T20:30:00Z",
-    status: "active",
-  },
-  {
-    id: "tok-003",
-    name: "Old Export Script",
-    prefix: "dp_live_f0a9",
-    scopes: ["read:documents"],
-    createdAt: "2026-03-01T09:00:00Z",
-    expiresAt: "2026-04-01T23:59:59Z",
-    lastUsedAt: "2026-03-28T11:20:00Z",
-    status: "expired",
-  },
-];
-
-const STATUS_COLOR: Record<ApiToken["status"], string> = {
-  active: "success",
-  expired: "default",
-  revoked: "error",
-};
-
-const STATUS_LABEL: Record<ApiToken["status"], string> = {
-  active: "生效中",
-  expired: "已过期",
-  revoked: "已撤销",
-};
-
 /**
- * API Tokens Tab —— Token 管理
+ * API Tokens Tab —— Token 管理（V1 接入 IAM Token API）
  *
  * 安全约束（security.md §1）：
- *  - Token 仅在创建时返回完整明文，之后不可再获取
+ *  - Token 仅在创建时返回完整明文，关闭对话框后无法再次查看
  *  - 撤销操作不可逆，需二次确认
  *  - 所有 Token 操作触发审计日志
+ *
+ * V1 端点：
+ *  - GET    /api/v1/iam/tokens        查询列表
+ *  - POST   /api/v1/iam/tokens        创建新 Token（返回明文，仅本次）
+ *  - DELETE /api/v1/iam/tokens/{id}   撤销 Token（软撤销）
  */
 export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
   const { message, modal } = App.useApp();
-  const [tokens, setTokens] = useState<ApiToken[]>(MOCK_TOKENS);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createdToken, setCreatedToken] = useState<CreatedToken | null>(null);
+  const [createdToken, setCreatedToken] = useState<string | null>(null);
   const [form] = Form.useForm();
-  const [creating, setCreating] = useState(false);
+
+  // 数据查询
+  const { data: tokens, isLoading, isError, error } = useApiTokens();
+  const createMutation = useCreateApiToken();
+  const revokeMutation = useRevokeApiToken();
 
   const handleCreate = async () => {
     try {
       const values = await form.validateFields();
-      setCreating(true);
-      await new Promise((r) => setTimeout(r, 600));
-      // V0：mock 生成 token
-      const newToken: CreatedToken = {
-        id: `tok-${Date.now()}`,
-        token: `dp_live_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 12)}`,
+      // 转换 expiresAt 为 ISO-8601（前端 date input 是 yyyy-mm-dd，附加 23:59:59Z 表示当天结束）
+      const expiresAtIso = `${values.expiresAt}T23:59:59Z`;
+      const response = await createMutation.mutateAsync({
         name: values.name,
-        expiresAt: values.expiresAt,
-      };
-      setCreatedToken(newToken);
-      setTokens((prev) => [
-        {
-          id: newToken.id,
-          name: newToken.name,
-          prefix: newToken.token.slice(0, 12),
-          scopes: values.scopes,
-          createdAt: new Date().toISOString(),
-          expiresAt: newToken.expiresAt,
-          status: "active",
-        },
-        ...prev,
-      ]);
-      setCreateOpen(false);
+        scopes: values.scopes,
+        expiresAt: expiresAtIso,
+      });
+      // 显示明文 token（仅本次）
+      setCreatedToken(response.plainToken);
+      message.success("Token 创建成功，请立即复制保存");
       form.resetFields();
-      message.success("Token 已创建，请立即复制保存");
+      setCreateOpen(false);
     } catch (err) {
-      message.error(err instanceof Error ? err.message : "创建失败");
-    } finally {
-      setCreating(false);
+      // mutation 失败或表单校验失败
+      if (err instanceof Error && err.message) {
+        message.error(err.message);
+      } else if (createMutation.isError) {
+        message.error("创建失败，请稍后重试");
+      }
     }
   };
 
-  const handleRevoke = (token: ApiToken) => {
+  const handleRevoke = (token: ApiTokenDto) => {
     modal.confirm({
-      title: `撤销 Token "${token.name}"？`,
-      icon: <ExclamationCircleOutlined />,
+      title: "确认撤销 Token",
       content: (
         <Space direction="vertical" size={4}>
-          <Text>此操作不可逆，使用该 Token 的所有集成将立即失效。</Text>
+          <Text>即将撤销 Token：{token.name}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            影响范围：{token.scopes.length} 个 scope · 创建于{" "}
-            {new Date(token.createdAt).toLocaleDateString()}
-          </Text>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            建议先在 CI/CD 中替换该 Token，再执行撤销。
+            撤销操作不可逆，撤销后该 Token 立即失效。
           </Text>
         </Space>
       ),
-      okText: "确认撤销",
+      okText: "撤销",
       okType: "danger",
       cancelText: "取消",
-      onOk: () => {
-        setTokens((prev) =>
-          prev.map((t) =>
-            t.id === token.id ? { ...t, status: "revoked" } : t,
-          ),
-        );
-        message.success(`已撤销 Token "${token.name}"（Mock，审计日志已记录）`);
+      onOk: async () => {
+        try {
+          await revokeMutation.mutateAsync({
+            id: token.id,
+            reason: "用户主动撤销",
+          });
+          message.success("Token 已撤销");
+        } catch (err) {
+          message.error(err instanceof Error ? err.message : "撤销失败");
+        }
       },
     });
   };
 
-  const handleCopy = (text: string) => {
-    void navigator.clipboard.writeText(text);
-    message.success("已复制到剪贴板");
+  const handleCopyToken = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(token);
+      message.success("已复制到剪贴板");
+    } catch {
+      message.error("复制失败，请手动选择文本复制");
+    }
   };
 
-  const columns: ColumnsType<ApiToken> = [
+  const columns: ColumnsType<ApiTokenDto> = [
     {
       title: "名称",
       dataIndex: "name",
@@ -219,20 +158,19 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
       dataIndex: "status",
       key: "status",
       width: 100,
-      render: (s: ApiToken["status"]) => (
-        <Tag
-          color={STATUS_COLOR[s]}
-          icon={
-            s === "active" ? (
-              <CheckCircleOutlined />
-            ) : s === "expired" ? (
-              <ClockCircleOutlined />
-            ) : null
-          }
-        >
-          {STATUS_LABEL[s]}
-        </Tag>
-      ),
+      render: (s: ApiTokenDto["status"]) => {
+        const colorMap: Record<ApiTokenDto["status"], string> = {
+          active: "success",
+          expired: "default",
+          revoked: "error",
+        };
+        const labelMap: Record<ApiTokenDto["status"], string> = {
+          active: "生效中",
+          expired: "已过期",
+          revoked: "已撤销",
+        };
+        return <Tag color={colorMap[s]}>{labelMap[s]}</Tag>;
+      },
     },
     {
       title: "创建时间",
@@ -250,35 +188,20 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
       dataIndex: "expiresAt",
       key: "expiresAt",
       width: 150,
-      render: (t: string) => {
-        const exp = new Date(t);
-        const days = Math.ceil((exp.getTime() - Date.now()) / 86_400_000);
-        const isExpiringSoon = days >= 0 && days <= 7;
-        return (
-          <Tooltip title={exp.toLocaleString("zh-CN")}>
-            <Space size={4}>
-              <Text
-                type={isExpiringSoon ? "warning" : "secondary"}
-                style={{ fontSize: 12 }}
-              >
-                {exp.toLocaleDateString("zh-CN")}
-              </Text>
-              {isExpiringSoon && (
-                <Tag color="orange" style={{ fontSize: 11 }}>
-                  {days}天后
-                </Tag>
-              )}
-            </Space>
-          </Tooltip>
-        );
-      },
+      render: (t: string) => (
+        <Tooltip title={new Date(t).toLocaleString("zh-CN")}>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {new Date(t).toLocaleDateString("zh-CN")}
+          </Text>
+        </Tooltip>
+      ),
     },
     {
       title: "最后使用",
       dataIndex: "lastUsedAt",
       key: "lastUsedAt",
       width: 150,
-      render: (t?: string) =>
+      render: (t: string | null) =>
         t ? (
           <Text type="secondary" style={{ fontSize: 12 }}>
             {new Date(t).toLocaleString("zh-CN")}
@@ -306,6 +229,25 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
       ),
     },
   ];
+
+  if (isLoading) {
+    return <Skeleton active paragraph={{ rows: 8 }} />;
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="加载 Token 列表失败"
+        description={
+          error instanceof Error
+            ? `${error.message}（请检查网络或重新登录后重试）`
+            : "未知错误，请稍后重试"
+        }
+      />
+    );
+  }
 
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
@@ -336,11 +278,7 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
           </>
         }
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateOpen(true)}
-          >
+          <Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
             创建 Token
           </Button>
         }
@@ -348,10 +286,23 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
         <Table
           rowKey="id"
           columns={columns}
-          dataSource={tokens}
+          dataSource={tokens ?? []}
           pagination={false}
           scroll={{ x: 1000 }}
-          locale={{ emptyText: <Empty description="暂无 API Token" /> }}
+          locale={{
+            emptyText: (
+              <Empty
+                description={
+                  <Space direction="vertical" size={4}>
+                    <Text type="secondary">暂无 API Token</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      点击右上角&ldquo;创建 Token&rdquo;创建首个 API Token
+                    </Text>
+                  </Space>
+                }
+              />
+            ),
+          }}
         />
       </Card>
 
@@ -361,7 +312,7 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
         open={createOpen}
         onCancel={() => setCreateOpen(false)}
         onOk={handleCreate}
-        confirmLoading={creating}
+        confirmLoading={createMutation.isPending}
         okText="创建"
         cancelText="取消"
         width={520}
@@ -377,6 +328,7 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
             rules={[
               { required: true, message: "请输入 Token 名称" },
               { min: 3, message: "至少 3 个字符" },
+              { max: 100, message: "不能超过 100 字符" },
             ]}
           >
             <Input placeholder="如 CI/CD Pipeline / Local Dev" />
@@ -413,92 +365,64 @@ export function ApiTokensPanel({ auth }: ApiTokensPanelProps) {
           >
             <Input type="date" min={new Date().toISOString().slice(0, 10)} />
           </Form.Item>
-          <Alert
-            type="info"
-            showIcon
-            message="创建后将立即显示完整 Token 明文"
-            description="请准备好安全的密码管理器或环境变量存储位置，关闭对话框后将无法再次查看。"
-          />
         </Form>
       </Modal>
 
-      {/* 创建后展示完整 Token */}
+      {/* 明文 Token 展示对话框（创建成功后立即弹出，仅本次可复制） */}
       <Modal
-        title="Token 已创建"
-        open={!!createdToken}
+        title="Token 创建成功"
+        open={createdToken !== null}
         onCancel={() => {
           setCreatedToken(null);
         }}
         footer={[
           <Button
+            key="copy"
+            icon={<CopyOutlined />}
+            onClick={() => createdToken && handleCopyToken(createdToken)}
+          >
+            复制 Token
+          </Button>,
+          <Button
             key="close"
             type="primary"
-            onClick={() => {
-              setCreatedToken(null);
-            }}
+            danger
+            onClick={() => setCreatedToken(null)}
           >
-            我已保存
+            我已保存，关闭
           </Button>,
         ]}
         closable={false}
         maskClosable={false}
-        width={560}
+        width={620}
       >
-        {createdToken && (
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-            <Alert
-              type="warning"
-              showIcon
-              message="这是唯一一次查看完整 Token 的机会"
-              description="关闭对话框后将无法再次显示，请立即复制保存。"
-            />
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                Token 名称
-              </Text>
-              <Paragraph style={{ margin: 0 }}>
-                <Text strong>{createdToken.name}</Text>
-              </Paragraph>
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                完整 Token
-              </Text>
-              <Input.Group compact>
-                <Input
-                  readOnly
-                  value={createdToken.token}
-                  style={{
-                    width: "calc(100% - 80px)",
-                    fontFamily: "monospace",
-                  }}
-                />
-                <Button
-                  icon={<CopyOutlined />}
-                  onClick={() => handleCopy(createdToken.token)}
-                  style={{ width: 80 }}
-                >
-                  复制
-                </Button>
-              </Input.Group>
-            </div>
-            <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                过期时间
-              </Text>
-              <Paragraph style={{ margin: 0 }}>
-                <Text>
-                  {new Date(createdToken.expiresAt).toLocaleString("zh-CN")}
-                </Text>
-              </Paragraph>
-            </div>
-          </Space>
-        )}
+        <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Alert
+            type="warning"
+            showIcon
+            message="这是 Token 的唯一一次明文展示"
+            description="关闭对话框后将无法再次查看此 Token，请立即复制保存到安全的密钥管理器（如 1Password / Bitwarden）。"
+          />
+          <Paragraph
+            code
+            copyable={false}
+            style={{
+              wordBreak: "break-all",
+              fontSize: 12,
+              padding: 12,
+              background: "#f5f5f5",
+              border: "1px solid #d9d9d9",
+              borderRadius: 4,
+            }}
+          >
+            {createdToken ?? ""}
+          </Paragraph>
+        </Space>
       </Modal>
 
       <Text type="secondary" style={{ fontSize: 12 }}>
-        * V0 阶段 Token 操作仅前端 Mock；V1 接入 IAM Token API
-        后将持久化并触发审计日志。当前用户：
+        * V1 已接入：Token 通过 POST /api/v1/iam/tokens
+        创建，明文仅在创建响应中返回一次。 当前用户：
         {auth?.principal?.displayName ?? "—"}
       </Text>
     </Space>

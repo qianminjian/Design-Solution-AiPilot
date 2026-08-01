@@ -1,6 +1,7 @@
 import { All, Controller, Inject, Req, UseInterceptors } from "@nestjs/common";
 import { Request } from "express";
 import type { ZodType } from "zod";
+import { Method } from "axios";
 import {
   principalDtoSchema,
   organizationDtoSchema,
@@ -14,7 +15,13 @@ import {
 } from "../../interceptors/proxy.interceptor";
 import { ProxyService } from "../proxy.service";
 import { SchemaValidator } from "../schema-validator.service";
-import { proxyWithValidation, SchemaMatchRule } from "./iam-proxy.helpers";
+import {
+  extractBody,
+  extractForwardHeaders,
+  normalizeQuery,
+  proxyWithValidation,
+  SchemaMatchRule,
+} from "./iam-proxy.helpers";
 
 /**
  * IAM 域代理控制器集合
@@ -211,5 +218,65 @@ export class AccessGrantProxyController {
       this.schemaValidator,
       GRANT_RULES,
     );
+  }
+}
+
+/**
+ * 当前用户偏好设置代理控制器：转发 /api/v1/users/me/preferences
+ *
+ * 后端在 Core Service 中通过 SecurityContext 解析 JWT 获取 principalId，
+ * 因此 BFF 仅需透传 Authorization 头（已在 extractForwardHeaders 中处理）。
+ *
+ * 不做严格 schema 校验：后端 GET 在数据库无记录时返回内存默认值（id/createdAt/updatedAt 为 null），
+ * 这与持久化后的非 null 字段并存，严格 schema 会误判。
+ */
+@Controller("v1/users/me/preferences")
+@UseInterceptors(ProxyInterceptor)
+export class UserPreferencesProxyController {
+  constructor(
+    @Inject(ProxyService) private readonly proxyService: ProxyService,
+  ) {}
+
+  @All()
+  proxy(@Req() request: Request): Promise<ProxyResult> {
+    return this.proxyService.forward({
+      method: request.method as Method,
+      path: request.originalUrl,
+      body: extractBody(request),
+      headers: extractForwardHeaders(request),
+      query: normalizeQuery(request.query),
+    });
+  }
+}
+
+/**
+ * IAM API Token 代理控制器：转发 /api/v1/iam/tokens
+ *
+ * 端点：
+ *  - GET    /api/v1/iam/tokens        查询当前用户的所有 Token
+ *  - POST   /api/v1/iam/tokens        创建新 Token（返回明文，仅本次）
+ *  - DELETE /api/v1/iam/tokens/{id}   撤销 Token（软撤销）
+ *
+ * 安全约束（security.md §1）：
+ *  - principalId 仅从 SecurityContext 获取，BFF 仅透传 Authorization 头
+ *  - 明文 token 仅在 POST 响应中返回，BFF 不缓存任何 token 明文
+ *  - 不做严格 schema 校验：POST 响应包含 plainToken（仅本次），下次 GET 不可获取
+ */
+@Controller("v1/iam/tokens")
+@UseInterceptors(ProxyInterceptor)
+export class ApiTokenProxyController {
+  constructor(
+    @Inject(ProxyService) private readonly proxyService: ProxyService,
+  ) {}
+
+  @All()
+  proxy(@Req() request: Request): Promise<ProxyResult> {
+    return this.proxyService.forward({
+      method: request.method as Method,
+      path: request.originalUrl,
+      body: extractBody(request),
+      headers: extractForwardHeaders(request),
+      query: normalizeQuery(request.query),
+    });
   }
 }

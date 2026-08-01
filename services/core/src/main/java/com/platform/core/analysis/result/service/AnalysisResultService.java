@@ -10,6 +10,7 @@ import com.platform.core.analysis.result.dto.ResultQualityAssessmentDto;
 import com.platform.core.analysis.result.dto.SubmitQualityAssessmentRequest;
 import com.platform.core.analysis.result.repository.AnalysisResultRepository;
 import com.platform.core.analysis.result.repository.ResultQualityAssessmentRepository;
+import com.platform.core.auth.jwt.JwtTokenProvider;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,13 +51,16 @@ public class AnalysisResultService {
 
     private final AnalysisResultRepository resultRepository;
     private final ResultQualityAssessmentRepository assessmentRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public AnalysisResultService(
             AnalysisResultRepository resultRepository,
-            ResultQualityAssessmentRepository assessmentRepository
+            ResultQualityAssessmentRepository assessmentRepository,
+            JwtTokenProvider jwtTokenProvider
     ) {
         this.resultRepository = resultRepository;
         this.assessmentRepository = assessmentRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     // ── 查询 ──
@@ -220,6 +224,11 @@ public class AnalysisResultService {
         };
     }
 
+    /**
+     * 校验 stepUpToken（V1.7 升级：真实 JWT 校验，对齐 Operations 域）
+     *
+     * @design D40-信息-物理安全.md §Step-up 认证
+     */
     private void validateStepUpToken(String stepUpToken) {
         if (stepUpToken == null || stepUpToken.isBlank()) {
             throw new BusinessException(
@@ -227,6 +236,7 @@ public class AnalysisResultService {
                     HttpStatus.BAD_REQUEST,
                     "高风险动作必须提供 stepUpToken");
         }
+        jwtTokenProvider.validateStepUpToken(stepUpToken);
     }
 
     /**

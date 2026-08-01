@@ -3,15 +3,19 @@ package com.platform.core.operations.connector.controller;
 import com.platform.core.common.response.ApiResponse;
 import com.platform.core.common.response.PageResponse;
 import com.platform.core.iam.support.TenantResolver;
+import com.platform.core.operations.connector.dto.ConnectorRegisterRequest;
 import com.platform.core.operations.connector.dto.ConnectorStatusDto;
 import com.platform.core.operations.connector.dto.ListConnectorsRequest;
 import com.platform.core.operations.connector.service.ConnectorService;
 import com.platform.core.operations.domain.enums.ConnectorHealthStatus;
 import com.platform.core.operations.domain.enums.ConnectorType;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +27,7 @@ import java.util.UUID;
  *
  * <p>路由：/api/v1/operations/connectors
  * <ul>
+ *   <li>POST   /register               连接器注册（启动时调用，幂等，V1.10.2 新增）</li>
  *   <li>GET    /                       列表查询（支持 type/status/keyword 过滤）</li>
  *   <li>GET    /{id}                   详情查询</li>
  * </ul>
@@ -42,6 +47,22 @@ public class ConnectorController {
     public ConnectorController(ConnectorService connectorService, TenantResolver tenantResolver) {
         this.connectorService = connectorService;
         this.tenantResolver = tenantResolver;
+    }
+
+    /**
+     * 注册连接器（V1.10.2 新增，对齐 WorkerController.register 模式）
+     *
+     * <p>连接器初始化时调用，幂等注册（同一 connectorCode 已存在时更新记录）。
+     * 安全红线：AI_PROVIDER 类型强制 isManualHandoff=true（OD-05 V1 约束）。
+     */
+    @PostMapping("/register")
+    public ApiResponse<ConnectorStatusDto> register(
+            @Valid @RequestBody ConnectorRegisterRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
+        ConnectorStatusDto dto = connectorService.register(tenantId, request);
+        return ApiResponse.success(dto);
     }
 
     @GetMapping

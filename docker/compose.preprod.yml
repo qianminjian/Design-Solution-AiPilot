@@ -1,0 +1,203 @@
+# Preprod Environment Override
+# 对齐 D44.5 测试环境分级：Staging/Preprod 环境（生产等价拓扑 / 匿名-合成规模数据 /
+#   已签名候选 / 受控真实依赖或仿真 / D45 发布门禁 / 回滚演练）
+#
+# 用法：
+#   docker compose -f docker/compose.yml -f docker/compose.preprod.yml -p platform-preprod up -d
+#
+# 设计原则（D44.5 + D44.6 + security.md）：
+#   1. Preprod 与 Staging 关键差异：资源规模与生产等价（合成规模数据可重放生产负载）
+#   2. Preprod 是 Production 投产前最后一道门禁，所有 D45 验收用例必须通过
+#   3. Preprod 环境使用合成生成器产生的"生产规模"数据，禁止使用真实生产数据
+#   4. Preprod 启用更严格的健康检查和监控（生产等价）
+#   5. Preprod 日志级别 warn（接近生产），但保留 error 级别审计日志详细输出
+#   6. Preprod 强制启用 AUDIT_LOG_DETAILED（D45 验收证据）
+#   7. Preprod 启用 SCHEDULER_ENABLED（验证 A-64 Token 清理等调度任务在生产规模下行为）
+#   8. 独立账号/订阅/Cluster/KMS Root/数据库/Bucket/Topic/域名/身份信任域
+#
+# 与 Staging 的差异：
+#   - 资源限制更大（生产规模）
+#   - health check 间隔与生产等价
+#   - LOG_LEVEL=warn（接近生产）
+#   - 资源预留（reservations）确保性能基线
+#   - 部署后冒烟测试（smoke test）脚本自动化执行
+
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: ${DB_NAME:-design_platform_preprod}
+      POSTGRES_USER: ${DB_USER:-platform_preprod}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?PREPROD_DB_PASSWORD is required}
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c track_activity_query_size=2048
+      -c shared_buffers=512MB
+      -c effective_cache_size=1024MB
+      -c work_mem=8MB
+      -c maintenance_work_mem=128MB
+      -c max_connections=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    mem_limit: 1024m
+    memswap_limit: 1024m
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    ports: !reset []
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?PREPROD_S3_ACCESS_KEY is required}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?PREPROD_S3_SECRET_KEY is required}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_URL:-https://console.preprod.example.com}
+    mem_limit: 768m
+    memswap_limit: 768m
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    restart: unless-stopped
+    ports: !reset []
+
+  minio-init:
+    environment:
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data-preprod}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?PREPROD_S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?PREPROD_S3_SECRET_KEY is required}
+    restart: "no"
+
+  chromadb:
+    environment:
+      CHROMA_SERVER_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:?PREPROD_CHROMADB_AUTH_CREDENTIALS is required}
+    mem_limit: 1024m
+    memswap_limit: 1024m
+    healthcheck:
+      interval: 15s
+      timeout: 30s
+      retries: 6
+      start_period: 45s
+    restart: unless-stopped
+    ports: !reset []
+
+  core-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: preprod
+      DB_NAME: ${DB_NAME:-design_platform_preprod}
+      DB_USER: ${DB_USER:-platform_preprod}
+      DB_PASSWORD: ${DB_PASSWORD:?PREPROD_DB_PASSWORD is required}
+      DB_POOL_MAX: "50"
+      DB_POOL_MIN: "10"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?PREPROD_S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?PREPROD_S3_SECRET_KEY is required}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data-preprod}
+      CHROMADB_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:?PREPROD_CHROMADB_AUTH_CREDENTIALS is required}
+      # Preprod 环境使用真实 LLM Provider（受控真实依赖）
+      LLM_API_KEY: ${LLM_API_KEY:?PREPROD_LLM_API_KEY is required}
+      LLM_API_BASE: ${LLM_API_BASE:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+      # Preprod 日志级别 warn（接近生产），保留 error 级别审计详细输出
+      LOG_LEVEL: warn
+      # Preprod 强制启用详细审计日志（D45 验收证据）
+      AUDIT_LOG_DETAILED: "true"
+      # Preprod 启用调度任务（验证生产规模下行为）
+      SCHEDULER_ENABLED: "true"
+      # Token 清理调度配置（A-64）
+      TOKEN_CLEANUP_FIXED_DELAY_SECONDS: ${TOKEN_CLEANUP_FIXED_DELAY_SECONDS:-3600}
+      TOKEN_CLEANUP_INITIAL_DELAY_SECONDS: ${TOKEN_CLEANUP_INITIAL_DELAY_SECONDS:-60}
+      TOKEN_CLEANUP_BATCH_SIZE: ${TOKEN_CLEANUP_BATCH_SIZE:-500}
+    mem_limit: 1024m
+    memswap_limit: 1024m
+    healthcheck:
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+    restart: unless-stopped
+    ports: !reset []
+
+  ai-service:
+    environment:
+      ENVIRONMENT: preprod
+      LOG_LEVEL: warn
+      DB_NAME: ${DB_NAME:-design_platform_preprod}
+      DB_USER: ${DB_USER:-platform_preprod}
+      DB_PASSWORD: ${DB_PASSWORD:?PREPROD_DB_PASSWORD is required}
+      DB_POOL_SIZE: "20"
+      DB_MAX_OVERFLOW: "40"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?PREPROD_S3_ACCESS_KEY is required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?PREPROD_S3_SECRET_KEY is required}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-platform-data-preprod}
+      CHROMADB_AUTH_CREDENTIALS: ${CHROMADB_AUTH_CREDENTIALS:?PREPROD_CHROMADB_AUTH_CREDENTIALS is required}
+      LLM_API_KEY: ${LLM_API_KEY:?PREPROD_LLM_API_KEY is required}
+      LLM_API_BASE: ${LLM_API_BASE:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+    mem_limit: 768m
+    memswap_limit: 768m
+    healthcheck:
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 45s
+    restart: unless-stopped
+    ports: !reset []
+
+  bff:
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: warn
+      CORS_ORIGIN: ${CORS_ORIGIN:?PREPROD_CORS_ORIGIN is required}
+    mem_limit: 256m
+    memswap_limit: 256m
+    healthcheck:
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 45s
+    restart: unless-stopped
+    ports: !reset []
+
+  web:
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_BFF_URL: ${NEXT_PUBLIC_BFF_URL:?PREPROD_NEXT_PUBLIC_BFF_URL is required}
+    mem_limit: 512m
+    memswap_limit: 512m
+    healthcheck:
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+    restart: unless-stopped
+    ports: !reset []
+
+  # Preprod 环境 Nginx 反向代理（HTTPS 入口，生产等价配置）
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/yun.gxjugu.com.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      web:
+        condition: service_healthy
+      bff:
+        condition: service_healthy
+    networks:
+      - backend_network
+    mem_limit: 96m
+    memswap_limit: 96m
+    healthcheck:
+      test: ["CMD-SHELL", "nginx -t"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped

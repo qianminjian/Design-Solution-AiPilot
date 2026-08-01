@@ -10,7 +10,7 @@ import com.platform.core.auth.dto.RefreshTokenResponse;
 import com.platform.core.auth.dto.StepUpTokenRequest;
 import com.platform.core.auth.dto.StepUpTokenResponse;
 import com.platform.core.auth.jwt.JwtTokenProvider;
-import com.platform.core.auth.security.AuthenticatedPrincipal;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import com.platform.core.auth.token.RefreshTokenStore;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;

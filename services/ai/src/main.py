@@ -20,6 +20,7 @@ from src.config import settings
 from src.database import check_db_connection
 from src.llm.factory import create_llm_client
 from src.logging_config import setup_logging
+from src.middleware.test_run_id import TestRunIdMiddleware
 from src.middleware.trace import TraceIdMiddleware
 from src.prompts.router import router as prompts_router
 from src.rag.router import router as rag_router
@@ -56,7 +57,7 @@ app = FastAPI(
 )
 
 # 中间件注册顺序：后注册的为外层
-# CORS 先注册（内层），TraceId 后注册（外层），确保 traceId 贯穿所有请求
+# CORS 先注册（内层），TraceId/TestRunId 后注册（外层），确保贯穿所有请求
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -64,6 +65,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(TestRunIdMiddleware)
 app.add_middleware(TraceIdMiddleware)
 
 # 业务路由

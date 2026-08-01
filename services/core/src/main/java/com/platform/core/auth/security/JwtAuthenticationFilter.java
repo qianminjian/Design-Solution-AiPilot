@@ -1,6 +1,7 @@
 package com.platform.core.auth.security;
 
 import com.platform.core.auth.jwt.JwtTokenProvider;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import com.platform.core.iam.support.TenantContextHolder;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -49,6 +50,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
+        // P0-16.1：如果 PAT（ApiTokenAuthenticationFilter）已认证成功，跳过 JWT 认证
+        // 避免覆盖 PAT 已设置的 SecurityContext
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                TenantContextHolder.clear();
+                SecurityContextHolder.clearContext();
+            }
+            return;
+        }
+
         String token = extractToken(request);
         if (token != null) {
             try {

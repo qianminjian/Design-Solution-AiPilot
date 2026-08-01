@@ -1,6 +1,7 @@
 package com.platform.core.auth.security;
 
 import com.platform.core.auth.jwt.JwtTokenProvider;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import com.platform.core.iam.support.TenantContextHolder;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;

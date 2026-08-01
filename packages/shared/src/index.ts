@@ -97,6 +97,17 @@ export * from "./contracts/change.contract";
 // ── Monitoring & Operations 域契约（D37.17 运营中心，V0 前端骨架，后端 API 待 V1 实现） ──
 export * from "./contracts/monitoring.contract";
 
+// ── Deployment Profile 契约（P0-1.1 测试环境分级，对齐 D44.5）──
+// 6 级环境元数据 + docker compose override 文件映射 + CI 流水线决策辅助
+// 用于：CI 流水线选择 compose 文件、D45 验收报告按环境分组、Support Matrix 差异记录
+export * from "./contracts/deployment.contract";
+
+// ── Pact 契约测试基础设施（P0-1.3，对齐 D45.11）──
+// V1 策略：用 zod schema + Consumer 期望声明实现软验证，BFF/前端调用
+// validateResponse 验证响应，失败计数到 monitoring schemaValidation。
+// V2 演进：基于 ConsumerExpectation 元数据自动生成 Pact V3 契约文件并 push 到 Broker。
+export * from "./contracts/pact";
+
 // ── Zod Schema（契约测试基础设施，P1-2）──
 // V1 策略：用 zod 共享 schema 替代完整 Pact Broker，后续 V2 可基于
 // schema 自动生成 Pact 契约文件并接入 Pact Broker。
@@ -120,3 +131,9 @@ export * from "./schemas/monitoring.schema";
 // V1 策略：从 BFF 透传模式升级为软验证模式，BFF 调用 schema.safeParse
 // 校验响应；失败计数到 monitoring schemaValidation，不阻断用户访问。
 export * from "./schemas/governance.schema";
+
+// ── 测试运行 ID 工具（P0-1.2 测试数据隔离，对齐 D43 SLO 报表排除规则）──
+// CI 流水线注入唯一标识，标记测试产生的审计日志/通知/计量数据，
+// 使其在 SLO 报表自动排除或单独计量，避免污染业务指标。
+// 多语言共享：TypeScript（BFF/前端）+ Java（Core）+ Python（AI）使用相同常量。
+export * from "./testing/test-run-id";

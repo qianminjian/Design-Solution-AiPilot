@@ -80,6 +80,14 @@ public class AuditLogService {
             spec = spec.and((root, q, cb) ->
                     cb.lessThanOrEqualTo(root.get("timestamp"), query.to()));
         }
+        // P0-1.2 测试数据隔离：excludeTestRun 优先于 testRunId
+        if (Boolean.TRUE.equals(query.excludeTestRun())) {
+            spec = spec.and((root, q, cb) ->
+                    cb.isNull(root.get("testRunId")));
+        } else if (query.testRunId() != null && !query.testRunId().isBlank()) {
+            spec = spec.and((root, q, cb) ->
+                    cb.equal(root.get("testRunId"), query.testRunId()));
+        }
         return spec;
     }
 
@@ -101,7 +109,8 @@ public class AuditLogService {
                 entity.isMasked(),
                 entity.getIpAddress(),
                 entity.getUserAgent(),
-                entity.getDetails()
+                entity.getDetails(),
+                entity.getTestRunId()
         );
     }
 }

@@ -93,6 +93,18 @@ app:
     jwt-secret: ${JWT_SECRET:dev-secret-change-me-in-production-at-least-32-chars}
     access-token-expire: ${JWT_ACCESS_TOKEN_EXPIRES_IN:15m}
     refresh-token-expire: ${JWT_REFRESH_TOKEN_EXPIRES_IN:7d}
+    # A-61 P0-2 修复：stepUpToken 哈希盐（对齐 security.md §2.2 密码存储红线）
+    # 生产环境必须配置环境变量 STEPUP_TOKEN_SALT（≥32 字符随机字符串），缺失时启动告警但仍可运行（仅开发环境）
+    stepup-token-salt: ${STEPUP_TOKEN_SALT:}
+    # A-64 Token 自动过期清理任务配置（对齐 security.md §1 密钥 90 天轮换红线）
+    # 定时扫描 status='active' 且 expires_at < NOW() 的 Token，批量更新为 status='expired'
+    token-cleanup:
+      # 调度间隔（秒），默认 1 小时（3600s）
+      fixed-delay-seconds: ${TOKEN_CLEANUP_FIXED_DELAY_SECONDS:3600}
+      # 应用启动后首次执行延迟（秒），默认 60s（避免启动峰值叠加）
+      initial-delay-seconds: ${TOKEN_CLEANUP_INITIAL_DELAY_SECONDS:60}
+      # 单批最大处理量，默认 500 条（防止内存峰值）
+      batch-size: ${TOKEN_CLEANUP_BATCH_SIZE:500}
   cors:
     allowed-origins: ${CORS_ORIGIN:http://localhost:3000}
   object-storage:
@@ -101,3 +113,17 @@ app:
     secret-key: ${S3_SECRET_KEY:minioadmin}
     bucket: ${S3_BUCKET_NAME:design-platform}
     region: ${S3_REGION:us-east-1}
+  # Sprint V1.8：AI Service 调用配置（AI 辅助影响分析）
+  ai-service:
+    base-url: ${AI_SERVICE_URL:http://localhost:8000}
+    timeout-seconds: ${AI_TIMEOUT_SECONDS:120}
+    retry-attempts: ${AI_RETRY_ATTEMPTS:1}
+  # Sprint V1.10.4：异步线程池配置（A-60 显式 TaskExecutor，对齐 A-59 健康检查异步执行需求）
+  # 用于 ConnectorHealthChecker.checkAsync 等 @Async 方法，避免使用 Spring 默认 SimpleAsyncTaskExecutor
+  # 默认值适配单机 16GB 内存场景（防 vm-compressor-space-shortage）
+  async:
+    core-pool-size: ${ASYNC_CORE_POOL_SIZE:2}
+    max-pool-size: ${ASYNC_MAX_POOL_SIZE:4}
+    queue-capacity: ${ASYNC_QUEUE_CAPACITY:40}
+    thread-name-prefix: ${ASYNC_THREAD_NAME_PREFIX:async-}
+    keep-alive-seconds: ${ASYNC_KEEP_ALIVE_SECONDS:60}

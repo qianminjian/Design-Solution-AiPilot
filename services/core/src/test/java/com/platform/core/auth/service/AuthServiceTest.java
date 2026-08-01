@@ -6,7 +6,7 @@ import com.platform.core.auth.dto.LogoutRequest;
 import com.platform.core.auth.dto.LogoutResponse;
 import com.platform.core.auth.dto.RefreshTokenResponse;
 import com.platform.core.auth.jwt.JwtTokenProvider;
-import com.platform.core.auth.security.AuthenticatedPrincipal;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import com.platform.core.auth.token.RefreshTokenStore;
 import com.platform.core.common.config.AppProperties;
 import com.platform.core.common.response.BusinessException;

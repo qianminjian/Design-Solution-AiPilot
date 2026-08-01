@@ -1,6 +1,6 @@
 package com.platform.core.cde.support;
 
-import com.platform.core.auth.security.AuthenticatedPrincipal;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

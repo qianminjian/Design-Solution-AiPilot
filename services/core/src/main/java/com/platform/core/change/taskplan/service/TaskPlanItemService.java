@@ -5,7 +5,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.platform.core.change.affecteditem.domain.AffectedItem;
 import com.platform.core.change.affecteditem.repository.AffectedItemRepository;
+import com.platform.core.change.domain.enums.ChangeStatus;
 import com.platform.core.change.domain.enums.TaskPlanStatus;
+import com.platform.core.change.request.domain.ChangeRequest;
+import com.platform.core.change.request.repository.ChangeRequestRepository;
 import com.platform.core.change.taskplan.domain.TaskPlanItem;
 import com.platform.core.change.taskplan.dto.CreateTaskPlanItemRequest;
 import com.platform.core.change.taskplan.dto.GenerateTaskPlanRequest;
@@ -51,15 +54,18 @@ public class TaskPlanItemService {
 
     private final TaskPlanItemRepository repository;
     private final AffectedItemRepository affectedItemRepository;
+    private final ChangeRequestRepository changeRequestRepository;
     private final ObjectMapper objectMapper;
 
     public TaskPlanItemService(
             TaskPlanItemRepository repository,
             AffectedItemRepository affectedItemRepository,
+            ChangeRequestRepository changeRequestRepository,
             ObjectMapper objectMapper
     ) {
         this.repository = repository;
         this.affectedItemRepository = affectedItemRepository;
+        this.changeRequestRepository = changeRequestRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -286,6 +292,8 @@ public class TaskPlanItemService {
      * <p>V0 简化实现：每个受影响项生成一个默认任务，按专业聚合。
      * V1 完整实现：调用规则引擎/AI 辅助生成任务模板。
      *
+     * <p>状态机：生成任务后变更请求从 APPROVED → IN_PROGRESS（前端契约对齐）
+     *
      * @param tenantId 租户 ID
      * @param changeId 变更请求 ID
      * @param request 生成请求（含默认责任人、默认完成时间）
@@ -297,11 +305,27 @@ public class TaskPlanItemService {
             UUID changeId,
             GenerateTaskPlanRequest request
     ) {
+        // 状态机校验：变更请求必须在 APPROVED 状态才能生成处置任务（进入实施阶段）
+        ChangeRequest changeRequest = changeRequestRepository.findByIdAndTenantId(changeId, tenantId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        "ChangeRequest not found: " + changeId));
+        if (changeRequest.getStatus() != ChangeStatus.APPROVED) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    "ChangeRequest 必须在 APPROVED 状态才能生成处置任务，当前状态: "
+                            + changeRequest.getStatus());
+        }
+
         List<AffectedItem> affectedItems = affectedItemRepository
                 .findAllByTenantIdAndChangeId(tenantId, changeId);
 
         if (affectedItems.isEmpty()) {
             log.info("TaskPlan generation skipped: no affected items, changeId={}", changeId);
+            // 即使没有受影响项，也切换到 IN_PROGRESS 状态（前端契约要求）
+            changeRequest.setStatus(ChangeStatus.IN_PROGRESS);
+            changeRequest.setImplementedAt(Instant.now());
+            changeRequestRepository.save(changeRequest);
             return Collections.emptyList();
         }
 
@@ -335,7 +359,14 @@ public class TaskPlanItemService {
         }
 
         List<TaskPlanItem> saved = repository.saveAll(tasks);
-        log.info("TaskPlan generated: changeId={}, count={}", changeId, saved.size());
+
+        // 切换变更请求状态：APPROVED → IN_PROGRESS
+        changeRequest.setStatus(ChangeStatus.IN_PROGRESS);
+        changeRequest.setImplementedAt(Instant.now());
+        changeRequestRepository.save(changeRequest);
+
+        log.info("TaskPlan generated: changeId={}, count={}, status=APPROVED→IN_PROGRESS",
+                changeId, saved.size());
         return saved.stream().map(this::toDto).toList();
     }
 

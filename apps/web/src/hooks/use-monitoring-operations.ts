@@ -2,7 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  ConnectorRegisterRequest,
   ConnectorStatusDto,
+  DualApprovalReviewRequest,
+  DualApprovalReviewResponseDto,
+  DualApprovalStatus,
   ListConnectorsRequest,
   ListQueueTasksRequest,
   ListWorkersRequest,
@@ -15,6 +19,7 @@ import type {
   WorkerStatusDto,
 } from "@design-platform/shared";
 import { MonitoringApiPaths } from "@design-platform/shared";
+import { DUAL_APPROVAL_MIN_INTERVAL_MS } from "@design-platform/shared";
 import { apiGet, apiPost } from "@/lib/api-client";
 
 /**
@@ -210,6 +215,32 @@ export function useConnectors(params: ListConnectorsRequest = {}) {
   });
 }
 
+/**
+ * 注册连接器（V1.10.3 新增，对齐后端 POST /api/v1/operations/connectors/register）
+ *
+ * 安全红线（对齐 OD-05 外部 AI 接入约束）：
+ *  - AI_PROVIDER 类型（建筑 AI Provider）强制 isManualHandoff=true（V1 不自动接入）
+ *  - 同一 connectorCode 已存在时更新记录（幂等注册）
+ *  - 成功后自动刷新连接器列表
+ */
+export function useRegisterConnector() {
+  const queryClient = useQueryClient();
+  return useMutation<ConnectorStatusDto, Error, ConnectorRegisterRequest>({
+    mutationFn: async (request) => {
+      return apiPost<ConnectorStatusDto>(
+        MonitoringApiPaths.connectorRegister,
+        request,
+      );
+    },
+    onSuccess: () => {
+      // 注册成功后刷新连接器列表
+      void queryClient.invalidateQueries({
+        queryKey: [...OPERATIONS_QUERY_KEY, "connectors"],
+      });
+    },
+  });
+}
+
 // ── Mutation ──
 
 /**
@@ -360,4 +391,172 @@ export function canExecuteOperationsAction(request: OperationsActionRequest): {
     canExecute: reasons.length === 0,
     reasons,
   };
+}
+
+// ── 双人审批 Hooks（D37.23 §不可逆/合规：二人审批） ──
+
+/**
+ * 查询 Operations 主动作详情（含双人审批状态）
+ * 对应契约：GET /api/v1/operations/action/{actionId}
+ *
+ * 支持两种 actionId 格式：
+ *  - UUID 字符串（数据库主键）：使用 actionDetail 路径
+ *  - operationId 字符串（前端 cancel 后返回的 ID）：使用 actionByOperationId 路径
+ *
+ * 自动判断：尝试解析为 UUID，成功用 actionDetail，失败用 actionByOperationId。
+ */
+export function useOperationsActionDetail(actionId: string | null) {
+  const isUuid = Boolean(actionId) && isValidUuid(actionId!);
+  const path = actionId
+    ? isUuid
+      ? MonitoringApiPaths.actionDetail(actionId!)
+      : MonitoringApiPaths.actionByOperationId(actionId!)
+    : null;
+
+  return useQuery<OperationsActionResponseDto>({
+    queryKey: [...OPERATIONS_QUERY_KEY, "action", actionId] as const,
+    queryFn: () => apiGet<OperationsActionResponseDto>(path!),
+    enabled: Boolean(actionId) && Boolean(path),
+    refetchInterval: 10_000,
+    retry: (failureCount, error) => {
+      if (isNotImplementedError(error)) return false;
+      return failureCount < 2;
+    },
+  });
+}
+
+/** 判断字符串是否为合法 UUID */
+function isValidUuid(s: string): boolean {
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+    s,
+  );
+}
+
+/**
+ * 查询待审批操作列表（D37.23 §不可逆/合规：二人审批）
+ * 对应契约：GET /api/v1/operations/action/pending
+ *
+ * 默认查 PENDING_REVIEW1 + PENDING_REVIEW2，按 initiatedAt 倒序。
+ */
+export function usePendingOperationsActions(
+  params: {
+    /** 双人审批状态过滤（不传默认 PENDING_REVIEW1 + PENDING_REVIEW2） */
+    statuses?: DualApprovalStatus[];
+    /** 页码（0-based） */
+    page?: number;
+    /** 每页大小（默认 20，最大 100） */
+    pageSize?: number;
+  } = {},
+) {
+  const search = new URLSearchParams();
+  if (params.statuses && params.statuses.length > 0) {
+    search.set("statuses", params.statuses.join(","));
+  }
+  search.set("page", String(params.page ?? 0));
+  search.set("size", String(params.pageSize ?? 20));
+  const url = `${MonitoringApiPaths.pendingActions}?${search.toString()}`;
+  return useQuery<OffsetPageResponse<OperationsActionResponseDto>>({
+    queryKey: [
+      ...OPERATIONS_QUERY_KEY,
+      "pendingActions",
+      {
+        statuses: params.statuses ?? null,
+        page: params.page ?? 0,
+        size: params.pageSize ?? 20,
+      },
+    ] as const,
+    queryFn: () => apiGet<OffsetPageResponse<OperationsActionResponseDto>>(url),
+    refetchInterval: 30_000,
+    placeholderData: (prev) => prev,
+    retry: (failureCount, error) => {
+      if (isNotImplementedError(error)) return false;
+      return failureCount < 2;
+    },
+  });
+}
+
+/** 审批人1 通过 */
+export function useApproveReview1() {
+  return useDualApprovalReview("approveReview1");
+}
+
+/** 审批人1 拒绝 */
+export function useRejectReview1() {
+  return useDualApprovalReview("rejectReview1");
+}
+
+/** 审批人2 通过 */
+export function useApproveReview2() {
+  return useDualApprovalReview("approveReview2");
+}
+
+/** 审批人2 拒绝 */
+export function useRejectReview2() {
+  return useDualApprovalReview("rejectReview2");
+}
+
+/** 双人审批 mutation 内部工厂 */
+function useDualApprovalReview(
+  path: "approveReview1" | "rejectReview1" | "approveReview2" | "rejectReview2",
+) {
+  const queryClient = useQueryClient();
+  return useMutation<
+    DualApprovalReviewResponseDto,
+    Error,
+    { actionId: string; request: DualApprovalReviewRequest }
+  >({
+    mutationFn: async ({ actionId, request }) => {
+      return apiPost<DualApprovalReviewResponseDto>(
+        MonitoringApiPaths[path](actionId),
+        request,
+      );
+    },
+    onSuccess: (_data, variables) => {
+      // 刷新该操作详情 + Operations 全量缓存
+      void queryClient.invalidateQueries({
+        queryKey: [...OPERATIONS_QUERY_KEY, "action", variables.actionId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [...OPERATIONS_QUERY_KEY],
+      });
+    },
+  });
+}
+
+/**
+ * 计算审批人2 距离审批人1 的剩余等待毫秒数
+ * 对齐后端 BUSINESS_RULE_VIOLATION 校验：审批间隔须 ≥ 5 秒
+ * @returns 剩余等待毫秒数（已超过返回 0）
+ */
+export function computeReview2WaitMs(reviewer1At?: string | null): number {
+  if (!reviewer1At) return 0;
+  const elapsed = Date.now() - new Date(reviewer1At).getTime();
+  if (elapsed >= DUAL_APPROVAL_MIN_INTERVAL_MS) return 0;
+  return DUAL_APPROVAL_MIN_INTERVAL_MS - elapsed;
+}
+
+/**
+ * 计算双人审批进度百分比（0-100）
+ *  - not_required: 100
+ *  - pending_review1: 25
+ *  - pending_review2: 75
+ *  - approved: 100
+ *  - rejected_*: 100（流程终止）
+ */
+export function computeDualApprovalProgress(
+  status: OperationsActionResponseDto["dualApprovalStatus"],
+): number {
+  if (!status || status === "not_required") return 100;
+  switch (status) {
+    case "pending_review1":
+      return 25;
+    case "pending_review2":
+      return 75;
+    case "approved":
+    case "rejected_review1":
+    case "rejected_review2":
+      return 100;
+    default:
+      return 0;
+  }
 }

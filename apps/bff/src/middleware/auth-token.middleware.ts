@@ -16,6 +16,8 @@ import { HttpHeader } from "@design-platform/shared";
  *    （仅当请求头未携带 Authorization 时，避免覆盖前端显式传入的场景）
  * 2. 从 Cookie 中读取 tenant_id，注入到 request.headers['x-tenant-id']
  *    （仅当请求头未携带 x-tenant-id 时）
+ * 3. A-61 P0-1 修复：从 JWT access_token 解析 principalId（sub），强制覆盖 x-user-id 头
+ *    （无论客户端是否传入 x-user-id，BFF 都从 JWT 解析后覆盖，防止客户端伪造）
  *
  * 跳过路径：
  * - /api/v1/auth/login：登录前无 token
@@ -23,7 +25,12 @@ import { HttpHeader } from "@design-platform/shared";
  * - /api/v1/auth/logout：登出时不校验 access token
  * - /api/v1/health、/api/v1/metrics：健康检查与指标端点
  *
- * 权威源：@design/D39-身份多租户-授权.md §D39.7、security.md §2.2
+ * 安全红线（A-61 P0-1 修复）：
+ * - x-user-id 头不可被客户端伪造（任意已登录租户用户可冒充其他用户发起危险动作）
+ * - BFF 必须从 JWT 解析 principalId 后强制覆盖 x-user-id 头
+ * - Core Service 服务层应改读 SecurityContext（禁止读 x-user-id 头）
+ *
+ * 权威源：@design/D39-身份多租户-授权.md §D39.7、security.md §2.2、A-61 P0-1 审计修复
  */
 @Injectable()
 export class AuthTokenMiddleware implements NestMiddleware {
@@ -42,10 +49,16 @@ export class AuthTokenMiddleware implements NestMiddleware {
     }
 
     // 注入 Authorization 头（若未显式携带）
+    let accessToken: string | null = null;
     if (!request.header(HttpHeader.AUTHORIZATION)) {
-      const accessToken = this.readCookie(request, "access_token");
+      accessToken = this.readCookie(request, "access_token");
       if (accessToken) {
         request.headers[HttpHeader.AUTHORIZATION] = `Bearer ${accessToken}`;
+      }
+    } else {
+      const authHeader = request.header(HttpHeader.AUTHORIZATION) ?? "";
+      if (authHeader.startsWith("Bearer ")) {
+        accessToken = authHeader.slice(7);
       }
     }
 
@@ -54,6 +67,16 @@ export class AuthTokenMiddleware implements NestMiddleware {
       const tenantId = this.readCookie(request, "tenant_id");
       if (tenantId) {
         request.headers[HttpHeader.X_TENANT_ID] = tenantId;
+      }
+    }
+
+    // A-61 P0-1 修复：从 JWT 解析 principalId，强制覆盖 x-user-id 头
+    // 防止客户端伪造 x-user-id 头冒充其他用户发起危险动作（isolate/failover/cancel）
+    if (accessToken) {
+      const principalId = this.extractPrincipalIdFromJwt(accessToken);
+      if (principalId) {
+        // 强制覆盖：无论客户端是否传入 x-user-id，都使用 JWT 解析的 principalId
+        request.headers[HttpHeader.X_USER_ID] = principalId;
       }
     }
 
@@ -67,6 +90,48 @@ export class AuthTokenMiddleware implements NestMiddleware {
     return AuthTokenMiddleware.SKIP_PATH_PATTERNS.some((pattern) =>
       pattern.test(path),
     );
+  }
+
+  /**
+   * 从 JWT access_token 中解析 principalId（sub claim）
+   *
+   * <p>仅解析 payload（不验证签名，签名验证由 Core Service JwtAuthenticationFilter 完成）。
+   * BFF 端仅用于提取 principalId 注入 x-user-id 头，不作为认证依据。
+   *
+   * @param accessToken JWT access token 字符串
+   * @returns principalId（UUID 字符串），解析失败返回 null
+   */
+  private extractPrincipalIdFromJwt(accessToken: string): string | null {
+    try {
+      const parts = accessToken.split(".");
+      if (parts.length !== 3) {
+        return null;
+      }
+      // JWT 第二部分为 payload（Base64Url 编码的 JSON）
+      const payloadBase64 = parts[1];
+      if (!payloadBase64) {
+        return null;
+      }
+      // Base64Url → Base64（补齐 padding）
+      const payloadBase64Standard = payloadBase64
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+      const padding = payloadBase64Standard.length % 4;
+      const padded =
+        padding === 0
+          ? payloadBase64Standard
+          : payloadBase64Standard + "=".repeat(4 - padding);
+      const payloadJson = Buffer.from(padded, "base64").toString("utf-8");
+      const payload = JSON.parse(payloadJson) as {
+        sub?: string;
+        principalId?: string;
+      };
+      // 兼容两种 claim 名：sub（标准 JWT）与 principalId（项目自定义）
+      return payload.principalId ?? payload.sub ?? null;
+    } catch {
+      // 解析失败静默返回 null（不阻断请求，Core Service 会验证 JWT 签名）
+      return null;
+    }
   }
 
   /**

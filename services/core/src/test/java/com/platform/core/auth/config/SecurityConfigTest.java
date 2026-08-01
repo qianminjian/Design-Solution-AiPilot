@@ -3,6 +3,7 @@ package com.platform.core.auth.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.platform.core.auth.jwt.JwtTokenProvider;
 import com.platform.core.common.config.AppProperties;
+import com.platform.core.iam.service.ApiTokenAuthenticator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +36,7 @@ class SecurityConfigTest {
     private JwtTokenProvider jwtTokenProvider;
     private AppProperties appProperties;
     private ObjectMapper objectMapper;
+    private ApiTokenAuthenticator apiTokenAuthenticator;
     private SecurityConfig securityConfig;
 
     @BeforeEach
@@ -42,7 +44,8 @@ class SecurityConfigTest {
         jwtTokenProvider = mock(JwtTokenProvider.class);
         objectMapper = new ObjectMapper();
         appProperties = new AppProperties();
-        securityConfig = new SecurityConfig(jwtTokenProvider, appProperties, objectMapper);
+        apiTokenAuthenticator = mock(ApiTokenAuthenticator.class);
+        securityConfig = new SecurityConfig(jwtTokenProvider, appProperties, objectMapper, apiTokenAuthenticator);
     }
 
     /** 构造模拟请求，使 UrlBasedCorsConfigurationSource 能匹配 /** 并返回配置 */
@@ -189,11 +192,11 @@ class SecurityConfigTest {
     class Instantiation {
 
         @Test
-        @DisplayName("应正确注入 JwtTokenProvider / AppProperties / ObjectMapper")
+        @DisplayName("应正确注入 JwtTokenProvider / AppProperties / ObjectMapper / ApiTokenAuthenticator")
         void shouldInjectDependencies() {
             // Arrange & Act
             SecurityConfig config = new SecurityConfig(
-                    jwtTokenProvider, appProperties, objectMapper
+                    jwtTokenProvider, appProperties, objectMapper, apiTokenAuthenticator
             );
 
             // Assert

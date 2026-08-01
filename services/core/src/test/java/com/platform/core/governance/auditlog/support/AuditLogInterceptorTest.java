@@ -1,6 +1,6 @@
 package com.platform.core.governance.auditlog.support;
 
-import com.platform.core.auth.security.AuthenticatedPrincipal;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import com.platform.core.governance.auditlog.domain.AuditActor;
@@ -142,7 +142,8 @@ class AuditLogInterceptorTest {
                     any(GovernanceResult.class), any(GovernanceRiskLevel.class),
                     anyBoolean(), anyString(),
                     org.mockito.ArgumentMatchers.nullable(String.class),
-                    anyString()
+                    anyString(),
+                    org.mockito.ArgumentMatchers.nullable(String.class)
             );
         }
 
@@ -156,7 +157,7 @@ class AuditLogInterceptorTest {
 
             verify(asyncWriter, never()).writeAsync(
                     any(), any(), any(), any(), any(), any(), any(),
-                    any(), any(), anyBoolean(), any(), any(), any()
+                    any(), any(), anyBoolean(), any(), any(), any(), any()
             );
         }
 
@@ -173,7 +174,7 @@ class AuditLogInterceptorTest {
 
             verify(asyncWriter, never()).writeAsync(
                     any(), any(), any(), any(), any(), any(), any(),
-                    any(), any(), anyBoolean(), any(), any(), any()
+                    any(), any(), anyBoolean(), any(), any(), any(), any()
             );
         }
 
@@ -192,7 +193,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter, times(1)).writeAsync(
                     eq(tenantId), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
         }
 
@@ -209,7 +210,7 @@ class AuditLogInterceptorTest {
 
             verify(asyncWriter, never()).writeAsync(
                     any(), any(), any(), any(), any(), any(), any(),
-                    any(), any(), anyBoolean(), any(), any(), any()
+                    any(), any(), anyBoolean(), any(), any(), any(), any()
             );
         }
     }
@@ -243,7 +244,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter, times(1)).writeAsync(
                     eq(tenantId), any(Instant.class), actorCaptor.capture(), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             AuditActor actor = actorCaptor.getValue();
             assertThat(actor.getId()).isEqualTo(principalId.toString());
@@ -270,7 +271,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter, times(1)).writeAsync(
                     eq(tenantId), any(Instant.class), actorCaptor.capture(), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             AuditActor actor = actorCaptor.getValue();
             assertThat(actor.getId()).isEqualTo(userId);
@@ -295,7 +296,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter, times(1)).writeAsync(
                     eq(tenantId), any(Instant.class), actorCaptor.capture(), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             AuditActor actor = actorCaptor.getValue();
             assertThat(actor.getId()).isEqualTo("anonymous");
@@ -322,7 +323,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), resultCaptor.capture(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             assertThat(resultCaptor.getValue()).isEqualTo(GovernanceResult.SUCCESS);
         }
@@ -342,7 +343,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), resultCaptor.capture(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             assertThat(resultCaptor.getValue()).isEqualTo(GovernanceResult.DENIED);
         }
@@ -362,7 +363,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), resultCaptor.capture(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             assertThat(resultCaptor.getValue()).isEqualTo(GovernanceResult.DENIED);
         }
@@ -382,7 +383,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), resultCaptor.capture(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             assertThat(resultCaptor.getValue()).isEqualTo(GovernanceResult.ERROR);
         }
@@ -403,7 +404,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), resultCaptor.capture(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             assertThat(resultCaptor.getValue()).isEqualTo(GovernanceResult.FAILURE);
         }
@@ -424,7 +425,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), resultCaptor.capture(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             assertThat(resultCaptor.getValue()).isEqualTo(GovernanceResult.ERROR);
         }
@@ -447,7 +448,7 @@ class AuditLogInterceptorTest {
             org.mockito.Mockito.doThrow(new RuntimeException("DB connection lost"))
                     .when(asyncWriter)
                     .writeAsync(any(), any(), any(), any(), any(), any(), any(),
-                            any(), any(), anyBoolean(), any(), any(), any());
+                            any(), any(), anyBoolean(), any(), any(), any(), any());
 
             // 不应抛异常
             interceptor.afterCompletion(request, response, new Object(), null);
@@ -455,7 +456,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter, times(1)).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
         }
     }
@@ -480,7 +481,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    ipCaptor.capture(), any(), any()
+                    ipCaptor.capture(), any(), any(), any()
             );
             assertThat(ipCaptor.getValue()).isEqualTo("203.0.113.10");
         }
@@ -501,7 +502,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), any(), any(), any(), any(), anyBoolean(),
-                    ipCaptor.capture(), any(), any()
+                    ipCaptor.capture(), any(), any(), any()
             );
             assertThat(ipCaptor.getValue()).isEqualTo("10.0.0.42");
         }
@@ -522,7 +523,7 @@ class AuditLogInterceptorTest {
             verify(asyncWriter).writeAsync(
                     any(UUID.class), any(Instant.class), any(AuditActor.class), anyString(),
                     any(), objectCaptor.capture(), any(), any(), any(), anyBoolean(),
-                    any(), any(), any()
+                    any(), any(), any(), any()
             );
             com.platform.core.governance.auditlog.domain.AuditObject obj = objectCaptor.getValue();
             assertThat(obj.getType()).isEqualTo("projects");

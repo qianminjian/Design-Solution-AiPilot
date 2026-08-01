@@ -67,7 +67,31 @@ export type OperationsActionType =
   | "failover"
   | "pause"
   | "resume"
-  | "cancel";
+  | "cancel"
+  | "delete";
+
+/**
+ * 双人审批状态（D37.23 §不可逆/合规：二人审批）
+ *
+ * 状态机流转：
+ *  - NOT_REQUIRED → 操作完成（无需双人审批）
+ *  - PENDING_REVIEW1 → APPROVED_REVIEW1 → PENDING_REVIEW2 → APPROVED
+ *  - PENDING_REVIEW1 → REJECTED_REVIEW1（审批人1拒绝）
+ *  - PENDING_REVIEW2 → REJECTED_REVIEW2（审批人2拒绝）
+ *
+ * 安全约束：
+ *  - 审批人1不可与发起人相同
+ *  - 审批人2不可与审批人1相同
+ *  - 审批人1和审批人2都需 stepUpToken 二次认证
+ *  - 审批人1和审批人2的审批间隔须 ≥ 5秒（防止快速攻击）
+ */
+export type DualApprovalStatus =
+  | "not_required"
+  | "pending_review1"
+  | "rejected_review1"
+  | "pending_review2"
+  | "approved"
+  | "rejected_review2";
 
 // ── DTO ──
 
@@ -263,6 +287,36 @@ export interface ListConnectorsRequest {
   keyword?: string;
 }
 
+/**
+ * 连接器注册请求（V1.10.3 新增，对齐后端 ConnectorRegisterRequest）
+ *
+ * 对应契约：POST /api/v1/operations/connectors/register
+ *
+ * 安全红线（对齐 OD-05 外部 AI 接入约束）：
+ *  - AI_PROVIDER 类型（建筑 AI Provider）强制 isManualHandoff=true（V1 不自动接入）
+ *  - 同一 connectorCode 已存在时更新记录（幂等注册）
+ */
+export interface ConnectorRegisterRequest {
+  /** 连接器业务编号（如 "deepseek-llm-001"） */
+  connectorCode: string;
+  /** 连接器名称（显示用） */
+  name: string;
+  /** 连接器类型 */
+  type: ConnectorType;
+  /** 部署 Region（Hybrid-Site 部署标识） */
+  region?: string;
+  /** 端点 URL（可选，连接器调用地址） */
+  endpointUrl?: string | null;
+  /** 许可证剩余描述（如 "30 days" / "5000 calls"） */
+  licenseRemaining?: string | null;
+  /**
+   * 是否为 ManualHandoff（OD-05 外部 AI V1 约束）
+   * - AI_PROVIDER 类型后端会强制覆盖为 true
+   * - 其他类型按传入值设置
+   */
+  isManualHandoff: boolean;
+}
+
 /** Operations 主动作请求（D37.17 §危险动作） */
 export interface OperationsActionRequest {
   /** 动作类型 */
@@ -289,6 +343,8 @@ export interface OperationsActionResponseDto {
   targetId: string;
   /** 操作状态 */
   status: "queued" | "running" | "completed" | "failed";
+  /** 风险等级（LOW/MEDIUM/HIGH/IRREVERSIBLE） */
+  riskLevel?: string;
   /** 已触发时间 */
   initiatedAt: string;
   /** 完成时间 */
@@ -297,6 +353,46 @@ export interface OperationsActionResponseDto {
   affectedCount?: number;
   /** 审计追踪 ID */
   auditTraceId: string;
+  /** 错误消息（FAILED 时存在） */
+  errorMessage?: string | null;
+  /** 发起人 ID（从 SecurityContext 解析，禁止客户端通过 x-user-id 头伪造） */
+  initiatedBy?: string | null;
+  /** 双人审批状态（D37.23 §不可逆/合规：二人审批） */
+  dualApprovalStatus?: DualApprovalStatus;
+  /** 审批人1 ID */
+  reviewer1Id?: string | null;
+  /** 审批人1 审批时间 */
+  reviewer1At?: string | null;
+  /** 审批人1 审批意见 */
+  reviewer1Comment?: string | null;
+  /** 审批人2 ID */
+  reviewer2Id?: string | null;
+  /** 审批人2 审批时间 */
+  reviewer2At?: string | null;
+  /** 审批人2 审批意见 */
+  reviewer2Comment?: string | null;
+}
+
+/** 双人审批请求 DTO（审批人1/2 进行审批/拒绝） */
+export interface DualApprovalReviewRequest {
+  /** Step-up 认证 Token（必须，审批为高风险操作） */
+  stepUpToken: string;
+  /** 审批意见（必须，进入审计日志） */
+  comment: string;
+}
+
+/** 双人审批响应 DTO */
+export interface DualApprovalReviewResponseDto {
+  /** 操作 ID */
+  operationId: string;
+  /** 更新后的双人审批状态 */
+  dualApprovalStatus: DualApprovalStatus;
+  /** 操作状态（queued/running/completed/failed） */
+  status: "queued" | "running" | "completed" | "failed";
+  /** 审计追踪 ID */
+  auditTraceId: string;
+  /** 审批完成后操作是否已执行 */
+  executed?: boolean;
 }
 
 // ── API 路径 ──
@@ -319,8 +415,29 @@ export const MonitoringApiPaths = {
   connectors: "/api/v1/operations/connectors",
   /** 连接器详情 */
   connector: (id: string) => `/api/v1/operations/connectors/${id}`,
+  /** 连接器注册（幂等，V1.10.3 新增，对齐 Worker register 模式） */
+  connectorRegister: "/api/v1/operations/connectors/register",
   /** Operations 主动作（isolate/retry/reconcile/failover） */
   action: "/api/v1/operations/action",
+  /** Operations 主动作详情（UUID 主键，含双人审批状态） */
+  actionDetail: (actionId: string) => `/api/v1/operations/action/${actionId}`,
+  /** 按字符串 operationId 查询详情（前端 cancel 后返回的字符串 ID） */
+  actionByOperationId: (operationId: string) =>
+    `/api/v1/operations/action/by-operation-id/${operationId}`,
+  /** 待审批操作列表（默认查 PENDING_REVIEW1 + PENDING_REVIEW2） */
+  pendingActions: "/api/v1/operations/action/pending",
+  /** 审批人1 通过 */
+  approveReview1: (actionId: string) =>
+    `/api/v1/operations/action/${actionId}/review1/approve`,
+  /** 审批人1 拒绝 */
+  rejectReview1: (actionId: string) =>
+    `/api/v1/operations/action/${actionId}/review1/reject`,
+  /** 审批人2 通过 */
+  approveReview2: (actionId: string) =>
+    `/api/v1/operations/action/${actionId}/review2/approve`,
+  /** 审批人2 拒绝 */
+  rejectReview2: (actionId: string) =>
+    `/api/v1/operations/action/${actionId}/review2/reject`,
 } as const;
 
 // ── 枚举映射常量 ──
@@ -443,6 +560,7 @@ export const OPERATIONS_ACTION_LABEL: Record<OperationsActionType, string> = {
   pause: "暂停",
   resume: "恢复",
   cancel: "取消",
+  delete: "删除",
 };
 
 /** Operations 主动作风险等级（D37.23 §危险动作） */
@@ -457,4 +575,28 @@ export const OPERATIONS_ACTION_RISK_LEVEL: Record<
   pause: "medium",
   resume: "low",
   cancel: "irreversible",
+  delete: "irreversible",
 };
+
+/** 双人审批状态标签（D37.23 §不可逆/合规：二人审批） */
+export const DUAL_APPROVAL_STATUS_LABEL: Record<DualApprovalStatus, string> = {
+  not_required: "无需审批",
+  pending_review1: "等待审批人1",
+  rejected_review1: "审批人1已拒绝",
+  pending_review2: "等待审批人2",
+  approved: "审批完成",
+  rejected_review2: "审批人2已拒绝",
+};
+
+/** 双人审批状态颜色（Ant Design Tag color） */
+export const DUAL_APPROVAL_STATUS_COLOR: Record<DualApprovalStatus, string> = {
+  not_required: "default",
+  pending_review1: "warning",
+  rejected_review1: "error",
+  pending_review2: "warning",
+  approved: "success",
+  rejected_review2: "error",
+};
+
+/** 最小审批间隔（毫秒）—— 防止快速攻击 */
+export const DUAL_APPROVAL_MIN_INTERVAL_MS = 5000;

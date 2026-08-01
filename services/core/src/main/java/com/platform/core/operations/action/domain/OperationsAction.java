@@ -1,6 +1,7 @@
 package com.platform.core.operations.action.domain;
 
 import com.platform.core.common.entity.TenantBaseEntity;
+import com.platform.core.operations.domain.enums.DualApprovalStatus;
 import com.platform.core.operations.domain.enums.OperationsActionStatus;
 import com.platform.core.operations.domain.enums.OperationsActionTargetType;
 import com.platform.core.operations.domain.enums.OperationsActionType;
@@ -121,6 +122,35 @@ public class OperationsAction extends TenantBaseEntity {
     /** 审批人 2（IRREVERSIBLE 动作双人审批，V0 占位通过） */
     @Column(name = "reviewer2", length = 200)
     private String reviewer2;
+
+    /** 审批人 1 用户 ID（V1.9 新增，从 x-user-id 头解析，PII: L2） */
+    @Column(name = "reviewer1_id", length = 200)
+    private String reviewer1Id;
+
+    /** 审批人 1 批准时间（V1.9 新增） */
+    @Column(name = "reviewer1_at")
+    private Instant reviewer1At;
+
+    /** 审批人 1 意见（V1.9 新增，必填，进入审计日志，PII: L2） */
+    @Column(name = "reviewer1_comment", length = 1000)
+    private String reviewer1Comment;
+
+    /** 审批人 2 用户 ID（V1.9 新增，从 x-user-id 头解析，PII: L2） */
+    @Column(name = "reviewer2_id", length = 200)
+    private String reviewer2Id;
+
+    /** 审批人 2 批准时间（V1.9 新增） */
+    @Column(name = "reviewer2_at")
+    private Instant reviewer2At;
+
+    /** 审批人 2 意见（V1.9 新增，必填，进入审计日志，PII: L2） */
+    @Column(name = "reviewer2_comment", length = 1000)
+    private String reviewer2Comment;
+
+    /** 双人审批状态（V1.9 新增，IRREVERSIBLE 动作状态机） */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dual_approval_status", nullable = false, length = 32)
+    private DualApprovalStatus dualApprovalStatus = DualApprovalStatus.NOT_REQUIRED;
 
     // ── Getters/Setters ──
 
@@ -266,5 +296,61 @@ public class OperationsAction extends TenantBaseEntity {
 
     public void setReviewer2(String reviewer2) {
         this.reviewer2 = reviewer2;
+    }
+
+    public String getReviewer1Id() {
+        return reviewer1Id;
+    }
+
+    public void setReviewer1Id(String reviewer1Id) {
+        this.reviewer1Id = reviewer1Id;
+    }
+
+    public Instant getReviewer1At() {
+        return reviewer1At;
+    }
+
+    public void setReviewer1At(Instant reviewer1At) {
+        this.reviewer1At = reviewer1At;
+    }
+
+    public String getReviewer1Comment() {
+        return reviewer1Comment;
+    }
+
+    public void setReviewer1Comment(String reviewer1Comment) {
+        this.reviewer1Comment = reviewer1Comment;
+    }
+
+    public String getReviewer2Id() {
+        return reviewer2Id;
+    }
+
+    public void setReviewer2Id(String reviewer2Id) {
+        this.reviewer2Id = reviewer2Id;
+    }
+
+    public Instant getReviewer2At() {
+        return reviewer2At;
+    }
+
+    public void setReviewer2At(Instant reviewer2At) {
+        this.reviewer2At = reviewer2At;
+    }
+
+    public String getReviewer2Comment() {
+        return reviewer2Comment;
+    }
+
+    public void setReviewer2Comment(String reviewer2Comment) {
+        this.reviewer2Comment = reviewer2Comment;
+    }
+
+    public DualApprovalStatus getDualApprovalStatus() {
+        return dualApprovalStatus;
+    }
+
+    public void setDualApprovalStatus(DualApprovalStatus dualApprovalStatus) {
+        this.dualApprovalStatus = dualApprovalStatus;
     }
 }

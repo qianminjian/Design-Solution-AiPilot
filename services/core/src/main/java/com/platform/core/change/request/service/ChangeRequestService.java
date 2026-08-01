@@ -1,5 +1,8 @@
 package com.platform.core.change.request.service;
 
+import com.platform.core.common.spi.StepUpTokenValidator;
+import com.platform.core.change.affecteditem.service.AffectedItemService;
+import com.platform.core.change.closureevidence.service.ClosureEvidenceService;
 import com.platform.core.change.domain.enums.ChangePriority;
 import com.platform.core.change.domain.enums.ChangeStatus;
 import com.platform.core.change.domain.enums.ChangeType;
@@ -13,8 +16,11 @@ import com.platform.core.change.request.dto.RejectChangeRequestRequest;
 import com.platform.core.change.request.dto.SubmitImpactAssessmentRequest;
 import com.platform.core.change.request.dto.VerifyClosureRequest;
 import com.platform.core.change.request.repository.ChangeRequestRepository;
+import com.platform.core.change.taskplan.service.TaskPlanItemService;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.Year;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -60,9 +67,39 @@ public class ChangeRequestService {
     private static final Logger log = LoggerFactory.getLogger(ChangeRequestService.class);
 
     private final ChangeRequestRepository repository;
+    private final ObjectMapper objectMapper;
+    /**
+     * A-61 P1-3 修复：依赖倒置，change 域通过 StepUpTokenValidator 端口接口
+     * 解除对 auth 域 JwtTokenProvider 的直接依赖。
+     */
+    private final StepUpTokenValidator stepUpTokenValidator;
+    private final AiImpactAnalyzer aiImpactAnalyzer;
+    /**
+     * A-61 P0-3 修复：注入变更闭环校验三件套
+     * - AffectedItemService：校验影响项无 UNKNOWN + 无 PENDING/IN_PROGRESS 复查
+     * - TaskPlanItemService：校验处置任务无 PENDING/IN_PROGRESS/BLOCKED（blocksClosure=true）
+     * - ClosureEvidenceService：校验关闭证据无 PENDING（blocksClosure=true）+ 无 REJECTED
+     */
+    private final AffectedItemService affectedItemService;
+    private final TaskPlanItemService taskPlanItemService;
+    private final ClosureEvidenceService closureEvidenceService;
 
-    public ChangeRequestService(ChangeRequestRepository repository) {
+    public ChangeRequestService(
+            ChangeRequestRepository repository,
+            ObjectMapper objectMapper,
+            StepUpTokenValidator stepUpTokenValidator,
+            AiImpactAnalyzer aiImpactAnalyzer,
+            AffectedItemService affectedItemService,
+            TaskPlanItemService taskPlanItemService,
+            ClosureEvidenceService closureEvidenceService
+    ) {
         this.repository = repository;
+        this.objectMapper = objectMapper;
+        this.stepUpTokenValidator = stepUpTokenValidator;
+        this.aiImpactAnalyzer = aiImpactAnalyzer;
+        this.affectedItemService = affectedItemService;
+        this.taskPlanItemService = taskPlanItemService;
+        this.closureEvidenceService = closureEvidenceService;
     }
 
     // ── 查询 ──
@@ -199,11 +236,29 @@ public class ChangeRequestService {
 
     // ── 状态流转：提交影响评估 ──
 
+    /**
+     * 提交影响评估（Sprint V1.8 集成 AI 辅助影响分析）
+     *
+     * <p>流程：
+     * <ol>
+     *   <li>状态机校验（DRAFT / SUBMITTED / IMPACT_ASSESSMENT → PENDING_APPROVAL）</li>
+     *   <li>高风险变更（CRITICAL）强制 stepUpToken 二次认证</li>
+     *   <li>保存用户手动输入的 impactAssessment</li>
+     *   <li>调用 {@link AiImpactAnalyzer#generateImpactAnalysis} 生成 AI 辅助分析</li>
+     *   <li>填充 aiAssistedAnalysis + isAiAssisted 字段（AI 失败时降级，不阻断主流程）</li>
+     * </ol>
+     *
+     * <p>安全红线：AI 输出 requiresHumanReview=true，必须经人工复核后才可作为最终判断依据。
+     *
+     * @design D37-关键界面-交互状态.md §D37.16
+     * @design security.md §12 AI 安全红线
+     */
     @Transactional
     public ChangeRequestDto submitImpactAssessment(
             UUID tenantId,
             UUID id,
             String currentUser,
+            String traceId,
             SubmitImpactAssessmentRequest request
     ) {
         ChangeRequest entity = repository.findByIdAndTenantId(id, tenantId)
@@ -212,12 +267,14 @@ public class ChangeRequestService {
                         HttpStatus.NOT_FOUND,
                         "ChangeRequest not found: " + id));
 
-        if (entity.getStatus() != ChangeStatus.SUBMITTED
+        // 前端契约：DRAFT/IMPACT_ASSESSMENT → PENDING_APPROVAL（@design-platform/shared §ChangeApiPaths）
+        if (entity.getStatus() != ChangeStatus.DRAFT
+                && entity.getStatus() != ChangeStatus.SUBMITTED
                 && entity.getStatus() != ChangeStatus.IMPACT_ASSESSMENT) {
             throw new BusinessException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     HttpStatus.CONFLICT,
-                    "ChangeRequest 必须在 SUBMITTED 或 IMPACT_ASSESSMENT 状态才能提交影响评估，当前状态: "
+                    "ChangeRequest 必须在 DRAFT / SUBMITTED / IMPACT_ASSESSMENT 状态才能提交影响评估，当前状态: "
                             + entity.getStatus());
         }
 
@@ -226,14 +283,29 @@ public class ChangeRequestService {
             validateStepUpToken(request.stepUpToken());
         }
 
-        entity.setImpactAssessment(request.impactAssessment());
+        // 将文本包装为 JSON 格式存储（impact_assessment 字段为 jsonb 类型）
+        entity.setImpactAssessment(wrapAsJson(request.impactAssessment()));
         entity.setConfirmedNoImpact(request.confirmedNoImpact());
         entity.setStatus(ChangeStatus.PENDING_APPROVAL);
         entity.setRiskAssessment(updateRiskAssessment(entity, request));
 
+        // Sprint V1.8：调用 AI 辅助影响分析（失败降级，不阻断主流程）
+        try {
+            AiImpactAnalyzer.AnalysisResult aiResult = aiImpactAnalyzer.generateImpactAnalysis(entity, traceId);
+            entity.setAiAssistedAnalysis(aiResult.payload());
+            entity.setAiAssisted(aiResult.aiAssisted());
+            log.info("AI 影响分析已填充: changeId={}, aiAssisted={}, degraded={}, traceId={}",
+                    id, aiResult.aiAssisted(), aiResult.degradeReason() != null, traceId);
+        } catch (Exception ex) {
+            // 兜底保护：AiImpactAnalyzer 内部已降级，此处仍 catch 防止意外异常影响主流程
+            log.warn("AI 影响分析异常，保留手动输入: changeId={}, error={}", id, ex.getMessage());
+            entity.setAiAssisted(false);
+            entity.setAiAssistedAnalysis("{}");
+        }
+
         ChangeRequest saved = repository.save(entity);
-        log.info("ChangeRequest impact assessment submitted: id={}, tenantId={}, confirmedNoImpact={}",
-                id, tenantId, request.confirmedNoImpact());
+        log.info("ChangeRequest impact assessment submitted: id={}, tenantId={}, confirmedNoImpact={}, aiAssisted={}",
+                id, tenantId, request.confirmedNoImpact(), saved.isAiAssisted());
         return toDto(saved);
     }
 
@@ -380,11 +452,14 @@ public class ChangeRequestService {
                         HttpStatus.NOT_FOUND,
                         "ChangeRequest not found: " + id));
 
-        if (entity.getStatus() != ChangeStatus.PENDING_VERIFICATION) {
+        // 前端契约：IN_PROGRESS/PENDING_VERIFICATION → CLOSED（@design-platform/shared §ChangeApiPaths §verifyClosure）
+        // V0 简化：允许 IN_PROGRESS 直接进入 CLOSED（跳过 PENDING_VERIFICATION 中间状态）
+        if (entity.getStatus() != ChangeStatus.PENDING_VERIFICATION
+                && entity.getStatus() != ChangeStatus.IN_PROGRESS) {
             throw new BusinessException(
                     ErrorCode.BUSINESS_RULE_VIOLATION,
                     HttpStatus.CONFLICT,
-                    "ChangeRequest 必须在 PENDING_VERIFICATION 状态才能验证关闭，当前状态: "
+                    "ChangeRequest 必须在 PENDING_VERIFICATION 或 IN_PROGRESS 状态才能验证关闭，当前状态: "
                             + entity.getStatus());
         }
 
@@ -413,8 +488,13 @@ public class ChangeRequestService {
                     "关闭人不可兼任实施人（职责分离原则）");
         }
 
-        // V0 简化：跳过 Unknown 影响项检查、所有任务完成检查、所有证据已验证检查
-        // V1 完整实现：调用 AffectedItemService/TaskPlanService/ClosureEvidenceService 校验
+        // A-61 P0-3 修复：变更关闭闭环校验（D11 变更管理红线）
+        // 1. 影响项校验：无 UNKNOWN 影响项 + 无 PENDING/IN_PROGRESS 复查
+        validateAffectedItemsBeforeClosure(tenantId, id);
+        // 2. 处置任务校验：无 PENDING/IN_PROGRESS/BLOCKED 阻塞任务
+        validateTaskPlanBeforeClosure(tenantId, id);
+        // 3. 关闭证据校验：无 PENDING 阻塞证据 + 无 REJECTED 证据
+        validateClosureEvidenceBeforeClosure(tenantId, id);
 
         entity.setStatus(ChangeStatus.CLOSED);
         entity.setClosedBy(currentUser);
@@ -428,6 +508,84 @@ public class ChangeRequestService {
         return toDto(saved);
     }
 
+    // ── 变更关闭闭环校验（A-61 P0-3 修复，对齐 D11 变更管理红线） ──
+
+    /**
+     * 校验影响项：无 UNKNOWN 影响项 + 无 PENDING/IN_PROGRESS 复查
+     *
+     * <p>对齐 @design/D11-变更管理.md §关闭校验：
+     * <ul>
+     *   <li>UNKNOWN 影响项表示影响分析未完成，禁止关闭</li>
+     *   <li>PENDING/IN_PROGRESS 复查项表示待复查流程未结束，禁止关闭</li>
+     * </ul>
+     */
+    private void validateAffectedItemsBeforeClosure(UUID tenantId, UUID changeId) {
+        long unknownCount = affectedItemService.countUnknownImpact(tenantId, changeId);
+        if (unknownCount > 0) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "变更关闭失败：存在 " + unknownCount + " 个 UNKNOWN 影响项未完成影响分析");
+        }
+        long pendingRecheck = affectedItemService.countPendingRecheck(tenantId, changeId);
+        if (pendingRecheck > 0) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "变更关闭失败：存在 " + pendingRecheck + " 个待复查影响项未完成复查流程");
+        }
+        long inProgressRecheck = affectedItemService.countInProgressRecheck(tenantId, changeId);
+        if (inProgressRecheck > 0) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "变更关闭失败：存在 " + inProgressRecheck + " 个复查中影响项未完成复查流程");
+        }
+    }
+
+    /**
+     * 校验处置任务：无 PENDING/IN_PROGRESS/BLOCKED 阻塞任务
+     *
+     * <p>对齐 @design/D11-变更管理.md §关闭校验：
+     * blocksClosure=true 的任务必须 COMPLETED 或 SKIPPED（含审批记录）。
+     * TaskPlanItemService.countBlockingTasks 已聚合 PENDING/IN_PROGRESS/BLOCKED 三态。
+     */
+    private void validateTaskPlanBeforeClosure(UUID tenantId, UUID changeId) {
+        long blockingTasks = taskPlanItemService.countBlockingTasks(tenantId, changeId);
+        if (blockingTasks > 0) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "变更关闭失败：存在 " + blockingTasks + " 个未完成的阻塞任务（PENDING/IN_PROGRESS/BLOCKED）");
+        }
+    }
+
+    /**
+     * 校验关闭证据：无 PENDING 阻塞证据 + 无 REJECTED 证据
+     *
+     * <p>对齐 @design/D11-变更管理.md §关闭校验：
+     * <ul>
+     *   <li>blocksClosure=true 的证据必须 VERIFIED 或 REJECTED（已处理）</li>
+     *   <li>存在 REJECTED 证据表示变更未通过验证，禁止关闭</li>
+     * </ul>
+     */
+    private void validateClosureEvidenceBeforeClosure(UUID tenantId, UUID changeId) {
+        long rejectedEvidence = closureEvidenceService.countRejected(tenantId, changeId);
+        if (rejectedEvidence > 0) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "变更关闭失败：存在 " + rejectedEvidence + " 个 REJECTED 关闭证据，变更未通过验证");
+        }
+        long blockingEvidence = closureEvidenceService.countBlockingEvidence(tenantId, changeId);
+        if (blockingEvidence > 0) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "变更关闭失败：存在 " + blockingEvidence + " 个未验证的阻塞证据（PENDING 状态）");
+        }
+    }
+
     // ── 辅助方法 ──
 
     /** 生成业务编号（如 CHG-2026-<6位UUID后缀>） */
@@ -436,7 +594,28 @@ public class ChangeRequestService {
         return "CHG-" + Year.now().getValue() + "-" + uuidSuffix;
     }
 
-    /** 校验 stepUpToken（V0 简化：仅非空校验） */
+    /**
+     * 校验 stepUpToken（V1.7 升级：真实 JWT 校验，对齐 Operations 域）
+     *
+     * <p>A-61 P1-3 修复：通过 {@link StepUpTokenValidator} 端口接口调用，
+     * 由 auth 域 JwtTokenProvider 适配器实现，解除 change → auth 反向依赖。
+     *
+     * <p>校验内容：
+     * <ul>
+     *   <li>JWT 签名（HS256）+ 有效期（默认 5 分钟）</li>
+     *   <li>token 类型必须为 TYPE_STEP_UP（"step_up"）</li>
+     * </ul>
+     *
+     * <p>错误处理：适配器内部已统一转换为
+     * {@link ErrorCode#STEP_UP_TOKEN_INVALID}（4015）防枚举攻击，
+     * 本方法仅需捕获 BusinessException 透传。
+     *
+     * <p>注意：当前实现不绑定 purpose 与具体 actionType，允许同一 token 在 5 分钟内用于多个高风险动作。
+     * V2 可考虑绑定 purpose 增强安全性。
+     *
+     * @design D40-信息-物理安全.md §Step-up 认证
+     * @design security.md §2.2 认证 Token + §12 AI 安全红线
+     */
     private void validateStepUpToken(String stepUpToken) {
         if (stepUpToken == null || stepUpToken.isBlank()) {
             throw new BusinessException(
@@ -444,7 +623,8 @@ public class ChangeRequestService {
                     HttpStatus.BAD_REQUEST,
                     "高风险操作需要 stepUpToken 二次认证");
         }
-        // V1 完整实现：调用 IAM step-up 服务校验 token 有效性与 scope
+        // V1.7 真实 JWT 校验：签名 + 有效期 + 类型（对齐 OperationsActionService.validateRiskConstraints）
+        stepUpTokenValidator.validateStepUpToken(stepUpToken);
     }
 
     /** 追加风险说明 */
@@ -452,6 +632,24 @@ public class ChangeRequestService {
         String existing = entity.getRiskAssessment() == null ? "" : entity.getRiskAssessment();
         String suffix = request.confirmedNoImpact() ? "（已确认无影响）" : "（已确认存在影响）";
         return existing + (existing.isEmpty() ? "" : " | ") + suffix;
+    }
+
+    /**
+     * 将文本包装为 JSON 对象存储（jsonb 字段需要合法 JSON 格式）
+     *
+     * <p>格式：{@code {"summary":"<文本内容>"}}
+     * 如果文本为 null 或空，返回 {@code "{}"}。
+     */
+    private String wrapAsJson(String text) {
+        if (text == null || text.isBlank()) {
+            return "{}";
+        }
+        try {
+            return objectMapper.writeValueAsString(Map.of("summary", text));
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to serialize impactAssessment as JSON, fallback to empty object", e);
+            return "{}";
+        }
     }
 
     /** 追加备注 */
@@ -495,7 +693,9 @@ public class ChangeRequestService {
                 entity.getImplementedAt(),
                 entity.getClosedBy(),
                 entity.getClosedAt(),
+                entity.getImpactAssessment(),
                 entity.isConfirmedNoImpact(),
+                entity.getAiAssistedAnalysis(),
                 entity.isAiAssisted(),
                 entity.getRiskAssessment(),
                 entity.getCreatedAt(),

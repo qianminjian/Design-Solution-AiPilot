@@ -260,6 +260,8 @@ export const governanceAuditLogSchema = z.object({
   ipAddress: z.string(),
   userAgent: z.string(),
   details: z.string(),
+  // P0-1.2 测试数据隔离：null 表示生产/未标记数据，非空表示测试数据
+  testRunId: z.string().nullable().optional(),
 });
 
 export const governanceAuditLogListResponseSchema = z.object({
@@ -267,6 +269,15 @@ export const governanceAuditLogListResponseSchema = z.object({
   total: z.number().int().nonnegative(),
 });
 
+/**
+ * 审计日志查询参数
+ *
+ * testRunId / excludeTestRun 用于 P0-1.2 测试数据隔离：
+ *  - 不传任何参数：返回全部（含测试与生产）
+ *  - testRunId=xxx：按值精确过滤某次测试运行
+ *  - excludeTestRun=true：仅返回生产数据（test_run_id IS NULL）
+ *  - testRunId 与 excludeTestRun 同时传时，以 excludeTestRun 优先
+ */
 export const governanceAuditLogQuerySchema = z.object({
   category: governanceAuditCategorySchema.optional(),
   result: governanceResultSchema.optional(),
@@ -275,6 +286,8 @@ export const governanceAuditLogQuerySchema = z.object({
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
   traceId: z.string().optional(),
+  testRunId: z.string().optional(),
+  excludeTestRun: z.boolean().optional(),
 });
 
 // ── Evidence Package（D37.17 Audit/Evidence 证据包） ──

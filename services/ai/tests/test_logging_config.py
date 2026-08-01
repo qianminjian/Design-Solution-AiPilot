@@ -1,7 +1,7 @@
 """日志配置模块单元测试
 
 覆盖：
-- TraceIdFilter.filter：注入 trace_id 与 service 字段
+- ContextFilter.filter：注入 trace_id / test_run_id 与 service 字段
 - setup_logging：root logger 配置（handler 清理、level 设置、第三方库降级）
 
 权威源：.trae/rules/observability.md §1.2 结构化日志字段
@@ -11,15 +11,15 @@ from unittest.mock import patch
 
 import pytest
 
-from src.logging_config import TraceIdFilter, setup_logging
+from src.logging_config import ContextFilter, setup_logging
 
 
-class TestTraceIdFilter:
-    """TraceIdFilter 日志过滤器"""
+class TestContextFilter:
+    """ContextFilter 日志过滤器"""
 
-    def test_应在_record_注入_trace_id_与_service(self):
+    def test_应在_record_注入_trace_id_test_run_id_与_service(self):
         # Arrange
-        filter_ = TraceIdFilter()
+        filter_ = ContextFilter()
         record = logging.LogRecord(
             name="test",
             level=logging.INFO,
@@ -36,14 +36,17 @@ class TestTraceIdFilter:
         # Assert
         assert result is True
         assert hasattr(record, "trace_id")
+        assert hasattr(record, "test_run_id")
         assert hasattr(record, "service")
         assert record.service == "ai"
         # 没有 trace_id 时应回退为 "-"
         assert record.trace_id == "-"
+        # 没有 test_run_id 时应回退为 "untracked"
+        assert record.test_run_id == "untracked"
 
     def test_trace_id_存在时应注入真实值(self):
         # Arrange
-        filter_ = TraceIdFilter()
+        filter_ = ContextFilter()
         record = logging.LogRecord(
             name="test",
             level=logging.INFO,
@@ -62,9 +65,31 @@ class TestTraceIdFilter:
         assert result is True
         assert record.trace_id == "trace-abc-123"
 
+    def test_test_run_id_存在时应注入真实值(self):
+        """P0-1.2：test_run_id 应被注入到日志 record"""
+        # Arrange
+        filter_ = ContextFilter()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="hello",
+            args=None,
+            exc_info=None,
+        )
+
+        # Act: mock get_test_run_id 返回真实 test_run_id
+        with patch("src.logging_config.get_test_run_id", return_value="github-run-12345-1"):
+            result = filter_.filter(record)
+
+        # Assert
+        assert result is True
+        assert record.test_run_id == "github-run-12345-1"
+
     def test_filter_应始终返回_true(self):
         # Arrange
-        filter_ = TraceIdFilter()
+        filter_ = ContextFilter()
         record = logging.LogRecord(
             name="test",
             level=logging.WARNING,
@@ -151,7 +176,7 @@ class TestSetupLogging:
             for h in original_handlers:
                 root.addHandler(h)
 
-    def test_handler_应携带_TraceIdFilter(self):
+    def test_handler_应携带_ContextFilter(self):
         # Arrange
         root = logging.getLogger()
         original_level = root.level
@@ -165,7 +190,7 @@ class TestSetupLogging:
 
             # Assert
             handler = root.handlers[0]
-            assert any(isinstance(f, TraceIdFilter) for f in handler.filters)
+            assert any(isinstance(f, ContextFilter) for f in handler.filters)
         finally:
             root.setLevel(original_level)
             for h in list(root.handlers):

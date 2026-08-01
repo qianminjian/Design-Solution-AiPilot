@@ -10,6 +10,12 @@ import type {
   CreateOrganizationRequest,
   CreateMembershipRequest,
   OffsetPageResponse,
+  UserPreferencesDto,
+  UpdateUserPreferencesRequest,
+  ApiTokenDto,
+  CreateApiTokenRequest,
+  CreateApiTokenResponse,
+  RevokeApiTokenRequest,
 } from "@design-platform/shared";
 import {
   IamApiPaths,
@@ -19,7 +25,7 @@ import {
   membershipDtoSchema,
 } from "@design-platform/shared";
 import { z } from "zod";
-import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api-client";
+import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from "@/lib/api-client";
 
 /** IAM 域查询键前缀 */
 const IAM_QUERY_KEY = ["iam"] as const;
@@ -387,6 +393,103 @@ export function useDeleteMembership() {
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: [...IAM_QUERY_KEY, "memberships", "list"],
+      });
+    },
+  });
+}
+
+// ── 用户偏好设置（V1） ──
+
+const MY_PREFERENCES_QUERY_KEY = ["iam", "my-preferences"] as const;
+
+/**
+ * 查询当前用户偏好设置
+ * GET /api/v1/users/me/preferences
+ * 后端在数据库无记录时返回内存默认值，因此始终返回完整 DTO（不进入 error 状态）
+ */
+export function useMyPreferences() {
+  return useQuery<UserPreferencesDto>({
+    queryKey: [...MY_PREFERENCES_QUERY_KEY] as const,
+    queryFn: () =>
+      apiGet<UserPreferencesDto>(IamApiPaths.myPreferences, {
+        // 不强制 schema 校验：后端默认值 DTO 的 id/createdAt/updatedAt 可能为 null
+      }),
+    staleTime: 60 * 1000, // 60s 内不重复请求
+  });
+}
+
+/**
+ * 更新当前用户偏好设置（upsert 语义：不存在则创建）
+ * PUT /api/v1/users/me/preferences
+ */
+export function useUpdateMyPreferences() {
+  const queryClient = useQueryClient();
+  return useMutation<UserPreferencesDto, Error, UpdateUserPreferencesRequest>({
+    mutationFn: (payload) =>
+      apiPut<UserPreferencesDto>(IamApiPaths.myPreferences, payload),
+    onSuccess: (data) => {
+      // 直接更新缓存，避免再次 GET
+      queryClient.setQueryData([...MY_PREFERENCES_QUERY_KEY], data);
+    },
+    // 失败时不重置缓存，保留上一次成功的偏好数据
+  });
+}
+
+// ── API Token（V1 IAM Token API） ──
+
+const API_TOKENS_QUERY_KEY = ["iam", "api-tokens"] as const;
+
+/**
+ * 查询当前用户的所有 API Token
+ * GET /api/v1/iam/tokens
+ *
+ * 安全约束：响应不包含明文 token（仅 prefix）。
+ */
+export function useApiTokens() {
+  return useQuery<ApiTokenDto[]>({
+    queryKey: [...API_TOKENS_QUERY_KEY] as const,
+    queryFn: () => apiGet<ApiTokenDto[]>(IamApiPaths.apiTokens),
+    staleTime: 30 * 1000, // 30s 内不重复请求
+  });
+}
+
+/**
+ * 创建 API Token
+ * POST /api/v1/iam/tokens
+ *
+ * 返回包含明文 token 的响应（仅本次返回，前端必须立即复制保存）。
+ */
+export function useCreateApiToken() {
+  const queryClient = useQueryClient();
+  return useMutation<CreateApiTokenResponse, Error, CreateApiTokenRequest>({
+    mutationFn: (payload) =>
+      apiPost<CreateApiTokenResponse>(IamApiPaths.apiTokens, payload, {
+        headers: { [HttpHeader.IDEMPOTENCY_KEY]: generateIdempotencyKey() },
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [...API_TOKENS_QUERY_KEY],
+      });
+    },
+  });
+}
+
+/**
+ * 撤销 API Token（软撤销，不可逆）
+ * DELETE /api/v1/iam/tokens/{id}
+ *
+ * 安全约束：仅能撤销自己的 Token，撤销后状态变为 revoked。
+ */
+export function useRevokeApiToken() {
+  const queryClient = useQueryClient();
+  return useMutation<ApiTokenDto, Error, { id: string; reason?: string }>({
+    mutationFn: ({ id, reason }) => {
+      const body: RevokeApiTokenRequest = reason ? { reason } : {};
+      return apiDelete<ApiTokenDto>(IamApiPaths.apiToken(id), { body });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [...API_TOKENS_QUERY_KEY],
       });
     },
   });

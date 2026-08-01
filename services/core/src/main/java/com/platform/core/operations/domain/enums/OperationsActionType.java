@@ -13,6 +13,7 @@ package com.platform.core.operations.domain.enums;
  *  - PAUSE: MEDIUM（需影响预览确认）
  *  - RESUME: LOW
  *  - CANCEL: IRREVERSIBLE（需 stepUpToken + 影响预览确认 + 双人审批）
+ *  - DELETE: IRREVERSIBLE（V1.10 新增，删除资源不可恢复，需双人审批）
  */
 public enum OperationsActionType {
     /** 隔离（将 Worker/Connector 从调度池移除，HIGH 风险） */
@@ -28,5 +29,7 @@ public enum OperationsActionType {
     /** 恢复（恢复暂停的队列任务或 Worker，LOW 风险） */
     RESUME,
     /** 取消（终止任务，IRREVERSIBLE 不可逆） */
-    CANCEL
+    CANCEL,
+    /** 删除（硬删除 Worker/Connector 资源，IRREVERSIBLE 不可逆，V1.10 新增） */
+    DELETE
 }

@@ -159,8 +159,9 @@ public class ChangeRequestController {
     ) {
         UUID tenantId = tenantResolver.resolveTenantId(httpRequest);
         String currentUser = changeRequestService.extractCurrentUser(httpRequest);
+        String traceId = httpRequest.getHeader("x-trace-id");
         ChangeRequestDto dto = changeRequestService.submitImpactAssessment(
-                tenantId, id, currentUser, request);
+                tenantId, id, currentUser, traceId, request);
         return ApiResponse.success(dto);
     }
 

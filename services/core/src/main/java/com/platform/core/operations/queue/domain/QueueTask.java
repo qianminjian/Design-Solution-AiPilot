@@ -106,6 +106,34 @@ public class QueueTask extends TenantBaseEntity {
     @Column(name = "stage_id", length = 64)
     private String stageId;
 
+    /**
+     * 下次重试时间（V1.6 新增）
+     * RETRY_SCHEDULED 状态下由指数退避计算，WorkerScheduler 扫描 nextRetryAt <= now 重置为 QUEUED
+     */
+    @Column(name = "next_retry_at")
+    private Instant nextRetryAt;
+
+    /**
+     * 重试原因（V1.6 新增，最多 500 字符）
+     * 记录最近一次失败原因，便于死信队列诊断
+     */
+    @Column(name = "retry_reason", length = 500)
+    private String retryReason;
+
+    /**
+     * 进入死信队列时间（V1.6 新增）
+     * DEAD_LETTER 状态时记录，用于死信队列按时间排序和清理
+     */
+    @Column(name = "dead_lettered_at")
+    private Instant deadLetteredAt;
+
+    /**
+     * 进入死信队列原因（V1.6 新增，最多 500 字符）
+     * 如 "Max retries (3) exceeded: errorMessage..."
+     */
+    @Column(name = "dead_letter_reason", length = 500)
+    private String deadLetterReason;
+
     // ── Getters/Setters ──
 
     public UUID getId() {
@@ -234,5 +262,37 @@ public class QueueTask extends TenantBaseEntity {
 
     public void setStageId(String stageId) {
         this.stageId = stageId;
+    }
+
+    public Instant getNextRetryAt() {
+        return nextRetryAt;
+    }
+
+    public void setNextRetryAt(Instant nextRetryAt) {
+        this.nextRetryAt = nextRetryAt;
+    }
+
+    public String getRetryReason() {
+        return retryReason;
+    }
+
+    public void setRetryReason(String retryReason) {
+        this.retryReason = retryReason;
+    }
+
+    public Instant getDeadLetteredAt() {
+        return deadLetteredAt;
+    }
+
+    public void setDeadLetteredAt(Instant deadLetteredAt) {
+        this.deadLetteredAt = deadLetteredAt;
+    }
+
+    public String getDeadLetterReason() {
+        return deadLetterReason;
+    }
+
+    public void setDeadLetterReason(String deadLetterReason) {
+        this.deadLetterReason = deadLetterReason;
     }
 }

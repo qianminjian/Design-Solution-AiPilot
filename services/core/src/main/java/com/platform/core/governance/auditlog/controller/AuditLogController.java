@@ -57,6 +57,8 @@ public class AuditLogController {
             @RequestParam(required = false) Instant from,
             @RequestParam(required = false) Instant to,
             @RequestParam(required = false) String traceId,
+            @RequestParam(required = false) String testRunId,
+            @RequestParam(required = false) Boolean excludeTestRun,
             @RequestParam(defaultValue = "desc") String order,
             HttpServletRequest httpRequest
     ) {
@@ -76,7 +78,9 @@ public class AuditLogController {
                 actorId,
                 from,
                 to,
-                traceId
+                traceId,
+                testRunId,
+                excludeTestRun
         );
         Page<AuditLogDto> resultPage = auditLogService.listAuditLogs(
                 tenantId, query, pageable);

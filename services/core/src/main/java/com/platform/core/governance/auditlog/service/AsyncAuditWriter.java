@@ -54,8 +54,9 @@ public class AsyncAuditWriter {
      * @param ipAddress   IP 地址
      * @param userAgent   User-Agent
      * @param details     详细信息（已脱敏）
+     * @param testRunId   测试运行 ID（P0-1.2 测试数据隔离，null 表示未标记）
      */
-    @Async
+    @Async("platformAsyncExecutor")
     public void writeAsync(
             UUID tenantId,
             Instant timestamp,
@@ -69,7 +70,8 @@ public class AsyncAuditWriter {
             boolean masked,
             String ipAddress,
             String userAgent,
-            String details
+            String details,
+            String testRunId
     ) {
         try {
             AuditLog entity = new AuditLog();
@@ -86,6 +88,11 @@ public class AsyncAuditWriter {
             entity.setIpAddress(ipAddress != null ? ipAddress : "unknown");
             entity.setUserAgent(userAgent != null ? userAgent : "unknown");
             entity.setDetails(details != null ? details : "");
+            // P0-1.2：仅当为真实测试运行（非 null/非 untracked）时写入 testRunId 字段，
+            // 保持历史数据 NULL 状态便于 SLO 报表查询 WHERE test_run_id IS NULL
+            if (testRunId != null && !testRunId.isBlank() && !"untracked".equals(testRunId)) {
+                entity.setTestRunId(testRunId);
+            }
             repository.save(entity);
         } catch (Exception ex) {
             // 审计日志写入失败不能影响主流程

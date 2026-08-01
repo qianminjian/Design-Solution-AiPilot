@@ -3,6 +3,7 @@ package com.platform.core.governance.dataasset.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.platform.core.auth.jwt.JwtTokenProvider;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import com.platform.core.governance.dataasset.domain.DataAsset;
@@ -43,13 +44,16 @@ public class DataAssetService {
 
     private final DataAssetRepository repository;
     private final ObjectMapper objectMapper;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public DataAssetService(
             DataAssetRepository repository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            JwtTokenProvider jwtTokenProvider
     ) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     @Transactional(readOnly = true)
@@ -130,6 +134,11 @@ public class DataAssetService {
         return toDto(saved);
     }
 
+    /**
+     * 校验 stepUpToken（V1.7 升级：真实 JWT 校验，对齐 Operations 域）
+     *
+     * @design D40-信息-物理安全.md §Step-up 认证
+     */
     private void validateStepUp(DataAssetActionRequest request) {
         if (request.stepUpToken() == null || request.stepUpToken().isBlank()) {
             throw new BusinessException(
@@ -137,6 +146,7 @@ public class DataAssetService {
                     HttpStatus.FORBIDDEN,
                     "Step-up authentication required for DELETE action");
         }
+        jwtTokenProvider.validateStepUpToken(request.stepUpToken());
     }
 
     private String resolveOperator(HttpServletRequest httpRequest) {

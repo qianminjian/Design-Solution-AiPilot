@@ -28,6 +28,8 @@ import {
   MembershipProxyController,
   RoleBindingProxyController,
   AccessGrantProxyController,
+  UserPreferencesProxyController,
+  ApiTokenProxyController,
 } from "./iam/iam-proxy.controller";
 import { GovernanceProxyController } from "./governance/governance-proxy.controller";
 import { ChangeProxyController } from "./change/change-proxy.controller";
@@ -91,6 +93,8 @@ import { StorageModule } from "../storage/storage.module";
     MembershipProxyController,
     RoleBindingProxyController,
     AccessGrantProxyController,
+    UserPreferencesProxyController,
+    ApiTokenProxyController,
     GovernanceProxyController,
     ChangeProxyController,
     OperationsProxyController,

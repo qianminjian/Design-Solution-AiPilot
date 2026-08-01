@@ -20,7 +20,9 @@ import { ProxyService } from "./proxy.service";
 @Controller("v1")
 @UseInterceptors(ProxyInterceptor)
 export class ProxyController {
-  constructor(@Inject(ProxyService) private readonly proxyService: ProxyService) {}
+  constructor(
+    @Inject(ProxyService) private readonly proxyService: ProxyService,
+  ) {}
 
   /**
    * 通配符匹配 /api/v1 下所有非 auth 路径
@@ -53,11 +55,16 @@ export class ProxyController {
    * 提取需要转发给 Core Service 的请求头
    * - Authorization：身份认证
    * - x-tenant-id：多租户路由
+   * - x-user-id：当前用户标识（写操作必需，由 Core Service extractCurrentUser 校验）
    * - x-trace-id：链路追踪
    * - Idempotency-Key：幂等键（D35.8）
    * - If-Match：乐观并发控制
    * - Content-Type：内容类型
    * - Accept-Language：本地化
+   *
+   * 注意：POST /api/v1/changes 等根路径会被 ProxyController 兜底匹配
+   * （ChangeProxyController 的 @All("*") 仅匹配 /api/v1/changes/* 子路径），
+   * 因此 ProxyController 必须转发 x-user-id，否则 Core Service 报 401。
    */
   private extractForwardHeaders(
     request: Request,
@@ -66,11 +73,13 @@ export class ProxyController {
     const forwardHeaderNames = [
       HttpHeader.AUTHORIZATION,
       HttpHeader.X_TENANT_ID,
+      "x-user-id",
       HttpHeader.X_TRACE_ID,
       HttpHeader.IDEMPOTENCY_KEY,
       HttpHeader.IF_MATCH,
       "content-type",
       HttpHeader.ACCEPT_LANGUAGE,
+      HttpHeader.X_TEST_RUN_ID,
     ];
 
     for (const name of forwardHeaderNames) {

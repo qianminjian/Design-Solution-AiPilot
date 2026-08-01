@@ -17,6 +17,9 @@ public class AppProperties {
     private Security security = new Security();
     private Cors cors = new Cors();
     private ObjectStorage objectStorage = new ObjectStorage();
+    private AiService aiService = new AiService();
+    /** 异步线程池配置（A-60 显式 TaskExecutor，对齐 A-59 健康检查异步执行需求） */
+    private Async async = new Async();
 
     public String getName() {
         return name;
@@ -64,6 +67,22 @@ public class AppProperties {
 
     public void setCors(Cors cors) {
         this.cors = cors;
+    }
+
+    public AiService getAiService() {
+        return aiService;
+    }
+
+    public void setAiService(AiService aiService) {
+        this.aiService = aiService;
+    }
+
+    public Async getAsync() {
+        return async;
+    }
+
+    public void setAsync(Async async) {
+        this.async = async;
     }
 
     public static class Security {
@@ -178,6 +197,128 @@ public class AppProperties {
                 return new String[0];
             }
             return allowedOrigins.split("\\s*,\\s*");
+        }
+    }
+
+    /**
+     * AI Service 调用配置（V1.8 Sprint AI 辅助影响分析）
+     *
+     * <p>Core Service 通过 RestClient 调用 AI Service 的 text-generation 端点，
+     * 自动生成变更影响分析内容（design-constraints.md §AI 安全红线）。
+     *
+     * <p>环境变量映射：
+     * <ul>
+     *   <li>{@code AI_SERVICE_URL} → app.ai-service.base-url</li>
+     *   <li>{@code AI_TIMEOUT_SECONDS} → app.ai-service.timeout-seconds</li>
+     * </ul>
+     */
+    public static class AiService {
+        /** AI Service 基础 URL，如 http://aidesign-ai:8000 */
+        private String baseUrl = "http://localhost:8000";
+
+        /** LLM 调用超时（秒），reasoning 模型建议 120s */
+        private int timeoutSeconds = 120;
+
+        /** 调用失败重试次数（不含首次调用） */
+        private int retryAttempts = 1;
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public int getTimeoutSeconds() {
+            return timeoutSeconds;
+        }
+
+        public void setTimeoutSeconds(int timeoutSeconds) {
+            this.timeoutSeconds = timeoutSeconds;
+        }
+
+        public int getRetryAttempts() {
+            return retryAttempts;
+        }
+
+        public void setRetryAttempts(int retryAttempts) {
+            this.retryAttempts = retryAttempts;
+        }
+    }
+
+    /**
+     * 异步线程池配置（A-60 显式 TaskExecutor）
+     *
+     * <p>对齐 A-59 V0 差距记录第④项："异步线程池配置（TaskExecutor）当前使用 Spring 默认配置，
+     * V1.11+ 可考虑显式配置线程池大小和队列容量防止资源耗尽"。
+     *
+     * <p>本配置用于 ConnectorHealthChecker.checkAsync 等 @Async 方法，避免使用 Spring 默认
+     * SimpleAsyncTaskExecutor（每次创建新线程，无上限，可能导致资源耗尽）。
+     *
+     * <p>环境变量映射：
+     * <ul>
+     *   <li>{@code ASYNC_CORE_POOL_SIZE} → app.async.core-pool-size</li>
+     *   <li>{@code ASYNC_MAX_POOL_SIZE} → app.async.max-pool-size</li>
+     *   <li>{@code ASYNC_QUEUE_CAPACITY} → app.async.queue-capacity</li>
+     *   <li>{@code ASYNC_THREAD_NAME_PREFIX} → app.async.thread-name-prefix</li>
+     *   <li>{@code ASYNC_KEEP_ALIVE_SECONDS} → app.async.keep-alive-seconds</li>
+     * </ul>
+     */
+    public static class Async {
+        /** 核心线程数（即使空闲也保留的线程数，建议 = CPU 核数） */
+        private int corePoolSize = 2;
+
+        /** 最大线程数（队列满后才会创建至 maxPoolSize，建议 = CPU 核数 × 2） */
+        private int maxPoolSize = 4;
+
+        /** 队列容量（核心线程满后任务进入队列等待，建议 = maxPoolSize × 10） */
+        private int queueCapacity = 40;
+
+        /** 线程名前缀（便于日志排查与 jstack 分析） */
+        private String threadNamePrefix = "async-";
+
+        /** 空闲线程保留秒数（超过核心线程数的空闲线程存活时间） */
+        private int keepAliveSeconds = 60;
+
+        public int getCorePoolSize() {
+            return corePoolSize;
+        }
+
+        public void setCorePoolSize(int corePoolSize) {
+            this.corePoolSize = corePoolSize;
+        }
+
+        public int getMaxPoolSize() {
+            return maxPoolSize;
+        }
+
+        public void setMaxPoolSize(int maxPoolSize) {
+            this.maxPoolSize = maxPoolSize;
+        }
+
+        public int getQueueCapacity() {
+            return queueCapacity;
+        }
+
+        public void setQueueCapacity(int queueCapacity) {
+            this.queueCapacity = queueCapacity;
+        }
+
+        public String getThreadNamePrefix() {
+            return threadNamePrefix;
+        }
+
+        public void setThreadNamePrefix(String threadNamePrefix) {
+            this.threadNamePrefix = threadNamePrefix;
+        }
+
+        public int getKeepAliveSeconds() {
+            return keepAliveSeconds;
+        }
+
+        public void setKeepAliveSeconds(int keepAliveSeconds) {
+            this.keepAliveSeconds = keepAliveSeconds;
         }
     }
 }

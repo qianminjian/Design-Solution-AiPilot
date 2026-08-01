@@ -1,6 +1,6 @@
 package com.platform.core.cde.support;
 
-import com.platform.core.auth.security.AuthenticatedPrincipal;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

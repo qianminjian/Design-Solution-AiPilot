@@ -1,4 +1,4 @@
-package com.platform.core.auth.security;
+package com.platform.core.common.security;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

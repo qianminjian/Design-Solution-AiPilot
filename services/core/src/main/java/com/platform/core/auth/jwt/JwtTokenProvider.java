@@ -9,6 +9,7 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.platform.core.common.spi.StepUpTokenValidator;
 import com.platform.core.common.config.AppProperties;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
@@ -37,7 +38,7 @@ import java.util.UUID;
  * - 密钥不得打印到日志
  */
 @Component
-public class JwtTokenProvider {
+public class JwtTokenProvider implements StepUpTokenValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
@@ -183,9 +184,12 @@ public class JwtTokenProvider {
      *
      * <p>校验失败抛 STEP_UP_TOKEN_INVALID 业务异常（4015），统一错误码避免暴露具体原因。
      *
+     * <p>实现自 {@link StepUpTokenValidator} 端口接口（change 域 SPI）。
+     *
      * @param token step-up token 字符串
      * @throws com.platform.core.common.response.BusinessException token 无效或已过期
      */
+    @Override
     public void validateStepUpToken(String token) {
         if (token == null || token.isBlank()) {
             throw new BusinessException(ErrorCode.STEP_UP_TOKEN_INVALID, HttpStatus.UNAUTHORIZED,
@@ -213,6 +217,7 @@ public class JwtTokenProvider {
     /**
      * 从 step-up token 提取 purpose claim（申请用途）
      */
+    @Override
     public String getPurposeFromToken(String token) {
         return getClaim(token, c -> c.getStringClaim(CLAIM_PURPOSE));
     }
@@ -254,6 +259,7 @@ public class JwtTokenProvider {
     /**
      * 从 token 提取 principalId（sub claim）
      */
+    @Override
     public UUID getPrincipalIdFromToken(String token) {
         return UUID.fromString(getClaim(token, JWTClaimsSet::getSubject));
     }

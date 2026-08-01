@@ -16,6 +16,7 @@ import com.platform.core.analysis.scenario.domain.AnalysisScenario;
 import com.platform.core.analysis.scenario.repository.AnalysisScenarioRepository;
 import com.platform.core.analysis.solver.domain.SolverProfile;
 import com.platform.core.analysis.solver.repository.SolverProfileRepository;
+import com.platform.core.auth.jwt.JwtTokenProvider;
 import com.platform.core.common.response.BusinessException;
 import com.platform.core.common.response.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,6 +69,7 @@ public class SimulationRunService {
     private final AnalysisProblemRepository problemRepository;
     private final AnalysisScenarioRepository scenarioRepository;
     private final SolverProfileRepository solverProfileRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public SimulationRunService(
             SimulationRunRepository runRepository,
@@ -75,7 +77,8 @@ public class SimulationRunService {
             ConvergenceMetricRepository convergenceRepository,
             AnalysisProblemRepository problemRepository,
             AnalysisScenarioRepository scenarioRepository,
-            SolverProfileRepository solverProfileRepository
+            SolverProfileRepository solverProfileRepository,
+            JwtTokenProvider jwtTokenProvider
     ) {
         this.runRepository = runRepository;
         this.timelineRepository = timelineRepository;
@@ -83,6 +86,7 @@ public class SimulationRunService {
         this.problemRepository = problemRepository;
         this.scenarioRepository = scenarioRepository;
         this.solverProfileRepository = solverProfileRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
 
     // ── 查询 ──
@@ -340,6 +344,11 @@ public class SimulationRunService {
                         "SolverProfile not found: " + solverProfileId));
     }
 
+    /**
+     * 校验 stepUpToken（V1.7 升级：真实 JWT 校验，对齐 Operations 域）
+     *
+     * @design D40-信息-物理安全.md §Step-up 认证
+     */
     private void validateStepUpToken(String stepUpToken) {
         if (stepUpToken == null || stepUpToken.isBlank()) {
             throw new BusinessException(
@@ -347,6 +356,7 @@ public class SimulationRunService {
                     HttpStatus.BAD_REQUEST,
                     "高风险动作必须提供 stepUpToken");
         }
+        jwtTokenProvider.validateStepUpToken(stepUpToken);
     }
 
     /**

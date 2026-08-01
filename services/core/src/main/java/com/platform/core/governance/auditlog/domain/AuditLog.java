@@ -77,6 +77,19 @@ public class AuditLog extends TenantBaseEntity {
     @Column(name = "details", nullable = false, length = 4000)
     private String details;
 
+    /**
+     * 测试运行 ID（P0-1.2 测试数据隔离）
+     *
+     * 用途：CI 流水线注入标识，标记测试产生的审计日志
+     *  - null：未标记（生产或本地开发，SLO 报表包含）
+     *  - "untracked"：未标记的本地开发数据（SLO 报表包含）
+     *  - UUID 或 github-run_id-attempt 格式：真实测试运行（SLO 报表排除）
+     *
+     * 权威源：@design/D43-SLO-运营报表.md §测试数据排除规则
+     */
+    @Column(name = "test_run_id", length = 64)
+    private String testRunId;
+
     public UUID getId() {
         return id;
     }
@@ -179,5 +192,13 @@ public class AuditLog extends TenantBaseEntity {
 
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public String getTestRunId() {
+        return testRunId;
+    }
+
+    public void setTestRunId(String testRunId) {
+        this.testRunId = testRunId;
     }
 }

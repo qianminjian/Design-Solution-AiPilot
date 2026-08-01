@@ -288,6 +288,32 @@ public class WorkerService {
         return toDto(saved);
     }
 
+    /**
+     * 删除 Worker（硬删除，V1.10 新增，由 OperationsActionService 双人审批后调用）
+     *
+     * <p>校验：仅允许删除 STOPPED/ERROR 状态的 Worker，防止误删运行中实例。
+     */
+    @Transactional
+    public void deleteWorker(UUID tenantId, UUID id, String reason) {
+        WorkerStatus entity = repository.findByIdAndTenantId(id, tenantId)
+                .orElseThrow(() -> new BusinessException(
+                        ErrorCode.NOT_FOUND,
+                        HttpStatus.NOT_FOUND,
+                        "WorkerStatus not found: " + id));
+
+        // 安全校验：运行中或暂停状态的 Worker 不允许直接删除
+        if (entity.getStatus() == WorkerRuntimeStatus.RUNNING
+                || entity.getStatus() == WorkerRuntimeStatus.IDLE) {
+            throw new BusinessException(
+                    ErrorCode.BUSINESS_RULE_VIOLATION,
+                    HttpStatus.CONFLICT,
+                    "Worker 状态为 " + entity.getStatus() + "，需先 isolate 或 pause 后再删除");
+        }
+
+        repository.delete(entity);
+        log.info("Worker deleted: id={}, tenantId={}, reason={}", id, tenantId, reason);
+    }
+
     private WorkerStatusDto toDto(WorkerStatus entity) {
         return new WorkerStatusDto(
                 entity.getId(),

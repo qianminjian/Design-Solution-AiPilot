@@ -18,7 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
-import com.platform.core.auth.security.AuthenticatedPrincipal;
+import com.platform.core.common.security.AuthenticatedPrincipal;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -129,6 +129,9 @@ public class AuditLogInterceptor implements HandlerInterceptor {
         // traceId
         String traceId = org.slf4j.MDC.get("traceId");
 
+        // P0-1.2 测试数据隔离：从 MDC 读取 testRunId（由 TestRunIdFilter 注入）
+        String testRunId = org.slf4j.MDC.get("testRunId");
+
         // 自动脱敏：高敏感字段不写详情
         boolean masked = true;
         String details = buildDetails(request, response, startTime, riskLevel);
@@ -146,7 +149,8 @@ public class AuditLogInterceptor implements HandlerInterceptor {
                 masked,
                 resolveClientIp(request),
                 request.getHeader("User-Agent"),
-                details
+                details,
+                testRunId
         );
     }
 

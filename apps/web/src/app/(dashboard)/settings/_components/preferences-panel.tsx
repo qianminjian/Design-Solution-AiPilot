@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import {
   Alert,
   Button,
@@ -8,6 +8,7 @@ import {
   Divider,
   Form,
   Select,
+  Skeleton,
   Space,
   Switch,
   Typography,
@@ -19,7 +20,11 @@ import {
   GlobalOutlined,
   ColumnWidthOutlined,
 } from "@ant-design/icons";
-import type { AuthContext } from "@design-platform/shared";
+import type {
+  AuthContext,
+  UpdateUserPreferencesRequest,
+} from "@design-platform/shared";
+import { useMyPreferences, useUpdateMyPreferences } from "@/hooks/use-iam";
 
 const { Text } = Typography;
 
@@ -31,30 +36,88 @@ interface PreferencesPanelProps {
  * Preferences Tab —— 偏好设置
  *
  * 包含：
- *  - 语言/时区/单位制/币种
+ *  - 语言/时区/单位制/币种（语言/时区来自 Principal，单位制/币种来自 UserPreferences）
  *  - 主题（light/dark/system）
  *  - 通知偏好（邮件/应用内/每日摘要/提及）
  *  - AI 安全偏好（始终显示 AI 辅助标记、人工复核徽章）
+ *
+ * V1 接入：GET /api/v1/users/me/preferences 加载，PUT 提交更新（upsert）。
  */
 export function PreferencesPanel({ auth }: PreferencesPanelProps) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
-  const [saving, setSaving] = useState(false);
+
+  const { data, isLoading, isError, error } = useMyPreferences();
+  const updateMutation = useUpdateMyPreferences();
+
+  // 数据加载后回填表单（初始值 + 后续变更）
+  useEffect(() => {
+    if (data) {
+      form.setFieldsValue({
+        // language/timezone 来自 Principal（auth 上下文），不由 UserPreferences 维护
+        language: auth?.principal?.locale ?? "zh-CN",
+        timezone: auth?.principal?.timezone ?? "Asia/Shanghai",
+        unitSystem: data.unitSystem,
+        currency: data.currency,
+        theme: data.theme,
+        emailNotify: data.emailNotify,
+        inAppNotify: data.inAppNotify,
+        dailyDigest: data.dailyDigest,
+        mentionNotify: data.mentionNotify,
+        showAiSafetyBanner: data.showAiSafetyBanner,
+        requireHumanReviewBadge: data.requireHumanReviewBadge,
+      });
+    }
+  }, [data, form, auth?.principal?.locale, auth?.principal?.timezone]);
 
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      setSaving(true);
-      await new Promise((r) => setTimeout(r, 600));
-      message.success("偏好设置已保存（Mock，未持久化）");
-      // eslint-disable-next-line no-console
-      console.log("[Preferences] saved (mock):", values);
+      const payload: UpdateUserPreferencesRequest = {
+        unitSystem: values.unitSystem,
+        currency: values.currency,
+        theme: values.theme,
+        emailNotify: values.emailNotify,
+        inAppNotify: values.inAppNotify,
+        dailyDigest: values.dailyDigest,
+        mentionNotify: values.mentionNotify,
+        showAiSafetyBanner: values.showAiSafetyBanner,
+        requireHumanReviewBadge: values.requireHumanReviewBadge,
+      };
+      await updateMutation.mutateAsync(payload);
+      message.success("偏好设置已保存");
     } catch (err) {
-      message.error(err instanceof Error ? err.message : "保存失败");
-    } finally {
-      setSaving(false);
+      // mutation 失败或表单校验失败
+      if (err instanceof Error && err.message) {
+        message.error(err.message);
+      } else if (updateMutation.isError) {
+        message.error("保存失败，请稍后重试");
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+        <Skeleton active paragraph={{ rows: 8 }} />
+      </Space>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="加载偏好设置失败"
+        description={
+          error instanceof Error
+            ? `${error.message}（请检查网络或重新登录后重试）`
+            : "未知错误，请稍后重试"
+        }
+      />
+    );
+  }
 
   return (
     <Form
@@ -247,15 +310,20 @@ export function PreferencesPanel({ auth }: PreferencesPanelProps) {
         <Divider />
 
         <Space>
-          <Button type="primary" loading={saving} onClick={handleSave}>
+          <Button
+            type="primary"
+            onClick={handleSave}
+            loading={updateMutation.isPending}
+          >
             保存偏好
           </Button>
           <Button onClick={() => form.resetFields()}>重置</Button>
         </Space>
 
         <Text type="secondary" style={{ fontSize: 12 }}>
-          * V0 阶段所有偏好仅前端 Mock，不持久化；V1 接入 UserPreferences API
-          后将按用户存储。
+          * V1 已接入：偏好设置将通过 PUT /api/v1/users/me/preferences
+          持久化存储。 语言/时区字段属于 Principal
+          核心身份信息，需在账户设置页修改。
         </Text>
       </Space>
     </Form>

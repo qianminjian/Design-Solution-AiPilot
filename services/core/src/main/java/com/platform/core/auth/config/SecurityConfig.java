@@ -5,6 +5,8 @@ import com.platform.core.auth.security.JwtAuthenticationFilter;
 import com.platform.core.common.config.AppProperties;
 import com.platform.core.common.response.ApiResponse;
 import com.platform.core.common.response.ErrorCode;
+import com.platform.core.iam.security.ApiTokenAuthenticationFilter;
+import com.platform.core.iam.service.ApiTokenAuthenticator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
@@ -27,12 +29,15 @@ import java.util.List;
  * Spring Security 配置
  *
  * 策略：
- * - 无状态会话（STATELESS），完全基于 JWT
- * - 禁用 CSRF（API 用 JWT，不需要 CSRF token）
+ * - 无状态会话（STATELESS），完全基于 JWT 或 PAT（P0-16.1）
+ * - 禁用 CSRF（API 用 JWT/PAT，不需要 CSRF token）
  * - CORS 白名单（禁止 *，见 security.md §7）
  * - 公开端点：登录 / 刷新 token / 健康检查 / 主体注册
  * - 其他 /api/v1/** 端点需要认证
- * - JwtAuthenticationFilter 在 UsernamePasswordAuthenticationFilter 之前
+ * - ApiTokenAuthenticationFilter（PAT）在 JwtAuthenticationFilter 之前
+ *   - PAT 优先识别（64 位十六进制字符串）
+ *   - JWT 由后续 JwtAuthenticationFilter 处理（xxx.yyy.zzz 格式）
+ *   - PAT 认证成功后 JwtAuthenticationFilter 跳过（检查 SecurityContext 已有 Authentication）
  */
 @Configuration
 @EnableWebSecurity
@@ -50,17 +55,27 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
+    private final ApiTokenAuthenticator apiTokenAuthenticator;
 
     public SecurityConfig(JwtTokenProvider jwtTokenProvider,
                           AppProperties appProperties,
-                          ObjectMapper objectMapper) {
+                          ObjectMapper objectMapper,
+                          ApiTokenAuthenticator apiTokenAuthenticator) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.appProperties = appProperties;
         this.objectMapper = objectMapper;
+        this.apiTokenAuthenticator = apiTokenAuthenticator;
     }
 
     /**
      * 安全过滤链
+     *
+     * <p>过滤器顺序（从前到后）：
+     * <ol>
+     *   <li>ApiTokenAuthenticationFilter（PAT 认证，64 位十六进制字符串）</li>
+     *   <li>JwtAuthenticationFilter（JWT 认证，xxx.yyy.zzz 格式）</li>
+     *   <li>UsernamePasswordAuthenticationFilter（Spring Security 默认）</li>
+     * </ol>
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -80,6 +95,10 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write(unauthorizedJson());
                         }))
+                // PAT Filter 在 JWT Filter 之前，PAT 优先识别
+                .addFilterBefore(new ApiTokenAuthenticationFilter(apiTokenAuthenticator),
+                        JwtAuthenticationFilter.class)
+                // JWT Filter 在 UsernamePasswordAuthenticationFilter 之前
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
