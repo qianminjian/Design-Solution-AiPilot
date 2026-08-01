@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Collections;
@@ -267,6 +268,57 @@ class GlobalExceptionHandlerTest {
 
             // Assert
             assertThat(response.getBody().message()).contains("类型不匹配");
+        }
+    }
+
+    @Nested
+    @DisplayName("handleMissingParam 缺少必填请求参数")
+    class HandleMissingParam {
+
+        @Test
+        @DisplayName("应返回 400 + 102 错误码（而非 500）")
+        void shouldReturn400AndParamInvalidCode() {
+            // Arrange
+            MissingServletRequestParameterException ex =
+                    new MissingServletRequestParameterException("projectId", "UUID");
+            HttpServletRequest request = mockRequest("/api/v1/workflow/stages");
+
+            // Act
+            ResponseEntity<ApiResponse<Void>> response = handler.handleMissingParam(ex, request);
+
+            // Assert
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(response.getBody().code()).isEqualTo(ErrorCode.PARAM_INVALID);
+        }
+
+        @Test
+        @DisplayName("响应消息应包含缺失参数名")
+        void shouldIncludeParameterName() {
+            // Arrange
+            MissingServletRequestParameterException ex =
+                    new MissingServletRequestParameterException("datasetId", "UUID");
+            HttpServletRequest request = mockRequest("/api/v1/verification-items");
+
+            // Act
+            ResponseEntity<ApiResponse<Void>> response = handler.handleMissingParam(ex, request);
+
+            // Assert
+            assertThat(response.getBody().message()).contains("datasetId");
+        }
+
+        @Test
+        @DisplayName("响应体 data 应为 null")
+        void shouldReturnNullData() {
+            // Arrange
+            MissingServletRequestParameterException ex =
+                    new MissingServletRequestParameterException("projectId", "UUID");
+            HttpServletRequest request = mockRequest("/api/v1/design-options");
+
+            // Act
+            ResponseEntity<ApiResponse<Void>> response = handler.handleMissingParam(ex, request);
+
+            // Assert
+            assertThat(response.getBody().data()).isNull();
         }
     }
 

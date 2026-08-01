@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -41,17 +42,25 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>请求结束清理 TenantContextHolder + SecurityContext（防 ThreadLocal 内存泄漏）</li>
  * </ul>
  */
-public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
+public class ApiTokenAuthenticationFilter extends OncePerRequestFilter implements Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(ApiTokenAuthenticationFilter.class);
 
     /** Authorization 头前缀 */
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /** 过滤器顺序：在 JwtAuthenticationFilter（HIGHEST_PRECEDENCE + 20）之前，PAT 优先 */
+    private static final int FILTER_ORDER = Ordered.HIGHEST_PRECEDENCE + 10;
+
     private final ApiTokenAuthenticator apiTokenAuthenticator;
 
     public ApiTokenAuthenticationFilter(ApiTokenAuthenticator apiTokenAuthenticator) {
         this.apiTokenAuthenticator = apiTokenAuthenticator;
+    }
+
+    @Override
+    public int getOrder() {
+        return FILTER_ORDER;
     }
 
     @Override

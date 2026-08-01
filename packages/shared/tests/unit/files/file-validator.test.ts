@@ -22,10 +22,12 @@ import {
   isAllowedExtension,
   isAllowedMimeType,
   isLikelyZipBomb,
+} from "../../../src/files";
+import {
   isPathSafe,
   sha256,
   validateFile,
-} from "../../../src/files";
+} from "../../../src/files/file-validator.node";
 
 /** OLE CFB 魔数（Revit RVT/RFA 文件头） */
 const OLE_CFB_MAGIC = Buffer.from([

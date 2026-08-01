@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.core.Ordered;
 
 /**
  * JWT 认证过滤器
@@ -32,18 +33,30 @@ import java.util.stream.Collectors;
  * 5. 请求结束清理 TenantContextHolder（防 ThreadLocal 内存泄漏）
  *
  * 验证失败：不抛异常（让 Security 链后续拒绝），仅清理上下文
+ *
+ * 实现 Ordered：Spring Security 6.2+ 要求 addFilterBefore 的锚点 filter
+ * 必须在 FilterOrderRegistration 注册顺序，否则抛
+ * "The Filter class ... does not have a registered order"。
  */
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter implements Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     /** Authorization 头前缀 */
     private static final String BEARER_PREFIX = "Bearer ";
 
+    /** 过滤器顺序：在 UsernamePasswordAuthenticationFilter（默认 200）之前 */
+    private static final int FILTER_ORDER = Ordered.HIGHEST_PRECEDENCE + 20;
+
     private final JwtTokenProvider jwtTokenProvider;
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    @Override
+    public int getOrder() {
+        return FILTER_ORDER;
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -52,6 +53,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         String msg = "参数 " + ex.getName() + " 类型不匹配";
         log.warn("参数类型不匹配 path={} name={}", request.getRequestURI(), ex.getName());
+        ApiResponse<Void> body = ApiResponse.error(ErrorCode.PARAM_INVALID, msg);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    /**
+     * 缺少必填请求参数 → 400 + 102
+     * （GET 列表端点常要求 projectId/datasetId 等 query 参数，缺参属客户端错误，不应落 500）
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParam(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String msg = "缺少必填参数 " + ex.getParameterName();
+        log.warn("缺少必填参数 path={} name={}", request.getRequestURI(), ex.getParameterName());
         ApiResponse<Void> body = ApiResponse.error(ErrorCode.PARAM_INVALID, msg);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }

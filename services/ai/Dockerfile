@@ -21,18 +21,9 @@ USER appuser
 # 容器内运行时通过 EMBEDDING_MODEL_PATH=/app/models/all-MiniLM-L6-v2 直接加载，绕过 huggingface_hub 缓存
 # 国内构建时使用 hf-mirror.com 镜像加速；构建网络不佳时跳过（部署后可手动 docker cp 补齐）
 ENV HF_ENDPOINT=https://hf-mirror.com
+# 注意：Python 代码必须写成单行（以 from 开头的行会被 Docker 解析器误判为 FROM 指令）
 RUN mkdir -p /app/models && \
-    python3 -c "
-from huggingface_hub import snapshot_download
-import os
-os.environ['HF_HUB_OFFLINE'] = '0'
-os.environ['TRANSFORMERS_OFFLINE'] = '0'
-snapshot_download(
-    repo_id='sentence-transformers/all-MiniLM-L6-v2',
-    local_dir='/app/models/all-MiniLM-L6-v2'
-)
-print('Model downloaded to /app/models/all-MiniLM-L6-v2')
-" || echo "model preload skipped (will docker cp on deploy)"
+    python3 -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/all-MiniLM-L6-v2', local_dir='/app/models/all-MiniLM-L6-v2'); print('Model downloaded to /app/models/all-MiniLM-L6-v2')" || echo "model preload skipped (will docker cp on deploy)"
 
 # 运行时强制离线模式（容器内无法访问 huggingface.co / hf-mirror.com）
 ENV HF_HUB_OFFLINE=1

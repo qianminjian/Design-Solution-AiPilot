@@ -95,12 +95,13 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write(unauthorizedJson());
                         }))
-                // PAT Filter 在 JWT Filter 之前，PAT 优先识别
-                .addFilterBefore(new ApiTokenAuthenticationFilter(apiTokenAuthenticator),
-                        JwtAuthenticationFilter.class)
-                // JWT Filter 在 UsernamePasswordAuthenticationFilter 之前
+                // 注意顺序（Spring Security 6.2+ 要求锚点 filter 已注册）：
+                // 1) 先注册 JwtAuthenticationFilter（锚定内置 UsernamePasswordAuthenticationFilter）
+                // 2) 再以 JwtAuthenticationFilter 为锚点注册 ApiTokenAuthenticationFilter（PAT 优先）
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new ApiTokenAuthenticationFilter(apiTokenAuthenticator),
+                        JwtAuthenticationFilter.class);
         return http.build();
     }
 

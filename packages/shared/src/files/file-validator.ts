@@ -1,25 +1,19 @@
 /**
- * 文件校验工具（P0-2.3 File/Manifest 契约）
+ * 文件校验工具——浏览器安全部分（P0-2.3 File/Manifest 契约）
  *
- * 覆盖 CDE 文件上传/下载安全契约：
+ * 仅包含不依赖 Node 内置模块的纯函数与常量：
  *  - 扩展名白名单（security.md §4：.rvt/.3dm/.skp/.dwg/.rfa/.dxf）
  *  - MIME 类型白名单映射
  *  - 魔数（magic bytes）校验（RVT/RFA=OLE CFB、DWG=AC10 版本头、DXF=文本 Section）
- *  - 文件大小限制（zip bomb / 资源耗尽防护）
- *  - 路径穿越防护（path.resolve 校验安全根目录）
- *  - SHA-256 内容哈希（证据可校验）
- *  - polyglot 检测（声明的 MIME/扩展名与魔数不一致）
+ *  - zip bomb 启发式检测（压缩比异常高）
  *
- * 魔数说明：
- *  - SKP（SketchUp）与 3DM（Rhino）无公开稳定的魔数常量，
- *    采用"宽松校验"策略（大小/MIME/非空），magicCheck 返回 "unsupported"，
- *    由沙箱/专业解析器进一步验证（D35.10 Sandbox 覆盖）。
+ * 依赖 Node 内置模块（node:crypto / node:path / Buffer）的函数
+ * （sha256 / isPathSafe / validateFile）请从 "./file-validator.node" 导入，
+ * 避免被浏览器端打包（web 构建报 UnhandledSchemeError）。
  *
  * 权威源：.trae/rules/security.md §4 输入校验 + §6.3 路径穿越防护
  *         + @design/D35-API-事件契约.md §D35.10 文件上传、下载与内容协商
  */
-import { createHash } from "node:crypto";
-import { resolve as resolvePath } from "node:path";
 
 /** 允许的设计文件扩展名白名单（security.md §4） */
 export const ALLOWED_DESIGN_EXTENSIONS = [
@@ -69,44 +63,6 @@ const MAGIC_SIGNATURES: ReadonlyArray<{
   { type: "ifc", ascii: "ISO-10303-21" },
 ];
 
-/** 文件校验错误码 */
-export type FileValidationErrorCode =
-  | "EMPTY_FILE"
-  | "INVALID_EXTENSION"
-  | "INVALID_MIME"
-  | "SIZE_EXCEEDED"
-  | "MAGIC_MISMATCH"
-  | "UNSAFE_PATH"
-  | "POLYGLOT_RISK";
-
-/** 文件校验结果 */
-export interface FileValidationResult {
-  /** 是否通过全部校验 */
-  readonly valid: boolean;
-  /** 错误码列表（valid=false 时非空） */
-  readonly errors: readonly FileValidationErrorCode[];
-  /** 检测到的魔数类型 */
-  readonly magic: MagicDetectResult;
-  /** 魔数校验级别（strict=已匹配/unsupported=无公开魔数/unknown=未识别） */
-  readonly magicLevel: "strict" | "unsupported" | "unknown";
-  /** 计算的内容哈希（SHA-256 hex） */
-  readonly sha256: string;
-  /** 校验耗时（ms，供 SLO 监控） */
-  readonly durationMs: number;
-}
-
-/** 文件校验输入 */
-export interface FileToValidate {
-  /** 原始文件名（含扩展名） */
-  readonly fileName: string;
-  /** 声明的 MIME 类型（客户端或代理提供） */
-  readonly mimeType?: string;
-  /** 文件大小（字节） */
-  readonly size: number;
-  /** 文件内容（魔数与哈希校验用） */
-  readonly buffer: Buffer;
-}
-
 /**
  * 校验扩展名是否在白名单内
  *
@@ -131,10 +87,10 @@ export function isAllowedMimeType(mimeType: string): boolean {
 /**
  * 检测文件内容魔数（magic bytes）
  *
- * @param buffer 文件内容
+ * @param buffer 文件内容（Uint8Array，浏览器与 Node 通用）
  * @returns 检测结果：ole-cfb/dwg/dxf/ifc（strict 匹配）/ unsupported（已知设计格式无魔数）/ unknown（未识别）
  */
-export function detectMagic(buffer: Buffer): {
+export function detectMagic(buffer: Uint8Array): {
   magic: MagicDetectResult;
   level: "strict" | "unsupported" | "unknown";
 } {
@@ -155,34 +111,17 @@ export function detectMagic(buffer: Buffer): {
   }
 
   // ASCII 前缀匹配（文本格式，前 64 字节内查找，容错 BOM/空白）
-  const head = buffer.subarray(0, 64).toString("utf8");
+  const head = new TextDecoder()
+    .decode(buffer.subarray(0, 64))
+    .replace(/^\uFEFF/, "")
+    .trimStart();
   for (const signature of MAGIC_SIGNATURES) {
-    if (signature.ascii) {
-      const normalized = head.replace(/^\uFEFF/, "").trimStart();
-      if (normalized.startsWith(signature.ascii)) {
-        return { magic: signature.type, level: "strict" };
-      }
+    if (signature.ascii && head.startsWith(signature.ascii)) {
+      return { magic: signature.type, level: "strict" };
     }
   }
 
   return { magic: "unknown", level: "unknown" };
-}
-
-/**
- * 路径穿越防护（security.md §6.3）
- *
- * 使用 path.resolve 解析后校验是否仍在允许的根目录内。
- *
- * @param allowedRoot 允许的文件根目录
- * @param userInput 用户提供的相对路径
- * @returns true = 安全；false = 路径穿越风险
- */
-export function isPathSafe(allowedRoot: string, userInput: string): boolean {
-  const resolved = resolvePath(allowedRoot, userInput);
-  const rootWithSep = allowedRoot.endsWith("/")
-    ? allowedRoot
-    : `${allowedRoot}/`;
-  return resolved === allowedRoot || resolved.startsWith(rootWithSep);
 }
 
 /**
@@ -208,75 +147,6 @@ export function isLikelyZipBomb(
 }
 
 /**
- * 计算文件 SHA-256 内容哈希（证据可校验）
- *
- * @param buffer 文件内容
- * @returns 64 位小写 hex
- */
-export function sha256(buffer: Buffer): string {
-  return createHash("sha256").update(buffer).digest("hex");
-}
-
-/**
- * 完整文件校验（扩展名 + MIME + 大小 + 魔数 + polyglot + 哈希）
- *
- * @param file 待校验文件
- * @param maxBytes 最大允许大小（默认 DEFAULT_MAX_FILE_SIZE_BYTES）
- * @returns 校验结果（valid=false 时 errors 列出全部违规项）
- */
-export function validateFile(
-  file: FileToValidate,
-  maxBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
-): FileValidationResult {
-  const start = Date.now();
-  const errors: FileValidationErrorCode[] = [];
-  const ext = extensionOf(file.fileName);
-
-  // 1. 空文件
-  if (file.size === 0 || file.buffer.length === 0) {
-    errors.push("EMPTY_FILE");
-  }
-
-  // 2. 扩展名白名单
-  if (!isAllowedExtension(file.fileName)) {
-    errors.push("INVALID_EXTENSION");
-  }
-
-  // 3. MIME 类型白名单
-  if (file.mimeType && !isAllowedMimeType(file.mimeType)) {
-    errors.push("INVALID_MIME");
-  }
-
-  // 4. 文件大小限制（资源耗尽防护）
-  if (file.size > maxBytes) {
-    errors.push("SIZE_EXCEEDED");
-  }
-
-  // 5. 魔数校验 + polyglot 检测
-  const { magic, level } = detectMagic(file.buffer);
-  if (level === "strict") {
-    // 魔数对应的预期扩展名
-    const expectedExtension = expectedExtensionForMagic(magic);
-    if (expectedExtension && ext !== expectedExtension) {
-      // 声明的扩展名与魔数不一致 → polyglot 风险（MIME 混淆）
-      errors.push("POLYGLOT_RISK");
-    }
-  }
-
-  // 6. 内容哈希
-  const hash = sha256(file.buffer);
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    magic,
-    magicLevel: level,
-    sha256: hash,
-    durationMs: Date.now() - start,
-  };
-}
-
-/**
  * 提取文件扩展名（小写，含点）
  */
 function extensionOf(fileName: string): string {
@@ -285,22 +155,4 @@ function extensionOf(fileName: string): string {
     return "";
   }
   return fileName.slice(index).toLowerCase();
-}
-
-/**
- * 魔数类型 → 预期扩展名（polyglot 检测用）
- */
-function expectedExtensionForMagic(magic: MagicDetectResult): string | null {
-  switch (magic) {
-    case "ole-cfb":
-      return ".rvt"; // RVT/RFA 家族，RVT 为默认预期
-    case "dwg":
-      return ".dwg";
-    case "dxf":
-      return ".dxf";
-    case "ifc":
-      return ".ifc";
-    default:
-      return null;
-  }
 }
